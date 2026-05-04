@@ -1,0 +1,58 @@
+## .NET / Visual Studio
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+[Dd]ebug/
+[Rr]elease/
+[Oo]bj/
+[Bb]in/
+[Ll]og/
+[Ll]ogs/
+
+## Build results
+*.pdb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tlh
+*.tmp
+*.tmp_proj
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## EF Core migrations SQLite DB (local only)
+*.db
+*.db-shm
+*.db-wal
+
+## App data / logs
+AppData/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Rider
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/

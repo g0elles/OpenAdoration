@@ -1,0 +1,43 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAdoration.Domain", "OpenAdoration.Domain\OpenAdoration.Domain.csproj", "{49B4BCF5-9B86-4CA7-B1F6-9CBE80A4485C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAdoration.Application", "OpenAdoration.Application\OpenAdoration.Application.csproj", "{C3165215-D28E-4A8B-9FAD-6164BF7F396E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAdoration.Infrastructure", "OpenAdoration.Infrastructure\OpenAdoration.Infrastructure.csproj", "{8A8733CE-0947-44A2-BD4F-86CE13FBBD3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAdoration.WPF", "OpenAdoration.WPF\OpenAdoration.WPF.csproj", "{8F7B433C-F7D1-4B73-9A42-568E99A6C292}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49B4BCF5-9B86-4CA7-B1F6-9CBE80A4485C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49B4BCF5-9B86-4CA7-B1F6-9CBE80A4485C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49B4BCF5-9B86-4CA7-B1F6-9CBE80A4485C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49B4BCF5-9B86-4CA7-B1F6-9CBE80A4485C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3165215-D28E-4A8B-9FAD-6164BF7F396E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3165215-D28E-4A8B-9FAD-6164BF7F396E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3165215-D28E-4A8B-9FAD-6164BF7F396E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3165215-D28E-4A8B-9FAD-6164BF7F396E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A8733CE-0947-44A2-BD4F-86CE13FBBD3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8733CE-0947-44A2-BD4F-86CE13FBBD3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A8733CE-0947-44A2-BD4F-86CE13FBBD3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A8733CE-0947-44A2-BD4F-86CE13FBBD3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F7B433C-F7D1-4B73-9A42-568E99A6C292}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F7B433C-F7D1-4B73-9A42-568E99A6C292}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F7B433C-F7D1-4B73-9A42-568E99A6C292}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F7B433C-F7D1-4B73-9A42-568E99A6C292}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C72F155D-4DAB-4026-B1D9-E64BF81845F3}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,11 @@
+<UserControl x:Class="OpenAdoration.WPF.Views.BibleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="{StaticResource SurfaceBrush}">
+        <TextBlock Text="Bible — coming soon"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   FontSize="18"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+    </Grid>
+</UserControl>
