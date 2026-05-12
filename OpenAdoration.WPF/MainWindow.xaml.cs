@@ -34,7 +34,7 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _logger.LogInformation("MainWindow closing — shutting down projection window");
-        _projectionWindow.Close();
+        _projectionWindow.CloseForReal();
         base.OnClosed(e);
     }
 }

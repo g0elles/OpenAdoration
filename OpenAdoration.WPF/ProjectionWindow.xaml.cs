@@ -13,6 +13,10 @@ public partial class ProjectionWindow : Window
     private readonly IProjectionService _projectionService;
     private readonly ILogger<ProjectionWindow> _logger;
 
+    // True only when MainWindow explicitly calls CloseForReal() on shutdown.
+    // Prevents the operator's X click from destroying this Singleton window.
+    private bool _allowClose;
+
     public ProjectionWindow(IProjectionService projectionService, ILogger<ProjectionWindow> logger)
     {
         InitializeComponent();
@@ -84,9 +88,9 @@ public partial class ProjectionWindow : Window
         Dispatcher.Invoke(() =>
         {
             if (isProjecting)
-                EnsureShown();  // auto-open when projection starts
+                EnsureShown();
             else
-                ClearDisplay();
+                StopAndHide();
         });
     }
 
@@ -159,6 +163,12 @@ public partial class ProjectionWindow : Window
         BlankOverlay.Visibility = Visibility.Visible;
     }
 
+    private void StopAndHide()
+    {
+        ClearDisplay();
+        Hide();
+    }
+
     private void ClearDisplay()
     {
         HideAllLayers();
@@ -190,6 +200,28 @@ public partial class ProjectionWindow : Window
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called by MainWindow on app shutdown — the only path that actually closes the window.
+    /// </summary>
+    public void CloseForReal()
+    {
+        _allowClose = true;
+        Close();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!_allowClose)
+        {
+            // Operator clicked X — hide instead of destroying the Singleton window
+            e.Cancel = true;
+            Hide();
+            _logger.LogInformation("Projection window hidden (X clicked)");
+            return;
+        }
+        base.OnClosing(e);
+    }
 
     protected override void OnClosed(EventArgs e)
     {
