@@ -41,10 +41,12 @@ public sealed class SongRepository : ISongRepository
 
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
+        var normalized = term.ToLower();
+
         return await context.Songs
             .AsNoTracking()
             .Include(s => s.Sections.OrderBy(ss => ss.Order))
-            .Where(s => s.Title.Contains(term))
+            .Where(s => s.Title.ToLower().Contains(normalized))
             .OrderBy(s => s.Title)
             .ToListAsync(ct);
     }
@@ -78,8 +80,9 @@ public sealed class SongRepository : ISongRepository
             .FirstOrDefaultAsync(s => s.Id == song.Id, ct)
             ?? throw new InvalidOperationException($"Song with ID {song.Id} was not found.");
 
-        existing.Title = song.Title;
-        existing.Author = song.Author;
+        existing.Title          = song.Title;
+        existing.Author         = song.Author;
+        existing.Classification = song.Classification;
 
         // Replace sections entirely to avoid stale or orphaned section rows
         context.SongSections.RemoveRange(existing.Sections);

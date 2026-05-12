@@ -57,7 +57,7 @@
             </Border>
 
             <!-- ── Scrollable form ── -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="FormScroller" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="24,20,24,24">
 
                     <!-- Header -->
@@ -87,46 +87,6 @@
                              Tag="e.g. Worship, Hymn, Contemporary…"
                              Text="{Binding Classification, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,24" />
-
-                    <!-- Add section buttons -->
-                    <TextBlock Text="ADD SECTION" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
-                    <WrapPanel Margin="0,0,0,20">
-                        <Button Content="+ Verse"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Verse"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Chorus"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Chorus"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Pre-Chorus"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="PreChorus"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Bridge"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Bridge"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Intro"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Intro"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Outro"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Outro"
-                                Margin="0,0,6,6" />
-                        <Button Content="+ Tag"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding AddSectionCommand}"
-                                CommandParameter="Tag"
-                                Margin="0,0,6,6" />
-                    </WrapPanel>
 
                     <!-- Section list -->
                     <ItemsControl ItemsSource="{Binding Sections}">
@@ -176,23 +136,45 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <!-- Empty state hint -->
-                    <TextBlock Text="Use the buttons above to add sections to this song."
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               FontSize="13"
-                               HorizontalAlignment="Center"
-                               Margin="0,12,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Sections.Count}" Value="0">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <!-- Add section buttons (below the list so they stay in view) -->
+                    <TextBlock Text="ADD SECTION" Style="{StaticResource FieldLabel}" Margin="0,20,0,8" />
+                    <WrapPanel>
+                        <Button Content="+ Verse"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Verse"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Chorus"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Chorus"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Pre-Chorus"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="PreChorus"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Bridge"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Bridge"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Intro"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Intro"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Outro"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Outro"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Tag"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Tag"
+                                Margin="0,0,6,6" />
+                    </WrapPanel>
 
                 </StackPanel>
             </ScrollViewer>

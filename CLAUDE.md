@@ -6,6 +6,65 @@
 
 ---
 
+# ─────────────────────────────────────────────────────────────────────────────
+code_standards:
+  status: MANDATORY — non-negotiable on every change, no exceptions.
+
+  principles:
+    SOLID:
+      S: >
+        Single Responsibility — every class/method does one thing.
+        ViewModels hold state and commands only; services hold business logic only;
+        repositories hold data access only. Never mix these responsibilities.
+      O: >
+        Open/Closed — extend via new classes or interfaces, not by modifying
+        existing ones. New slide types, new services, new pages must slot in
+        without touching existing code.
+      L: >
+        Liskov Substitution — implementations must be fully substitutable for
+        their interfaces. No interface method that some implementors must leave
+        empty or throw NotImplementedException on.
+      I: >
+        Interface Segregation — keep interfaces narrow. A caller should never
+        depend on methods it does not use. Split fat interfaces before adding them.
+      D: >
+        Dependency Inversion — depend on abstractions (interfaces), never on
+        concrete types across layers. WPF → Application interface only.
+        Never reference Infrastructure types from WPF or Application.
+
+    clean_code:
+      - No dead code, no commented-out blocks, no TODO/FIXME left in committed code.
+      - Names are intention-revealing; no abbreviations except well-known ones (VM, UI, DI).
+      - Methods stay small (target < 20 lines); extract named private helpers otherwise.
+      - No magic strings or magic numbers — use constants, enums, or named values.
+      - Validate at system boundaries (user input, external APIs); trust internals.
+      - One level of abstraction per method — no mixing high-level orchestration with
+        low-level implementation detail in the same function body.
+
+    reliability:
+      - All IDisposable classes implement Dispose() and unsubscribe events.
+      - Event subscriptions on long-lived objects always have a matching unsubscription.
+      - UI property updates from non-UI-thread callers must go through Dispatcher.Invoke.
+      - CancellationToken propagated through all async chains (service → repository).
+      - EF Core SaveChangesAsync is implicitly transactional; never call it twice for
+        one logical operation — batch all changes into a single call.
+
+    patterns_enforced:
+      - Scope-per-navigation (see G11) — never resolve page VMs from the root container.
+      - IsBusy guard (see G4) — LoadAsync owns its own busy state, callers do not set it.
+      - Dispatcher.Invoke in MainViewModel and any singleton that subscribes to
+        IProjectionService events (fire can come from any thread in the future).
+      - IDisposable on every ViewModel that subscribes to external events.
+
+  what_not_to_do:
+    - Do not add error handling for impossible code paths (trust the framework).
+    - Do not add backwards-compatibility shims for code you are changing.
+    - Do not design for hypothetical future requirements beyond the current milestone.
+    - Do not inject concrete classes across layer boundaries — always use interfaces.
+    - Do not leave stub ViewModels with unused injected services; trim to what is used.
+
+---
+
 project:
   name: OpenAdoration
   description: >
@@ -507,6 +566,12 @@ confirmed_bugs:
     location: OpenAdoration.Application/Services/SongService.cs
     description: GenerateSlides would throw ArgumentException if any section had empty Lyrics (SlideType.Song requires content)
     fix: Added .Where(s => !string.IsNullOrWhiteSpace(s.Lyrics)) filter before Slide construction; logs warning for skipped sections
+
+  - id: B8
+    status: FIXED  # 2026-05-11
+    location: OpenAdoration.Infrastructure/Repositories/SongRepository.cs — UpdateAsync
+    description: Classification field was silently dropped on every song edit (only Title and Author were copied to the tracked entity)
+    fix: Added existing.Classification = song.Classification
 
   - id: B6
     status: OPEN

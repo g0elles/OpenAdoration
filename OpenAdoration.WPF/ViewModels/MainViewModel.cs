@@ -7,7 +7,7 @@ using OpenAdoration.Application.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class MainViewModel : BaseViewModel
+public partial class MainViewModel : BaseViewModel, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IProjectionService _projectionService;
@@ -21,6 +21,9 @@ public partial class MainViewModel : BaseViewModel
 
     [ObservableProperty]
     private bool _isProjecting;
+
+    [ObservableProperty]
+    private bool _isScreenOpen;
 
     // Current slide info — drives the bottom-bar preview panel
     [ObservableProperty] private string _currentSongTitle  = string.Empty;
@@ -108,35 +111,49 @@ public partial class MainViewModel : BaseViewModel
 
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
     {
-        IsProjecting = isProjecting;
-        if (!isProjecting)
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            CurrentSongTitle  = string.Empty;
-            CurrentSlideLabel = string.Empty;
-            PreviewText       = string.Empty;
-            PreviewIsBlank    = false;
-        }
+            IsProjecting = isProjecting;
+            if (!isProjecting)
+            {
+                CurrentSongTitle  = string.Empty;
+                CurrentSlideLabel = string.Empty;
+                PreviewText       = string.Empty;
+                PreviewIsBlank    = false;
+            }
+        });
     }
 
     private void OnSlideChanged(object? sender, Slide? slide)
     {
-        CurrentSongTitle  = _projectionService.ContextLabel;
-        CurrentSlideLabel = slide?.Label ?? string.Empty;
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            CurrentSongTitle  = _projectionService.ContextLabel;
+            CurrentSlideLabel = slide?.Label ?? string.Empty;
 
-        if (slide is null)
-        {
-            PreviewText    = string.Empty;
-            PreviewIsBlank = false;
-        }
-        else if (slide.Type == SlideType.Blank)
-        {
-            PreviewText    = string.Empty;
-            PreviewIsBlank = true;
-        }
-        else
-        {
-            PreviewText    = slide.Content;
-            PreviewIsBlank = false;
-        }
+            if (slide is null)
+            {
+                PreviewText    = string.Empty;
+                PreviewIsBlank = false;
+            }
+            else if (slide.Type == SlideType.Blank)
+            {
+                PreviewText    = string.Empty;
+                PreviewIsBlank = true;
+            }
+            else
+            {
+                PreviewText    = slide.Content;
+                PreviewIsBlank = false;
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
+        _projectionService.SlideChanged           -= OnSlideChanged;
+        _currentScope?.Dispose();
+        _currentScope = null;
     }
 }

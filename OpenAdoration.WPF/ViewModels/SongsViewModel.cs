@@ -4,13 +4,15 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class SongsViewModel : BaseViewModel
+public partial class SongsViewModel : BaseViewModel, IDisposable
 {
-    private readonly ISongService       _songService;
-    private readonly IProjectionService _projectionService;
+    private readonly ISongService            _songService;
+    private readonly IProjectionService      _projectionService;
+    private readonly IDialogService          _dialogService;
     private readonly ILogger<SongsViewModel> _logger;
 
     // Child VM — shares the same DI scope, created once per navigation to Songs
@@ -18,23 +20,31 @@ public partial class SongsViewModel : BaseViewModel
 
     [ObservableProperty] private ObservableCollection<Song> _songs = [];
     [ObservableProperty] private Song?   _selectedSong;
-    [ObservableProperty] private string  _searchText = string.Empty;
-    [ObservableProperty] private bool    _isEditing;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSearchText))]
+    private string _searchText = string.Empty;
+    [ObservableProperty] private bool _isEditing;
+
+    public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
 
     public SongsViewModel(
         ISongService            songService,
         IProjectionService      projectionService,
+        IDialogService          dialogService,
         AddEditSongViewModel    editViewModel,
         ILogger<SongsViewModel> logger)
     {
         _songService       = songService;
         _projectionService = projectionService;
+        _dialogService     = dialogService;
         _logger            = logger;
         EditViewModel      = editViewModel;
 
         EditViewModel.Saved     += OnSongSaved;
         EditViewModel.Cancelled += OnEditCancelled;
     }
+
+    partial void OnSearchTextChanged(string value) => SearchCommand.Execute(null);
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -89,6 +99,11 @@ public partial class SongsViewModel : BaseViewModel
     [RelayCommand]
     private async Task DeleteSongAsync(Song song)
     {
+        if (!_dialogService.Confirm(
+                $"Delete \"{song.Title}\"?\n\nThis action cannot be undone.",
+                "Delete Song"))
+            return;
+
         if (IsBusy) return;
         IsBusy = true;
         ClearError();
@@ -136,5 +151,11 @@ public partial class SongsViewModel : BaseViewModel
     private void OnEditCancelled(object? sender, EventArgs e)
     {
         IsEditing = false;
+    }
+
+    public void Dispose()
+    {
+        EditViewModel.Saved     -= OnSongSaved;
+        EditViewModel.Cancelled -= OnEditCancelled;
     }
 }

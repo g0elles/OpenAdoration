@@ -164,9 +164,16 @@
 
                     <Button Content="Open Screen"
                             Style="{StaticResource SecondaryButton}"
-                            Click="OnOpenScreenClick"
+                            Click="OnToggleScreenClick"
                             Padding="12,8"
-                            Margin="0,0,10,0" />
+                            Margin="0,0,10,0"
+                            Visibility="{Binding IsScreenOpen, Converter={StaticResource InverseBoolToVis}}" />
+                    <Button Content="Close Screen"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="OnToggleScreenClick"
+                            Padding="12,8"
+                            Margin="0,0,10,0"
+                            Visibility="{Binding IsScreenOpen, Converter={StaticResource BoolToVis}}" />
 
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">

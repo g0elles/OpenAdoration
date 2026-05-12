@@ -92,7 +92,7 @@
                                VerticalAlignment="Top"
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
 
-                    <!-- Empty state -->
+                    <!-- Empty state — no songs exist yet -->
                     <TextBlock Text="No songs yet. Click + New to add one."
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
@@ -109,6 +109,35 @@
                                             <Condition Binding="{Binding IsBusy}"        Value="False" />
                                             <Condition Binding="{Binding HasError}"       Value="False" />
                                             <Condition Binding="{Binding Songs.Count}"    Value="0" />
+                                            <Condition Binding="{Binding HasSearchText}"  Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Empty state — search returned nothing -->
+                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="16">
+                        <Run Text="No songs found for &quot;" />
+                        <Run Text="{Binding SearchText}" />
+                        <Run Text="&quot;." />
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsBusy}"        Value="False" />
+                                            <Condition Binding="{Binding HasError}"       Value="False" />
+                                            <Condition Binding="{Binding Songs.Count}"    Value="0" />
+                                            <Condition Binding="{Binding HasSearchText}"  Value="True" />
                                         </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Visible" />
                                     </MultiDataTrigger>

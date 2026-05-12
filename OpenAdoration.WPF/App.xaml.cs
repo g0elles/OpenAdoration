@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Infrastructure.Extensions;
 using OpenAdoration.Infrastructure.Logging;
+using OpenAdoration.WPF.Services;
 using OpenAdoration.WPF.ViewModels;
 
 // 'Application' alone is ambiguous with the OpenAdoration.Application namespace —
@@ -85,6 +86,7 @@ public partial class App : WpfApp
 
     private static void RegisterViewModels(IServiceCollection services)
     {
+        services.AddSingleton<IDialogService, MessageBoxDialogService>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();
