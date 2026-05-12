@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -21,8 +22,11 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProjecting;
 
-    [ObservableProperty]
-    private string _currentSlideLabel = string.Empty;
+    // Current slide info — drives the bottom-bar preview panel
+    [ObservableProperty] private string _currentSongTitle  = string.Empty;
+    [ObservableProperty] private string _currentSlideLabel = string.Empty;
+    [ObservableProperty] private string _previewText       = string.Empty;
+    [ObservableProperty] private bool   _previewIsBlank;
 
     public MainViewModel(
         IServiceProvider services,
@@ -76,9 +80,9 @@ public partial class MainViewModel : BaseViewModel
 
     private void NavigateTo<T>() where T : BaseViewModel
     {
-        var oldScope   = _currentScope;
-        _currentScope  = _services.CreateScope();
-        CurrentView    = _currentScope.ServiceProvider.GetRequiredService<T>();
+        var oldScope  = _currentScope;
+        _currentScope = _services.CreateScope();
+        CurrentView   = _currentScope.ServiceProvider.GetRequiredService<T>();
         oldScope?.Dispose();
     }
 
@@ -105,10 +109,34 @@ public partial class MainViewModel : BaseViewModel
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
     {
         IsProjecting = isProjecting;
+        if (!isProjecting)
+        {
+            CurrentSongTitle  = string.Empty;
+            CurrentSlideLabel = string.Empty;
+            PreviewText       = string.Empty;
+            PreviewIsBlank    = false;
+        }
     }
 
-    private void OnSlideChanged(object? sender, Application.Common.Slide? slide)
+    private void OnSlideChanged(object? sender, Slide? slide)
     {
+        CurrentSongTitle  = _projectionService.ContextLabel;
         CurrentSlideLabel = slide?.Label ?? string.Empty;
+
+        if (slide is null)
+        {
+            PreviewText    = string.Empty;
+            PreviewIsBlank = false;
+        }
+        else if (slide.Type == SlideType.Blank)
+        {
+            PreviewText    = string.Empty;
+            PreviewIsBlank = true;
+        }
+        else
+        {
+            PreviewText    = slide.Content;
+            PreviewIsBlank = false;
+        }
     }
 }

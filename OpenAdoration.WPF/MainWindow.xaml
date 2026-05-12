@@ -7,30 +7,26 @@
         Width="1280" Height="720"
         Background="{StaticResource PrimaryBrush}">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-    </Window.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- ── Content area (sidebar + page) ── -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- ── Sidebar ── -->
+            <!-- Sidebar -->
             <Border Grid.Column="0"
                     Background="{StaticResource PrimaryBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <DockPanel>
 
-                    <!-- App header -->
                     <Border DockPanel.Dock="Top" Padding="16,20,16,12">
                         <StackPanel>
                             <TextBlock Text="OpenAdoration"
@@ -48,7 +44,6 @@
                                Background="{StaticResource BorderBrush}"
                                Margin="16,0" />
 
-                    <!-- Navigation -->
                     <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0">
                         <Button Style="{StaticResource NavButton}"
                                 Content="🎵  Songs"
@@ -70,7 +65,7 @@
                 </DockPanel>
             </Border>
 
-            <!-- ── Content area ── -->
+            <!-- Page content -->
             <ContentControl Grid.Column="1"
                             Content="{Binding CurrentView}"
                             Background="{StaticResource SurfaceBrush}" />
@@ -81,49 +76,117 @@
                 Background="{StaticResource PrimaryBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="16,10">
+                Padding="12,8">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Current slide info -->
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="PROJECTING"
-                               Foreground="{StaticResource AccentBrush}"
-                               FontSize="10"
-                               FontWeight="Bold"
-                               Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}" />
+                <!-- ── Preview thumbnail (16:9 miniature) ── -->
+                <Border Grid.Column="0"
+                        Width="112" Height="63"
+                        Background="Black"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="3"
+                        Margin="0,0,12,0">
+                    <Grid>
+                        <!-- Live preview text -->
+                        <TextBlock Text="{Binding PreviewText}"
+                                   Foreground="White"
+                                   FontSize="7"
+                                   FontFamily="Arial"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   Padding="4"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+
+                        <!-- BLANK indicator -->
+                        <Border Background="#CC000000"
+                                Visibility="{Binding PreviewIsBlank, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="BLANK"
+                                       Foreground="#888888"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+
+                        <!-- NO SIGNAL overlay when not projecting -->
+                        <Border Background="#CC0D0D14"
+                                Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
+                            <TextBlock Text="NO SIGNAL"
+                                       Foreground="#444466"
+                                       FontSize="8"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- ── Current item info ── -->
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="{StaticResource AccentBrush}"
+                                CornerRadius="2"
+                                Padding="5,1"
+                                Margin="0,0,6,0"
+                                Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="LIVE"
+                                       Foreground="White"
+                                       FontSize="9"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="{Binding CurrentSongTitle}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <TextBlock Text="{Binding CurrentSlideLabel}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontSize="14" />
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="11"
+                               Margin="0,2,0,0"
+                               Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <!-- Projection controls -->
-                <StackPanel Grid.Column="1"
+                <!-- ── Transport controls + Open Screen ── -->
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
-                    <Button Content="◀  Previous"
-                            Style="{StaticResource ProjectionButton}"
-                            Command="{Binding ProjectionPreviousCommand}"
-                            IsEnabled="{Binding IsProjecting}"
-                            Margin="0,0,8,0" />
-                    <Button Content="Next  ▶"
-                            Style="{StaticResource ProjectionButton}"
-                            Command="{Binding ProjectionNextCommand}"
-                            IsEnabled="{Binding IsProjecting}"
-                            Margin="0,0,8,0" />
-                    <Button Content="Blank"
-                            Style="{StaticResource ProjectionButton}"
-                            Command="{Binding ProjectionBlankCommand}"
-                            IsEnabled="{Binding IsProjecting}"
-                            Margin="0,0,8,0" />
-                    <Button Content="Stop"
-                            Style="{StaticResource DangerButton}"
-                            Command="{Binding ProjectionStopCommand}"
-                            IsEnabled="{Binding IsProjecting}" />
+
+                    <Button Content="Open Screen"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="OnOpenScreenClick"
+                            Padding="12,8"
+                            Margin="0,0,10,0" />
+
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                        <Button Content="◀"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding ProjectionPreviousCommand}"
+                                Margin="0,0,4,0" />
+                        <Button Content="▶"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding ProjectionNextCommand}"
+                                Margin="0,0,4,0" />
+                        <Button Content="Blank"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding ProjectionBlankCommand}"
+                                Margin="0,0,4,0" />
+                        <Button Content="Stop"
+                                Style="{StaticResource DangerButton}"
+                                Command="{Binding ProjectionStopCommand}" />
+                    </StackPanel>
+
                 </StackPanel>
             </Grid>
         </Border>

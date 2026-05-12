@@ -13,6 +13,9 @@ public interface IProjectionService
     int CurrentSlideIndex { get; }
     bool IsProjecting { get; }
 
+    /// <summary>Human-readable label for the item being projected (e.g. the song title). Empty when not projecting.</summary>
+    string ContextLabel { get; }
+
     /// <summary>Fires whenever the displayed slide changes (including when projection stops).</summary>
     event EventHandler<Slide?> SlideChanged;
 

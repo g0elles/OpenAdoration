@@ -14,6 +14,7 @@ public sealed class ProjectionService : IProjectionService
     private List<Slide> _slides = [];
     private int _currentIndex = -1;
     private bool _isProjecting;
+    private string _contextLabel = string.Empty;
 
     public ProjectionService(ILogger<ProjectionService> logger)
     {
@@ -27,6 +28,7 @@ public sealed class ProjectionService : IProjectionService
     public IReadOnlyList<Slide> CurrentSlides => _slides;
     public int CurrentSlideIndex => _currentIndex;
     public bool IsProjecting => _isProjecting;
+    public string ContextLabel => _contextLabel;
 
     public event EventHandler<Slide?>? SlideChanged;
     public event EventHandler<bool>? ProjectionStateChanged;
@@ -46,6 +48,7 @@ public sealed class ProjectionService : IProjectionService
 
         _slides = [.. slides];
         _currentIndex = 0;
+        _contextLabel = contextLabel;
 
         if (!_isProjecting)
         {
@@ -136,6 +139,7 @@ public sealed class ProjectionService : IProjectionService
         _slides = [];
         _currentIndex = -1;
         _isProjecting = false;
+        _contextLabel = string.Empty;
 
         RaiseSlideChanged(null);
         RaiseProjectionStateChanged(false);

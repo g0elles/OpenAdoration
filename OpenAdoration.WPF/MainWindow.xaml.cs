@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using OpenAdoration.Application.Services;
 using OpenAdoration.WPF.ViewModels;
 using System.Windows;
 
@@ -22,16 +21,14 @@ public partial class MainWindow : Window
 
         DataContext = viewModel;
 
-        // Navigate to Songs on startup
         viewModel.NavigateToSongsCommand.Execute(null);
     }
 
-    protected override void OnContentRendered(EventArgs e)
+    // "Open Screen" button — shows the projection window without starting projection
+    private void OnOpenScreenClick(object sender, RoutedEventArgs e)
     {
-        base.OnContentRendered(e);
-
-        _projectionWindow.ShowOnSecondaryScreen();
-        _logger.LogInformation("MainWindow rendered, projection window launched");
+        _logger.LogInformation("Operator opened projection screen manually");
+        _projectionWindow.EnsureShown();
     }
 
     protected override void OnClosed(EventArgs e)

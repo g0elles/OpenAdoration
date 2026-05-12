@@ -18,32 +18,56 @@ public partial class ProjectionWindow : Window
         InitializeComponent();
 
         _projectionService = projectionService;
-        _logger = logger;
+        _logger            = logger;
 
-        _projectionService.SlideChanged          += OnSlideChanged;
+        _projectionService.SlideChanged           += OnSlideChanged;
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Positions the window on the secondary monitor and makes it visible.
-    /// If no secondary monitor is found, positions it on the primary as a fallback.
+    /// Shows the window if it is not already visible.
+    /// On dual-screen: fullscreen on the secondary monitor.
+    /// On single-screen: small floating window (800×450) in the bottom-right corner.
+    /// Safe to call multiple times — no-op if already shown.
     /// </summary>
-    public void ShowOnSecondaryScreen()
+    public void EnsureShown()
     {
+        if (IsVisible) return;
+
         var secondary = ScreenHelper.GetSecondaryScreen();
 
-        if (secondary is null)
+        if (secondary is not null)
         {
-            _logger.LogWarning("No secondary screen detected — projection window will open on the primary screen");
+            // Dual-screen: fullscreen on the secondary monitor
+            WindowStyle = WindowStyle.None;
+            ResizeMode  = ResizeMode.NoResize;
+            ShowOnSecondaryScreen(secondary);
         }
         else
         {
-            _logger.LogInformation("Projecting on: {Screen}", secondary.DeviceName);
-            ScreenHelper.PositionOnScreen(this, secondary);
-        }
+            // Single-screen: floating, resizable, positioned bottom-right
+            _logger.LogWarning("No secondary screen — opening projection as a floating window");
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            ResizeMode  = ResizeMode.CanResize;
+            Title       = "Projection Preview";
 
+            var primary = System.Windows.Forms.Screen.PrimaryScreen!;
+            Width  = 800;
+            Height = 450;
+            Left   = primary.WorkingArea.Right  - Width  - 20;
+            Top    = primary.WorkingArea.Bottom - Height - 20;
+            WindowState = WindowState.Normal;
+            Show();
+        }
+    }
+
+    /// <summary>Legacy helper — positions fullscreen on the given screen.</summary>
+    private void ShowOnSecondaryScreen(System.Windows.Forms.Screen screen)
+    {
+        _logger.LogInformation("Projecting on: {Screen}", screen.DeviceName);
+        ScreenHelper.PositionOnScreen(this, screen);
         WindowState = WindowState.Maximized;
         Show();
     }
@@ -52,7 +76,6 @@ public partial class ProjectionWindow : Window
 
     private void OnSlideChanged(object? sender, Slide? slide)
     {
-        // Always marshal back to the UI thread
         Dispatcher.Invoke(() => RenderSlide(slide));
     }
 
@@ -60,7 +83,9 @@ public partial class ProjectionWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
-            if (!isProjecting)
+            if (isProjecting)
+                EnsureShown();  // auto-open when projection starts
+            else
                 ClearDisplay();
         });
     }
@@ -74,6 +99,8 @@ public partial class ProjectionWindow : Window
             ClearDisplay();
             return;
         }
+
+        UpdateCornerLabel(slide);
 
         switch (slide.Type)
         {
@@ -100,7 +127,7 @@ public partial class ProjectionWindow : Window
     private void ShowText(string content)
     {
         HideAllLayers();
-        SlideTextBlock.Text = content;
+        SlideTextBlock.Text    = content;
         TextViewbox.Visibility = Visibility.Visible;
     }
 
@@ -116,7 +143,7 @@ public partial class ProjectionWindow : Window
         try
         {
             HideAllLayers();
-            BackgroundImage.Source = new BitmapImage(new Uri(path, UriKind.Absolute));
+            BackgroundImage.Source     = new BitmapImage(new Uri(path, UriKind.Absolute));
             BackgroundImage.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
@@ -135,6 +162,7 @@ public partial class ProjectionWindow : Window
     private void ClearDisplay()
     {
         HideAllLayers();
+        CornerLabel.Visibility = Visibility.Collapsed;
     }
 
     private void HideAllLayers()
@@ -146,11 +174,26 @@ public partial class ProjectionWindow : Window
         BackgroundImage.Source     = null;
     }
 
+    private void UpdateCornerLabel(Slide slide)
+    {
+        var songTitle = _projectionService.ContextLabel;
+
+        if (string.IsNullOrWhiteSpace(songTitle))
+        {
+            CornerLabel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        CornerSongTitle.Text    = songTitle;
+        CornerSectionLabel.Text = slide.Label;
+        CornerLabel.Visibility  = Visibility.Visible;
+    }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     protected override void OnClosed(EventArgs e)
     {
-        _projectionService.SlideChanged          -= OnSlideChanged;
+        _projectionService.SlideChanged           -= OnSlideChanged;
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         base.OnClosed(e);
     }

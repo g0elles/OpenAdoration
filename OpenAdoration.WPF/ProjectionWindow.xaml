@@ -39,5 +39,28 @@
                    Fill="Black"
                    Visibility="Collapsed" />
 
+        <!-- Corner label: song title · section (top-left, subtle) -->
+        <StackPanel x:Name="CornerLabel"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    Margin="14,10,0,0"
+                    Panel.ZIndex="100"
+                    Visibility="Collapsed">
+            <TextBlock x:Name="CornerSongTitle"
+                       FontFamily="Arial"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#CCFFFFFF" />
+            <TextBlock Text="  ·  "
+                       FontFamily="Arial"
+                       FontSize="16"
+                       Foreground="#66FFFFFF" />
+            <TextBlock x:Name="CornerSectionLabel"
+                       FontFamily="Arial"
+                       FontSize="16"
+                       Foreground="#99FFFFFF" />
+        </StackPanel>
+
     </Grid>
 </Window>
