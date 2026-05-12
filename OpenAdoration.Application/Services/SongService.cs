@@ -117,12 +117,19 @@ public sealed class SongService : ISongService
             return [];
         }
 
+        // Skip sections that have no lyrics — they cannot form a valid slide and
+        // would throw ArgumentException in the Slide constructor.
         var slides = ordered
+            .Where(s => !string.IsNullOrWhiteSpace(s.Lyrics))
             .Select(s => new Slide(
                 content: s.Lyrics,
                 type: SlideType.Song,
                 label: s.Label))
             .ToList();
+
+        var skipped = ordered.Count - slides.Count;
+        if (skipped > 0)
+            _logger.LogWarning("Song {SongId} '{Title}': skipped {Skipped} section(s) with empty lyrics", song.Id, song.Title, skipped);
 
         _logger.LogDebug("Generated {Count} slide(s) for song {SongId}", slides.Count, song.Id);
 

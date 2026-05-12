@@ -27,7 +27,7 @@ public sealed class Slide
 
     public Slide(string content, SlideType type, string label, string? mediaPath = null, int? themeId = null)
     {
-        if (type != SlideType.Media && string.IsNullOrWhiteSpace(content))
+        if (type is not SlideType.Media and not SlideType.Blank && string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content is required for non-media slides.", nameof(content));
 
         if (string.IsNullOrWhiteSpace(label))

@@ -1,11 +1,179 @@
 <UserControl x:Class="OpenAdoration.WPF.Views.SongsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:views="clr-namespace:OpenAdoration.WPF.Views"
+             xmlns:conv="clr-namespace:OpenAdoration.WPF.Converters"
+             xmlns:domain="clr-namespace:OpenAdoration.Domain.Entities;assembly=OpenAdoration.Domain"
+             d:DataContext="{d:DesignInstance Type=vm:SongsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Loaded="OnLoaded">
+
+    <UserControl.Resources>
+        <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+        <BooleanToVisibilityConverter          x:Key="BoolToVis" />
+    </UserControl.Resources>
+
     <Grid Background="{StaticResource SurfaceBrush}">
-        <TextBlock Text="Songs — coming next"
-                   Foreground="{StaticResource TextSecondaryBrush}"
-                   FontSize="18"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
+
+        <!-- ── List panel (NOT editing) ── -->
+        <Grid Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />   <!-- Toolbar -->
+                <RowDefinition Height="*"    />   <!-- Song list -->
+                <RowDefinition Height="Auto" />   <!-- Error banner -->
+            </Grid.RowDefinitions>
+
+            <!-- Toolbar -->
+            <Border Grid.Row="0"
+                    Padding="20,14"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"    />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource SearchTextBox}"
+                             Tag="Search songs..."
+                             Margin="0,0,12,0" />
+
+                    <Button Grid.Column="1"
+                            Content="+ New Song"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding AddSongCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- Busy overlay -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource SurfaceBrush}"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                    Panel.ZIndex="10">
+                <TextBlock Text="Loading..."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Border>
+
+            <!-- Song list -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IsBusy, Converter={StaticResource InverseBoolToVis}}">
+                <StackPanel Margin="0,8">
+
+                    <!-- Empty state -->
+                    <TextBlock Text="No songs found."
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="14"
+                               HorizontalAlignment="Center"
+                               Margin="0,48,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Songs.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <ItemsControl ItemsSource="{Binding Songs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type domain:Song}">
+                                <Border Style="{StaticResource SongRowCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"    />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Song info -->
+                                        <StackPanel Grid.Column="0"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                       FontSize="12"
+                                                       Margin="0,2,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="{Binding Author}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Author}" Value="{x:Null}">
+                                                                <Setter Property="Text" Value="Unknown author" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Author}" Value="">
+                                                                <Setter Property="Text" Value="Unknown author" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                       FontSize="11"
+                                                       Margin="0,3,0,0">
+                                                <Run Text="{Binding Sections.Count, Mode=OneWay}" />
+                                                <Run Text="section(s)" />
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- Row actions -->
+                                        <StackPanel Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    VerticalAlignment="Center">
+                                            <Button Content="▶  Project"
+                                                    Style="{StaticResource PrimaryButton}"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.ProjectSongCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Margin="0,0,8,0" />
+                                            <Button Content="Edit"
+                                                    Style="{StaticResource SecondaryButton}"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.EditSongCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Margin="0,0,8,0" />
+                                            <Button Content="Delete"
+                                                    Style="{StaticResource DangerButton}"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.DeleteSongCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Error banner -->
+            <Border Grid.Row="2"
+                    Padding="20,10"
+                    Background="{StaticResource DangerBrush}"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="13" />
+            </Border>
+        </Grid>
+
+        <!-- ── Edit panel (IsEditing = true) ── -->
+        <views:AddEditSongView
+            DataContext="{Binding EditViewModel}"
+            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" />
+
     </Grid>
 </UserControl>
