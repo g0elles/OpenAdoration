@@ -11,8 +11,8 @@ using OpenAdoration.Infrastructure.Persistence;
 namespace OpenAdoration.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260512031929_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260512033146_AddSongClassification")]
+    partial class AddSongClassification
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
