@@ -431,7 +431,10 @@ feature_status:  # as of 2026-05-11
     viewmodel: done
     view: done
     working: true
-    notes: Full CRUD + search + projection. Sections managed as replace-all on update.
+    notes: >
+      Full CRUD + search + projection. Sections managed as replace-all on update.
+      Classification field added (migration AddSongClassification).
+      Confirmed working 2026-05-12.
 
   Themes:
     domain: done
@@ -500,27 +503,77 @@ confirmed_bugs:
     fix: NavigateTo<T>() creates IServiceScope, resolves VM from it, disposes old scope on next navigation
 
   - id: B5
-    status: FIXED  # 2026-05-11
+    status: FIXED  # 2026-05-12
     location: OpenAdoration.Application/Services/SongService.cs
     description: GenerateSlides would throw ArgumentException if any section had empty Lyrics (SlideType.Song requires content)
     fix: Added .Where(s => !string.IsNullOrWhiteSpace(s.Lyrics)) filter before Slide construction; logs warning for skipped sections
+
+  - id: B6
+    status: OPEN
+    location: OpenAdoration.WPF/MainWindow.xaml.cs — OnContentRendered
+    description: ProjectionWindow opens automatically on every app launch, covering the primary screen if no secondary monitor is present
+    planned_fix: >
+      Remove ShowOnSecondaryScreen() call from OnContentRendered.
+      Window stays hidden at startup. First ProjectSong call opens + projects
+      in one step. Add "Open Screen" button in bottom bar (milestone_0b).
+
+  - id: B7
+    status: OPEN
+    location: OpenAdoration.WPF/ProjectionWindow.xaml
+    description: Song title and section label are not shown on the projection screen — the operator cannot see which slide is active at a glance
+    planned_fix: >
+      Add a TextBlock overlay in the top-left corner of ProjectionWindow
+      showing contextLabel (song title) and slide.Label (e.g. "Verse 1").
+      Font small enough to not distract the audience. (milestone_0b)
 
 # ─────────────────────────────────────────────────────────────────────────────
 roadmap:
   milestone_0:
     title: Make Songs actually work
-    status: IN PROGRESS
+    status: DONE  # 2026-05-12
     fixes_done: [B1, B4, B5]
-    remaining: Run full manual test checklist (see ROADMAP.md §0.4)
+    delivered:
+      - Full CRUD (add/edit/delete) with all SectionTypes
+      - Classification field on Song (migration AddSongClassification)
+      - Search by title
+      - Projection via ProjectSongCommand
+      - SongsView two-panel layout, AddEditSongView with section cards
+
+  milestone_0b:
+    title: Projection UX hardening
+    status: PLANNED  # discussed 2026-05-12
+    key_work:
+      - "B6: Projection window must NOT open at startup — remove ShowOnSecondaryScreen()
+         call from MainWindow.OnContentRendered. Window stays hidden until user
+         explicitly projects. First ProjectSong call opens + projects in one step.
+         Add 'Open Screen' button in bottom bar for showing a blank screen first."
+      - "B7: Song title label in projection window corner — overlay TextBlock anchored
+         top-left showing contextLabel (song title) + slide.Label (section).
+         Receives data from IProjectionService.SlideChanged via slide.Label and
+         a new ContextLabelChanged event or storing _contextLabel on the window."
+      - "Preview panel in bottom bar — small 16:9 dark rectangle that mirrors the
+         current slide state (lyrics text or blank indicator). Subscribes to
+         SlideChanged. Works on both 1-screen and 2-screen setups. Replaces the
+         plain CurrentSlideLabel TextBlock in MainWindow.xaml."
+      - "Single-screen mode — ScreenHelper.GetSecondaryScreen() returns null.
+         Instead of fullscreen-maximizing on the primary (blocks operator),
+         open ProjectionWindow as a resizable floating window (WindowStyle=SingleBorderWindow,
+         ResizeMode=CanResize, initial size ~800x450) positioned bottom-right.
+         On dual-screen: keep existing fullscreen-on-secondary behaviour."
 
   milestone_1:
     title: Themes — apply to projection
     status: PLANNED
     key_work:
-      - Fix B2 (hardcoded ProjectionWindow rendering)
+      - Fix B2 (hardcoded ProjectionWindow rendering — Arial 72pt white)
       - ThemeViewModel full implementation
       - ThemesView.xaml + AddEditThemeView.xaml with live preview rectangle
       - Pass ThemeId through GenerateSlides
+      - "Future (milestone_0b follow-on): per-song theme applied via IThemeService
+         when rendering each slide in ProjectionWindow"
+    note: >
+      User also requested full control over font, size, colour, position, and
+      transitions per song. This is the milestone that delivers it.
 
   milestone_2:
     title: Bible Browser
@@ -559,10 +612,6 @@ roadmap:
       Ctrl+1: Songs, Ctrl+2: Bible, Ctrl+3: Schedule
 
   milestone_6:
-    title: Projection Preview Panel
-    status: PLANNED
-
-  milestone_7:
     title: Polish & Release
     status: PLANNED
 
