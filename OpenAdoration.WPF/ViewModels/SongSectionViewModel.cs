@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -22,38 +21,21 @@ public partial class SongSectionViewModel : ObservableObject
 
     public string Label => Type switch
     {
-        SectionType.Verse   => $"Verse {SectionNumber}",
-        SectionType.Bridge  => $"Bridge {SectionNumber}",
-        _                   => Type.ToString()
+        SectionType.Verse  => $"Verse {SectionNumber}",
+        SectionType.Bridge => $"Bridge {SectionNumber}",
+        _                  => Type.ToString()
     };
 
-    // Raised so the parent ViewModel can re-number and re-order sections
     public event EventHandler? MoveUpRequested;
     public event EventHandler? MoveDownRequested;
     public event EventHandler? DeleteRequested;
 
     [RelayCommand]
-    private void MoveUp()   => MoveUpRequested?.Invoke(this, EventArgs.Empty);
+    private void MoveUp() => MoveUpRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
     private void MoveDown() => MoveDownRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
-    private void Delete()   => DeleteRequested?.Invoke(this, EventArgs.Empty);
-
-    public SongSection ToEntity() => new()
-    {
-        Type          = Type,
-        SectionNumber = SectionNumber,
-        Lyrics        = Lyrics,
-        Order         = Order
-    };
-
-    public static SongSectionViewModel FromEntity(SongSection section) => new()
-    {
-        Type          = section.Type,
-        SectionNumber = section.SectionNumber,
-        Lyrics        = section.Lyrics,
-        Order         = section.Order
-    };
+    private void Delete() => DeleteRequested?.Invoke(this, EventArgs.Empty);
 }

@@ -12,12 +12,7 @@ public partial class MainViewModel : BaseViewModel
     private readonly IProjectionService _projectionService;
     private readonly ILogger<MainViewModel> _logger;
 
-    /// <summary>
-    /// The scope that owns the current navigation target's scoped dependencies
-    /// (repositories, services, DbContext factories). Created fresh on every
-    /// navigation and disposed when the user navigates away, so nothing leaks
-    /// into the root container.
-    /// </summary>
+    // One scope per page — disposes scoped services when the user navigates away
     private IServiceScope? _currentScope;
 
     [ObservableProperty]
@@ -79,6 +74,14 @@ public partial class MainViewModel : BaseViewModel
         NavigateTo<ThemeViewModel>();
     }
 
+    private void NavigateTo<T>() where T : BaseViewModel
+    {
+        var oldScope   = _currentScope;
+        _currentScope  = _services.CreateScope();
+        CurrentView    = _currentScope.ServiceProvider.GetRequiredService<T>();
+        oldScope?.Dispose();
+    }
+
     // ── Projection controls ───────────────────────────────────────────────────
 
     [RelayCommand]
@@ -107,42 +110,5 @@ public partial class MainViewModel : BaseViewModel
     private void OnSlideChanged(object? sender, Application.Common.Slide? slide)
     {
         CurrentSlideLabel = slide?.Label ?? string.Empty;
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Opens a fresh DI scope, resolves <typeparamref name="TViewModel"/> from it,
-    /// assigns it to <see cref="CurrentView"/>, then disposes the previous scope.
-    /// <para>
-    /// Using a scope per navigation ensures that scoped services (ISongService,
-    /// IDbContextFactory, etc.) are never captured by the root container, preventing
-    /// DbContext reuse across unrelated operations and memory leaks on long sessions.
-    /// </para>
-    /// </summary>
-    private void NavigateTo<TViewModel>() where TViewModel : BaseViewModel
-    {
-        // Create the new scope first — if this throws nothing is broken yet.
-        var newScope = _services.CreateScope();
-        BaseViewModel vm;
-
-        try
-        {
-            vm = newScope.ServiceProvider.GetRequiredService<TViewModel>();
-        }
-        catch
-        {
-            newScope.Dispose();
-            throw;
-        }
-
-        // Swap scope and view atomically (single-threaded UI thread).
-        CurrentView = vm;
-
-        var oldScope  = _currentScope;
-        _currentScope = newScope;
-
-        // Disposing the old scope tears down all scoped services the previous VM owned.
-        oldScope?.Dispose();
     }
 }

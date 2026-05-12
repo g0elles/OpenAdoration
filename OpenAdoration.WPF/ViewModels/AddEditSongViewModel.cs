@@ -1,113 +1,155 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
-using System.Collections.ObjectModel;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class AddEditSongViewModel : ObservableObject
+public partial class AddEditSongViewModel : BaseViewModel
 {
+    private readonly ISongService _songService;
     private readonly ILogger<AddEditSongViewModel> _logger;
 
-    // 0 = new song
-    private int _songId;
+    private int _songId; // 0 = new song
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-    private string _title = string.Empty;
+    [ObservableProperty] private string _title          = string.Empty;
+    [ObservableProperty] private string _author         = string.Empty;
+    [ObservableProperty] private string _classification = string.Empty;
 
-    [ObservableProperty]
-    private string _author = string.Empty;
+    public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
 
-    public ObservableCollection<SongSectionViewModel> Sections { get; } = new();
+    public bool   IsNew     => _songId == 0;
+    public string FormTitle => IsNew ? "New Song" : "Edit Song";
 
     public event EventHandler<Song>? Saved;
     public event EventHandler?       Cancelled;
 
-    public AddEditSongViewModel(ILogger<AddEditSongViewModel> logger)
+    public AddEditSongViewModel(ISongService songService, ILogger<AddEditSongViewModel> logger)
     {
-        _logger = logger;
+        _songService = songService;
+        _logger      = logger;
     }
 
-    // ── Load ─────────────────────────────────────────────────────────────────
-
-    public void LoadForCreate()
+    public void InitialiseNew()
     {
-        _songId = 0;
-        Title   = string.Empty;
-        Author  = string.Empty;
-        Sections.Clear();
+        _songId        = 0;
+        Title          = string.Empty;
+        Author         = string.Empty;
+        Classification = string.Empty;
+        ClearError();
+        ClearSections();
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(FormTitle));
     }
 
-    public void LoadForEdit(Song song)
+    public void InitialiseEdit(Song song)
     {
-        _songId = song.Id;
-        Title   = song.Title;
-        Author  = song.Author ?? string.Empty;
-
-        Sections.Clear();
-        foreach (var section in song.GetOrderedSections())
-        {
-            var vm = SongSectionViewModel.FromEntity(section);
-            SubscribeSectionEvents(vm);
-            Sections.Add(vm);
-        }
+        _songId        = song.Id;
+        Title          = song.Title;
+        Author         = song.Author         ?? string.Empty;
+        Classification = song.Classification ?? string.Empty;
+        ClearError();
+        ClearSections();
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(FormTitle));
+        foreach (var s in song.GetOrderedSections())
+            Sections.Add(CreateSectionVm(s.Type, s.SectionNumber, s.Lyrics, s.Order));
     }
 
-    // ── Commands ─────────────────────────────────────────────────────────────
-
-    // CommandParameter from each "Add X" button is the SectionType enum name as a string.
     [RelayCommand]
     private void AddSection(string? sectionTypeName)
     {
         if (!Enum.TryParse<SectionType>(sectionTypeName, out var type))
-        {
-            _logger.LogWarning("Unknown section type name '{Name}' — defaulting to Verse", sectionTypeName);
-            type = SectionType.Verse;
-        }
+            return;
 
-        var vm = new SongSectionViewModel { Type = type };
-        SubscribeSectionEvents(vm);
-        Sections.Add(vm);
-        RecalculateOrder();
-
-        _logger.LogDebug("Added {Type} section to song editor", type);
+        var number = Sections.Count(s => s.Type == type) + 1;
+        var order  = Sections.Count;
+        Sections.Add(CreateSectionVm(type, number, string.Empty, order));
     }
-
-    [RelayCommand(CanExecute = nameof(CanSave))]
-    private void Save()
-    {
-        var song = BuildEntity();
-
-        if (_songId == 0)
-            _logger.LogInformation("Saving new song: {Title}", Title);
-        else
-            _logger.LogInformation("Saving updated song {SongId}: {Title}", _songId, Title);
-
-        Saved?.Invoke(this, song);
-    }
-
-    private bool CanSave() => !string.IsNullOrWhiteSpace(Title);
 
     [RelayCommand]
-    private void Cancel() => Cancelled?.Invoke(this, EventArgs.Empty);
-
-    // ── Section event handlers ────────────────────────────────────────────────
-
-    private void SubscribeSectionEvents(SongSectionViewModel vm)
+    private async Task SaveAsync()
     {
+        if (IsBusy) return;
+
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            SetError("Song title is required.");
+            return;
+        }
+
+        IsBusy = true;
+        ClearError();
+
+        try
+        {
+            RecalculateOrder();
+            var song = BuildSong();
+
+            if (IsNew)
+            {
+                var created = await _songService.CreateAsync(song);
+                _logger.LogInformation("Song created: {Title}", created.Title);
+                Saved?.Invoke(this, created);
+            }
+            else
+            {
+                await _songService.UpdateAsync(song);
+                _logger.LogInformation("Song updated: {SongId}", _songId);
+                Saved?.Invoke(this, song);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save song");
+            SetError("Failed to save. Please try again.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        ClearError();
+        Cancelled?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private Song BuildSong() => new()
+    {
+        Id             = _songId,
+        Title          = Title.Trim(),
+        Author         = string.IsNullOrWhiteSpace(Author)         ? null : Author.Trim(),
+        Classification = string.IsNullOrWhiteSpace(Classification) ? null : Classification.Trim(),
+        Sections       = [.. Sections.Select(vm => new SongSection
+        {
+            Type          = vm.Type,
+            SectionNumber = vm.SectionNumber,
+            Lyrics        = vm.Lyrics,
+            Order         = vm.Order
+        })]
+    };
+
+    private SongSectionViewModel CreateSectionVm(SectionType type, int sectionNumber, string lyrics, int order)
+    {
+        var vm = new SongSectionViewModel
+        {
+            Type          = type,
+            SectionNumber = sectionNumber,
+            Lyrics        = lyrics,
+            Order         = order
+        };
         vm.MoveUpRequested   += OnMoveUp;
         vm.MoveDownRequested += OnMoveDown;
         vm.DeleteRequested   += OnDelete;
-    }
-
-    private void UnsubscribeSectionEvents(SongSectionViewModel vm)
-    {
-        vm.MoveUpRequested   -= OnMoveUp;
-        vm.MoveDownRequested -= OnMoveDown;
-        vm.DeleteRequested   -= OnDelete;
+        return vm;
     }
 
     private void OnMoveUp(object? sender, EventArgs e)
@@ -115,7 +157,6 @@ public partial class AddEditSongViewModel : ObservableObject
         if (sender is not SongSectionViewModel vm) return;
         var idx = Sections.IndexOf(vm);
         if (idx <= 0) return;
-
         Sections.Move(idx, idx - 1);
         RecalculateOrder();
     }
@@ -125,7 +166,6 @@ public partial class AddEditSongViewModel : ObservableObject
         if (sender is not SongSectionViewModel vm) return;
         var idx = Sections.IndexOf(vm);
         if (idx < 0 || idx >= Sections.Count - 1) return;
-
         Sections.Move(idx, idx + 1);
         RecalculateOrder();
     }
@@ -133,42 +173,38 @@ public partial class AddEditSongViewModel : ObservableObject
     private void OnDelete(object? sender, EventArgs e)
     {
         if (sender is not SongSectionViewModel vm) return;
-        UnsubscribeSectionEvents(vm);
+        vm.MoveUpRequested   -= OnMoveUp;
+        vm.MoveDownRequested -= OnMoveDown;
+        vm.DeleteRequested   -= OnDelete;
         Sections.Remove(vm);
         RecalculateOrder();
+        RenumberSections();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    // Re-assigns Order and SectionNumber so labels stay correct after moves/deletes
     private void RecalculateOrder()
     {
-        var counters = new Dictionary<SectionType, int>();
+        for (int i = 0; i < Sections.Count; i++)
+            Sections[i].Order = i;
+    }
 
-        for (var i = 0; i < Sections.Count; i++)
+    private void RenumberSections()
+    {
+        foreach (var grp in Sections.GroupBy(s => s.Type))
         {
-            var vm = Sections[i];
-            vm.Order = i;
-
-            counters.TryGetValue(vm.Type, out var count);
-            count++;
-            counters[vm.Type] = count;
-            vm.SectionNumber  = count;
+            int n = 1;
+            foreach (var vm in grp)
+                vm.SectionNumber = n++;
         }
     }
 
-    private Song BuildEntity()
+    private void ClearSections()
     {
-        var sections = Sections
-            .Select(vm => vm.ToEntity())
-            .ToList();
-
-        return new Song
+        foreach (var vm in Sections)
         {
-            Id       = _songId,
-            Title    = Title.Trim(),
-            Author   = string.IsNullOrWhiteSpace(Author) ? null : Author.Trim(),
-            Sections = sections
-        };
+            vm.MoveUpRequested   -= OnMoveUp;
+            vm.MoveDownRequested -= OnMoveDown;
+            vm.DeleteRequested   -= OnDelete;
+        }
+        Sections.Clear();
     }
 }

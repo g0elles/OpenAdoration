@@ -5,172 +5,198 @@
              d:DataContext="{d:DesignInstance Type=vm:AddEditSongViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d">
+             mc:Ignorable="d"
+             Background="{StaticResource SurfaceBrush}">
 
-    <Grid Background="{StaticResource SurfaceBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />   <!-- Header -->
-            <RowDefinition Height="*"    />   <!-- Scrollable body -->
-            <RowDefinition Height="Auto" />   <!-- Footer actions -->
-        </Grid.RowDefinitions>
+    <Grid>
+        <!-- Busy overlay -->
+        <Grid Panel.ZIndex="10"
+              Background="#80000000"
+              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Saving…"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="16"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
 
-        <!-- ── Header ── -->
-        <Border Grid.Row="0"
-                Padding="24,16"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,0,0,1">
-            <TextBlock Text="Song"
-                       Foreground="{StaticResource TextPrimaryBrush}"
-                       FontSize="18"
-                       FontWeight="SemiBold" />
-        </Border>
+        <!-- Main layout -->
+        <DockPanel>
 
-        <!-- ── Body ── -->
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      Padding="24,16">
-            <StackPanel>
+            <!-- ── Footer: error + action buttons ── -->
+            <Border DockPanel.Dock="Bottom"
+                    Background="{StaticResource PrimaryBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="20,12">
+                <Grid>
+                    <!-- Error message (left) -->
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource DangerBrush}"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
+                               TextWrapping="Wrap"
+                               MaxWidth="400"
+                               HorizontalAlignment="Left" />
 
-                <!-- Title -->
-                <TextBlock Text="Title *"
-                           Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FieldTextBox}"
-                         Margin="0,4,0,16" />
+                    <!-- Buttons (right) -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <Button Content="Cancel"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelCommand}"
+                                Margin="0,0,8,0" />
+                        <Button Content="Save Song"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                <!-- Author -->
-                <TextBlock Text="Author"
-                           Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FieldTextBox}"
-                         Margin="0,4,0,24" />
+            <!-- ── Scrollable form ── -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24,20,24,24">
 
-                <!-- Sections list -->
-                <TextBlock Text="SECTIONS"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="11"
-                           FontWeight="Bold"
-                           Margin="0,0,0,8" />
+                    <!-- Header -->
+                    <TextBlock Text="{Binding FormTitle}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,20" />
 
-                <ItemsControl ItemsSource="{Binding Sections}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:SongSectionViewModel}">
-                            <Border Style="{StaticResource SectionCard}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*"    />
-                                    </Grid.RowDefinitions>
+                    <!-- Title field -->
+                    <TextBlock Text="TITLE" Style="{StaticResource FieldLabel}" />
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="Song title"
+                             Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,14" />
 
-                                    <!-- Section header: label + reorder + delete -->
-                                    <Grid Grid.Row="0" Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+                    <!-- Author field -->
+                    <TextBlock Text="AUTHOR / ARTIST" Style="{StaticResource FieldLabel}" />
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="Optional"
+                             Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,14" />
 
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding Label}"
-                                                   Foreground="{StaticResource AccentBrush}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="13"
-                                                   VerticalAlignment="Center" />
+                    <!-- Classification field -->
+                    <TextBlock Text="CLASSIFICATION" Style="{StaticResource FieldLabel}" />
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="e.g. Worship, Hymn, Contemporary…"
+                             Text="{Binding Classification, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,24" />
 
-                                        <StackPanel Grid.Column="1"
-                                                    Orientation="Horizontal">
-                                            <Button Content="▲"
-                                                    Style="{StaticResource IconButton}"
-                                                    Command="{Binding MoveUpCommand}"
-                                                    ToolTip="Move up" />
-                                            <Button Content="▼"
-                                                    Style="{StaticResource IconButton}"
-                                                    Command="{Binding MoveDownCommand}"
-                                                    ToolTip="Move down"
-                                                    Margin="4,0" />
-                                            <Button Content="✕"
-                                                    Style="{StaticResource IconDangerButton}"
-                                                    Command="{Binding DeleteCommand}"
-                                                    ToolTip="Remove section" />
-                                        </StackPanel>
+                    <!-- Add section buttons -->
+                    <TextBlock Text="ADD SECTION" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
+                    <WrapPanel Margin="0,0,0,20">
+                        <Button Content="+ Verse"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Verse"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Chorus"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Chorus"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Pre-Chorus"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="PreChorus"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Bridge"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Bridge"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Intro"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Intro"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Outro"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Outro"
+                                Margin="0,0,6,6" />
+                        <Button Content="+ Tag"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding AddSectionCommand}"
+                                CommandParameter="Tag"
+                                Margin="0,0,6,6" />
+                    </WrapPanel>
+
+                    <!-- Section list -->
+                    <ItemsControl ItemsSource="{Binding Sections}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:SongSectionViewModel}">
+                                <Border Style="{StaticResource SectionCard}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Section header -->
+                                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                                            <TextBlock Text="{Binding Label}"
+                                                       Foreground="{StaticResource AccentBrush}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Right">
+                                                <Button Content="▲"
+                                                        Style="{StaticResource IconButton}"
+                                                        Command="{Binding MoveUpCommand}"
+                                                        ToolTip="Move up" />
+                                                <Button Content="▼"
+                                                        Style="{StaticResource IconButton}"
+                                                        Command="{Binding MoveDownCommand}"
+                                                        Margin="2,0"
+                                                        ToolTip="Move down" />
+                                                <Button Content="✕"
+                                                        Style="{StaticResource IconDangerButton}"
+                                                        Command="{Binding DeleteCommand}"
+                                                        ToolTip="Remove section" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Lyrics area -->
+                                        <TextBox Grid.Row="1"
+                                                 Style="{StaticResource LyricsTextBox}"
+                                                 Text="{Binding Lyrics, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinHeight="80"
+                                                 MaxHeight="200" />
                                     </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                                    <!-- Lyrics -->
-                                    <TextBox Grid.Row="1"
-                                             Text="{Binding Lyrics, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource LyricsTextBox}"
-                                             MinHeight="90"
-                                             AcceptsReturn="True"
-                                             TextWrapping="Wrap"
-                                             VerticalScrollBarVisibility="Auto" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <!-- Empty state hint -->
+                    <TextBlock Text="Use the buttons above to add sections to this song."
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               Margin="0,12,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Sections.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
-                <!-- Quick-add section buttons — one per type, no dropdown needed -->
-                <TextBlock Text="ADD SECTION"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="11"
-                           FontWeight="Bold"
-                           Margin="0,4,0,8" />
-                <WrapPanel Margin="0,0,0,4">
-                    <Button Content="+ Verse"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Verse"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Chorus"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Chorus"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Pre-Chorus"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="PreChorus"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Bridge"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Bridge"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Intro"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Intro"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Outro"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Outro"
-                            Margin="0,0,6,6" />
-                    <Button Content="+ Tag"
-                            Style="{StaticResource SecondaryButton}"
-                            Command="{Binding AddSectionCommand}"
-                            CommandParameter="Tag"
-                            Margin="0,0,0,6" />
-                </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
 
-            </StackPanel>
-        </ScrollViewer>
-
-        <!-- ── Footer ── -->
-        <Border Grid.Row="2"
-                Padding="24,12"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button Content="Cancel"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding CancelCommand}"
-                        Margin="0,0,8,0" />
-                <Button Content="Save Song"
-                        Style="{StaticResource PrimaryButton}"
-                        Command="{Binding SaveCommand}" />
-            </StackPanel>
-        </Border>
-
+        </DockPanel>
     </Grid>
 </UserControl>
