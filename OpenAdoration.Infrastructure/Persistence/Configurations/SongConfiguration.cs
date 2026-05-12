@@ -17,6 +17,9 @@ public sealed class SongConfiguration : IEntityTypeConfiguration<Song>
         builder.Property(s => s.Author)
             .HasMaxLength(200);
 
+        builder.Property(s => s.Classification)
+            .HasMaxLength(100);
+
         builder.HasMany(s => s.Sections)
             .WithOne(ss => ss.Song)
             .HasForeignKey(ss => ss.SongId)

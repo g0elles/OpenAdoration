@@ -1,0 +1,210 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Services;
+using OpenAdoration.Domain.Entities;
+using OpenAdoration.Domain.Enums;
+
+namespace OpenAdoration.WPF.ViewModels;
+
+public partial class AddEditSongViewModel : BaseViewModel
+{
+    private readonly ISongService _songService;
+    private readonly ILogger<AddEditSongViewModel> _logger;
+
+    private int _songId; // 0 = new song
+
+    [ObservableProperty] private string _title          = string.Empty;
+    [ObservableProperty] private string _author         = string.Empty;
+    [ObservableProperty] private string _classification = string.Empty;
+
+    public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
+
+    public bool   IsNew     => _songId == 0;
+    public string FormTitle => IsNew ? "New Song" : "Edit Song";
+
+    public event EventHandler<Song>? Saved;
+    public event EventHandler?       Cancelled;
+
+    public AddEditSongViewModel(ISongService songService, ILogger<AddEditSongViewModel> logger)
+    {
+        _songService = songService;
+        _logger      = logger;
+    }
+
+    public void InitialiseNew()
+    {
+        _songId        = 0;
+        Title          = string.Empty;
+        Author         = string.Empty;
+        Classification = string.Empty;
+        ClearError();
+        ClearSections();
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(FormTitle));
+    }
+
+    public void InitialiseEdit(Song song)
+    {
+        _songId        = song.Id;
+        Title          = song.Title;
+        Author         = song.Author         ?? string.Empty;
+        Classification = song.Classification ?? string.Empty;
+        ClearError();
+        ClearSections();
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(FormTitle));
+        foreach (var s in song.GetOrderedSections())
+            Sections.Add(CreateSectionVm(s.Type, s.SectionNumber, s.Lyrics, s.Order));
+    }
+
+    [RelayCommand]
+    private void AddSection(string? sectionTypeName)
+    {
+        if (!Enum.TryParse<SectionType>(sectionTypeName, out var type))
+            return;
+
+        var number = Sections.Count(s => s.Type == type) + 1;
+        var order  = Sections.Count;
+        Sections.Add(CreateSectionVm(type, number, string.Empty, order));
+    }
+
+    [RelayCommand]
+    private async Task SaveAsync()
+    {
+        if (IsBusy) return;
+
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            SetError("Song title is required.");
+            return;
+        }
+
+        IsBusy = true;
+        ClearError();
+
+        try
+        {
+            RecalculateOrder();
+            var song = BuildSong();
+
+            if (IsNew)
+            {
+                var created = await _songService.CreateAsync(song);
+                _logger.LogInformation("Song created: {Title}", created.Title);
+                Saved?.Invoke(this, created);
+            }
+            else
+            {
+                await _songService.UpdateAsync(song);
+                _logger.LogInformation("Song updated: {SongId}", _songId);
+                Saved?.Invoke(this, song);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save song");
+            SetError("Failed to save. Please try again.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        ClearError();
+        Cancelled?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private Song BuildSong() => new()
+    {
+        Id             = _songId,
+        Title          = Title.Trim(),
+        Author         = string.IsNullOrWhiteSpace(Author)         ? null : Author.Trim(),
+        Classification = string.IsNullOrWhiteSpace(Classification) ? null : Classification.Trim(),
+        Sections       = [.. Sections.Select(vm => new SongSection
+        {
+            Type          = vm.Type,
+            SectionNumber = vm.SectionNumber,
+            Lyrics        = vm.Lyrics,
+            Order         = vm.Order
+        })]
+    };
+
+    private SongSectionViewModel CreateSectionVm(SectionType type, int sectionNumber, string lyrics, int order)
+    {
+        var vm = new SongSectionViewModel
+        {
+            Type          = type,
+            SectionNumber = sectionNumber,
+            Lyrics        = lyrics,
+            Order         = order
+        };
+        vm.MoveUpRequested   += OnMoveUp;
+        vm.MoveDownRequested += OnMoveDown;
+        vm.DeleteRequested   += OnDelete;
+        return vm;
+    }
+
+    private void OnMoveUp(object? sender, EventArgs e)
+    {
+        if (sender is not SongSectionViewModel vm) return;
+        var idx = Sections.IndexOf(vm);
+        if (idx <= 0) return;
+        Sections.Move(idx, idx - 1);
+        RecalculateOrder();
+    }
+
+    private void OnMoveDown(object? sender, EventArgs e)
+    {
+        if (sender is not SongSectionViewModel vm) return;
+        var idx = Sections.IndexOf(vm);
+        if (idx < 0 || idx >= Sections.Count - 1) return;
+        Sections.Move(idx, idx + 1);
+        RecalculateOrder();
+    }
+
+    private void OnDelete(object? sender, EventArgs e)
+    {
+        if (sender is not SongSectionViewModel vm) return;
+        vm.MoveUpRequested   -= OnMoveUp;
+        vm.MoveDownRequested -= OnMoveDown;
+        vm.DeleteRequested   -= OnDelete;
+        Sections.Remove(vm);
+        RecalculateOrder();
+        RenumberSections();
+    }
+
+    private void RecalculateOrder()
+    {
+        for (int i = 0; i < Sections.Count; i++)
+            Sections[i].Order = i;
+    }
+
+    private void RenumberSections()
+    {
+        foreach (var grp in Sections.GroupBy(s => s.Type))
+        {
+            int n = 1;
+            foreach (var vm in grp)
+                vm.SectionNumber = n++;
+        }
+    }
+
+    private void ClearSections()
+    {
+        foreach (var vm in Sections)
+        {
+            vm.MoveUpRequested   -= OnMoveUp;
+            vm.MoveDownRequested -= OnMoveDown;
+            vm.DeleteRequested   -= OnDelete;
+        }
+        Sections.Clear();
+    }
+}

@@ -118,6 +118,7 @@ public sealed class SongService : ISongService
         }
 
         var slides = ordered
+            .Where(s => !string.IsNullOrWhiteSpace(s.Lyrics))
             .Select(s => new Slide(
                 content: s.Lyrics,
                 type: SlideType.Song,

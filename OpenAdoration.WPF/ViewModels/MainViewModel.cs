@@ -12,6 +12,9 @@ public partial class MainViewModel : BaseViewModel
     private readonly IProjectionService _projectionService;
     private readonly ILogger<MainViewModel> _logger;
 
+    // One scope per page — disposes scoped services when the user navigates away
+    private IServiceScope? _currentScope;
+
     [ObservableProperty]
     private BaseViewModel? _currentView;
 
@@ -40,35 +43,43 @@ public partial class MainViewModel : BaseViewModel
     private void NavigateToSongs()
     {
         _logger.LogDebug("Navigating to Songs");
-        CurrentView = _services.GetRequiredService<SongsViewModel>();
+        NavigateTo<SongsViewModel>();
     }
 
     [RelayCommand]
     private void NavigateToBible()
     {
         _logger.LogDebug("Navigating to Bible");
-        CurrentView = _services.GetRequiredService<BibleViewModel>();
+        NavigateTo<BibleViewModel>();
     }
 
     [RelayCommand]
     private void NavigateToSchedule()
     {
         _logger.LogDebug("Navigating to Service Schedule");
-        CurrentView = _services.GetRequiredService<ServiceScheduleViewModel>();
+        NavigateTo<ServiceScheduleViewModel>();
     }
 
     [RelayCommand]
     private void NavigateToMedia()
     {
         _logger.LogDebug("Navigating to Media");
-        CurrentView = _services.GetRequiredService<MediaViewModel>();
+        NavigateTo<MediaViewModel>();
     }
 
     [RelayCommand]
     private void NavigateToThemes()
     {
         _logger.LogDebug("Navigating to Themes");
-        CurrentView = _services.GetRequiredService<ThemeViewModel>();
+        NavigateTo<ThemeViewModel>();
+    }
+
+    private void NavigateTo<T>() where T : BaseViewModel
+    {
+        var oldScope   = _currentScope;
+        _currentScope  = _services.CreateScope();
+        CurrentView    = _currentScope.ServiceProvider.GetRequiredService<T>();
+        oldScope?.Dispose();
     }
 
     // ── Projection controls ───────────────────────────────────────────────────

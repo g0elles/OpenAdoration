@@ -87,6 +87,7 @@ public partial class App : WpfApp
     {
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();
+        services.AddTransient<AddEditSongViewModel>();
         services.AddTransient<BibleViewModel>();
         services.AddTransient<ServiceScheduleViewModel>();
         services.AddTransient<MediaViewModel>();
