@@ -18,8 +18,6 @@ public sealed class SongService : ISongService
 
     public async Task<Song?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        _logger.LogDebug("Fetching song {SongId}", id);
-
         var song = await _repository.GetByIdAsync(id, ct);
 
         if (song is null)
@@ -30,11 +28,7 @@ public sealed class SongService : ISongService
 
     public async Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default)
     {
-        _logger.LogDebug("Fetching all songs");
-
         var songs = await _repository.GetAllAsync(ct);
-
-        _logger.LogDebug("Returned {Count} songs", songs.Count);
 
         return songs;
     }
@@ -43,11 +37,7 @@ public sealed class SongService : ISongService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(term);
 
-        _logger.LogDebug("Searching songs by title: {Term}", term);
-
         var results = await _repository.SearchByTitleAsync(term, ct);
-
-        _logger.LogDebug("Search '{Term}' returned {Count} result(s)", term, results.Count);
 
         return results;
     }
@@ -56,12 +46,9 @@ public sealed class SongService : ISongService
     {
         ArgumentNullException.ThrowIfNull(song);
 
-        _logger.LogInformation("Creating song: {Title}", song.Title);
-
         try
         {
             var created = await _repository.AddAsync(song, ct);
-            _logger.LogInformation("Song created with ID {SongId}: {Title}", created.Id, created.Title);
             return created;
         }
         catch (Exception ex)
@@ -75,12 +62,10 @@ public sealed class SongService : ISongService
     {
         ArgumentNullException.ThrowIfNull(song);
 
-        _logger.LogInformation("Updating song {SongId}: {Title}", song.Id, song.Title);
 
         try
         {
             await _repository.UpdateAsync(song, ct);
-            _logger.LogInformation("Song {SongId} updated successfully", song.Id);
         }
         catch (Exception ex)
         {
@@ -91,12 +76,10 @@ public sealed class SongService : ISongService
 
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
-        _logger.LogInformation("Deleting song {SongId}", id);
 
         try
         {
             await _repository.DeleteAsync(id, ct);
-            _logger.LogInformation("Song {SongId} deleted successfully", id);
         }
         catch (Exception ex)
         {
@@ -130,8 +113,6 @@ public sealed class SongService : ISongService
         var skipped = ordered.Count - slides.Count;
         if (skipped > 0)
             _logger.LogWarning("Song {SongId} '{Title}': skipped {Skipped} section(s) with empty lyrics", song.Id, song.Title, skipped);
-
-        _logger.LogDebug("Generated {Count} slide(s) for song {SongId}", slides.Count, song.Id);
 
         return slides;
     }
