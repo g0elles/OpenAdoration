@@ -1,16 +1,132 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
+using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class ThemeViewModel : BaseViewModel
+public partial class ThemeViewModel : BaseViewModel, IDisposable
 {
-    private readonly IThemeService _themeService;
+    private readonly IThemeService           _themeService;
+    private readonly IDialogService          _dialogService;
     private readonly ILogger<ThemeViewModel> _logger;
 
-    public ThemeViewModel(IThemeService themeService, ILogger<ThemeViewModel> logger)
+    public AddEditThemeViewModel EditViewModel { get; }
+
+    [ObservableProperty] private ObservableCollection<Theme> _themes = [];
+    [ObservableProperty] private Theme? _selectedTheme;
+    [ObservableProperty] private bool   _isEditing;
+
+    public ThemeViewModel(
+        IThemeService           themeService,
+        IDialogService          dialogService,
+        AddEditThemeViewModel   editViewModel,
+        ILogger<ThemeViewModel> logger)
     {
-        _themeService = themeService;
-        _logger       = logger;
+        _themeService  = themeService;
+        _dialogService = dialogService;
+        _logger        = logger;
+        EditViewModel  = editViewModel;
+
+        EditViewModel.Saved     += OnThemeSaved;
+        EditViewModel.Cancelled += OnEditCancelled;
+    }
+
+    // ── Commands ──────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task LoadAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var list = await _themeService.GetAllAsync();
+            Themes = new ObservableCollection<Theme>(list);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load themes");
+            SetError("Failed to load themes.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void NewTheme()
+    {
+        SelectedTheme = null;
+        EditViewModel.InitialiseNew();
+        IsEditing = true;
+    }
+
+    [RelayCommand]
+    private void EditTheme(Theme theme)
+    {
+        SelectedTheme = theme;
+        EditViewModel.InitialiseEdit(theme);
+        IsEditing = true;
+    }
+
+    [RelayCommand]
+    private async Task DeleteThemeAsync(Theme theme)
+    {
+        if (!_dialogService.Confirm(
+                $"Delete \"{theme.Name}\"?\n\nThis action cannot be undone.",
+                "Delete Theme"))
+            return;
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            await _themeService.DeleteAsync(theme.Id);
+            _logger.LogInformation("Theme deleted: {ThemeId}", theme.Id);
+            if (SelectedTheme?.Id == theme.Id) SelectedTheme = null;
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Repository throws this when trying to delete the default theme
+            SetError(ex.Message);
+            return;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete theme {ThemeId}", theme.Id);
+            SetError("Failed to delete theme.");
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        await LoadAsync();
+    }
+
+    // ── Event handlers from EditViewModel ─────────────────────────────────────
+
+    private async void OnThemeSaved(object? sender, Theme theme)
+    {
+        IsEditing = false;
+        await LoadAsync();
+    }
+
+    private void OnEditCancelled(object? sender, EventArgs e)
+    {
+        IsEditing = false;
+    }
+
+    public void Dispose()
+    {
+        EditViewModel.Saved     -= OnThemeSaved;
+        EditViewModel.Cancelled -= OnEditCancelled;
     }
 }

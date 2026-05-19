@@ -16,6 +16,7 @@
             <!-- Global converters -->
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+            <converters:HexColorToBrushConverter x:Key="HexToBrush" />
 
             <!-- ViewModel → View mapping for ContentControl navigation -->
             <DataTemplate DataType="{x:Type vm:SongsViewModel}">

@@ -1,27 +1,39 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
+using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Helpers;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace OpenAdoration.WPF;
 
 public partial class ProjectionWindow : Window
 {
-    private readonly IProjectionService _projectionService;
+    private readonly IProjectionService   _projectionService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProjectionWindow> _logger;
 
     // True only when MainWindow explicitly calls CloseForReal() on shutdown.
     // Prevents the operator's X click from destroying this Singleton window.
     private bool _allowClose;
 
-    public ProjectionWindow(IProjectionService projectionService, ILogger<ProjectionWindow> logger)
+    // Cached theme for the current projection session. Cleared on Stop so
+    // each new session fetches the latest saved theme from the database.
+    private Theme? _activeTheme;
+
+    public ProjectionWindow(
+        IProjectionService   projectionService,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ProjectionWindow> logger)
     {
         InitializeComponent();
 
         _projectionService = projectionService;
+        _scopeFactory      = scopeFactory;
         _logger            = logger;
 
         _projectionService.SlideChanged           += OnSlideChanged;
@@ -44,14 +56,12 @@ public partial class ProjectionWindow : Window
 
         if (secondary is not null)
         {
-            // Dual-screen: fullscreen on the secondary monitor
             WindowStyle = WindowStyle.None;
             ResizeMode  = ResizeMode.NoResize;
             ShowOnSecondaryScreen(secondary);
         }
         else
         {
-            // Single-screen: floating, resizable, positioned bottom-right
             _logger.LogWarning("No secondary screen — opening projection as a floating window");
             WindowStyle = WindowStyle.SingleBorderWindow;
             ResizeMode  = ResizeMode.CanResize;
@@ -67,7 +77,6 @@ public partial class ProjectionWindow : Window
         }
     }
 
-    /// <summary>Legacy helper — positions fullscreen on the given screen.</summary>
     private void ShowOnSecondaryScreen(System.Windows.Forms.Screen screen)
     {
         _logger.LogInformation("Projecting on: {Screen}", screen.DeviceName);
@@ -78,8 +87,12 @@ public partial class ProjectionWindow : Window
 
     // ── Projection service callbacks ─────────────────────────────────────────
 
-    private void OnSlideChanged(object? sender, Slide? slide)
+    private async void OnSlideChanged(object? sender, Slide? slide)
     {
+        // Load the theme on first slide of each session; cached for subsequent slides.
+        if (_activeTheme is null)
+            await LoadThemeAsync();
+
         Dispatcher.Invoke(() => RenderSlide(slide));
     }
 
@@ -94,6 +107,73 @@ public partial class ProjectionWindow : Window
         });
     }
 
+    // ── Theme ─────────────────────────────────────────────────────────────────
+
+    private async Task LoadThemeAsync()
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService = scope.ServiceProvider.GetRequiredService<IThemeService>();
+            _activeTheme = await themeService.GetDefaultAsync();
+            _logger.LogDebug("Loaded theme: {Name}", _activeTheme.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load default theme — using hardcoded fallback");
+            _activeTheme = null;
+        }
+    }
+
+    /// <summary>Applies the cached theme to all rendering elements.</summary>
+    private void ApplyTheme()
+    {
+        if (_activeTheme is null) return;
+
+        // Text style
+        SlideTextBlock.FontFamily = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
+        SlideTextBlock.FontSize   = _activeTheme.FontSize;
+        SlideTextBlock.LineHeight = _activeTheme.FontSize * 1.33;
+        SlideTextBlock.Foreground = HexToBrush(_activeTheme.FontColor);
+
+        // Background color
+        ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
+
+        // Background image (optional)
+        if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundImagePath)
+            && File.Exists(_activeTheme.BackgroundImagePath))
+        {
+            try
+            {
+                ThemeBackgroundImage.Source     = new BitmapImage(new Uri(_activeTheme.BackgroundImagePath, UriKind.Absolute));
+                ThemeBackgroundImage.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not load theme background image '{Path}'", _activeTheme.BackgroundImagePath);
+                ThemeBackgroundImage.Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            ThemeBackgroundImage.Source     = null;
+            ThemeBackgroundImage.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private static SolidColorBrush HexToBrush(string hex)
+    {
+        try
+        {
+            var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+            return new SolidColorBrush(color);
+        }
+        catch
+        {
+            return new SolidColorBrush(System.Windows.Media.Colors.White);
+        }
+    }
+
     // ── Rendering ─────────────────────────────────────────────────────────────
 
     private void RenderSlide(Slide? slide)
@@ -104,6 +184,7 @@ public partial class ProjectionWindow : Window
             return;
         }
 
+        ApplyTheme();
         UpdateCornerLabel(slide);
 
         switch (slide.Type)
@@ -165,6 +246,7 @@ public partial class ProjectionWindow : Window
 
     private void StopAndHide()
     {
+        _activeTheme = null; // Force fresh theme load on next projection session
         ClearDisplay();
         Hide();
     }
@@ -186,24 +268,21 @@ public partial class ProjectionWindow : Window
 
     private void UpdateCornerLabel(Slide slide)
     {
-        var songTitle = _projectionService.ContextLabel;
+        var label = _projectionService.ContextLabel;
 
-        if (string.IsNullOrWhiteSpace(songTitle))
+        if (string.IsNullOrWhiteSpace(label))
         {
             CornerLabel.Visibility = Visibility.Collapsed;
             return;
         }
 
-        CornerSongTitle.Text    = songTitle;
+        CornerSongTitle.Text    = label;
         CornerSectionLabel.Text = slide.Label;
         CornerLabel.Visibility  = Visibility.Visible;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Called by MainWindow on app shutdown — the only path that actually closes the window.
-    /// </summary>
     public void CloseForReal()
     {
         _allowClose = true;
@@ -214,7 +293,6 @@ public partial class ProjectionWindow : Window
     {
         if (!_allowClose)
         {
-            // Operator clicked X — hide instead of destroying the Singleton window
             e.Cancel = true;
             Hide();
             _logger.LogInformation("Projection window hidden (X clicked)");

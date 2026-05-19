@@ -10,7 +10,15 @@
 
     <Grid>
 
-        <!-- Media layer (images) — rendered below text -->
+        <!-- Theme background color — base canvas, always visible during projection -->
+        <Rectangle x:Name="ThemeBackground" Fill="Black" />
+
+        <!-- Theme background image — optional, sits above color layer -->
+        <Image x:Name="ThemeBackgroundImage"
+               Stretch="UniformToFill"
+               Visibility="Collapsed" />
+
+        <!-- Media layer — for SlideType.Media, sits above theme background -->
         <Image x:Name="BackgroundImage"
                Stretch="Uniform"
                VerticalAlignment="Center"

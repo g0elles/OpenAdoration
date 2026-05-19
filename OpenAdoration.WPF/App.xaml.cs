@@ -94,6 +94,7 @@ public partial class App : WpfApp
         services.AddTransient<ServiceScheduleViewModel>();
         services.AddTransient<MediaViewModel>();
         services.AddTransient<ThemeViewModel>();
+        services.AddTransient<AddEditThemeViewModel>();
     }
 
     private static void RegisterWindows(IServiceCollection services)
