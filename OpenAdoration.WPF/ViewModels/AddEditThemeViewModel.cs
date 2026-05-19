@@ -18,6 +18,20 @@ public partial class AddEditThemeViewModel : BaseViewModel
     [ObservableProperty] private string  _fontFamily      = "Arial";
     [ObservableProperty] private int     _fontSize        = 72;
 
+    [ObservableProperty] private System.Windows.TextAlignment _textAlignment = System.Windows.TextAlignment.Center;
+
+    // Convenience bools so the alignment ToggleButtons can bind IsChecked one-way
+    public bool IsAlignLeft   => TextAlignment == System.Windows.TextAlignment.Left;
+    public bool IsAlignCenter => TextAlignment == System.Windows.TextAlignment.Center;
+    public bool IsAlignRight  => TextAlignment == System.Windows.TextAlignment.Right;
+
+    partial void OnTextAlignmentChanged(System.Windows.TextAlignment value)
+    {
+        OnPropertyChanged(nameof(IsAlignLeft));
+        OnPropertyChanged(nameof(IsAlignCenter));
+        OnPropertyChanged(nameof(IsAlignRight));
+    }
+
     // Colors stored as WPF Color — converted to/from hex string only at DB boundaries
     [ObservableProperty] private System.Windows.Media.Color?  _fontColor       = System.Windows.Media.Colors.White;
     [ObservableProperty] private System.Windows.Media.Color?  _backgroundColor = System.Windows.Media.Colors.Black;
@@ -68,6 +82,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         Name                 = string.Empty;
         FontFamily           = "Arial";
         FontSize             = 72;
+        TextAlignment        = System.Windows.TextAlignment.Center;
         FontColor            = System.Windows.Media.Colors.White;
         BackgroundColor      = System.Windows.Media.Colors.Black;
         BackgroundImagePath  = null;
@@ -84,6 +99,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         Name                 = theme.Name;
         FontFamily           = theme.FontFamily;
         FontSize             = theme.FontSize;
+        TextAlignment        = ParseAlignment(theme.TextAlignment);
         FontColor            = ParseColor(theme.FontColor,      System.Windows.Media.Colors.White);
         BackgroundColor      = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
         BackgroundImagePath  = theme.BackgroundImagePath;
@@ -141,6 +157,29 @@ public partial class AddEditThemeViewModel : BaseViewModel
         Cancelled?.Invoke(this, EventArgs.Empty);
     }
 
+    [RelayCommand]
+    private void SetAlignment(string alignment)
+    {
+        TextAlignment = alignment switch
+        {
+            "Left"  => System.Windows.TextAlignment.Left,
+            "Right" => System.Windows.TextAlignment.Right,
+            _       => System.Windows.TextAlignment.Center
+        };
+    }
+
+    [RelayCommand]
+    private void IncreaseFontSize()
+    {
+        if (FontSize < 300) FontSize = Math.Min(300, FontSize + 2);
+    }
+
+    [RelayCommand]
+    private void DecreaseFontSize()
+    {
+        if (FontSize > 8) FontSize = Math.Max(8, FontSize - 2);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private Theme BuildTheme() => new()
@@ -149,6 +188,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         Name                = Name.Trim(),
         FontFamily          = FontFamily,
         FontSize            = FontSize,
+        TextAlignment       = TextAlignment.ToString(),
         FontColor           = ColorToHex(FontColor,       "#FFFFFF"),
         BackgroundColor     = ColorToHex(BackgroundColor, "#000000"),
         BackgroundImagePath = NullIfEmpty(BackgroundImagePath),
@@ -169,6 +209,13 @@ public partial class AddEditThemeViewModel : BaseViewModel
         var c = color.Value;
         return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
     }
+
+    private static System.Windows.TextAlignment ParseAlignment(string? s) => s switch
+    {
+        "Left"  => System.Windows.TextAlignment.Left,
+        "Right" => System.Windows.TextAlignment.Right,
+        _       => System.Windows.TextAlignment.Center
+    };
 
     private static string? NullIfEmpty(string? s) =>
         string.IsNullOrWhiteSpace(s) ? null : s.Trim();

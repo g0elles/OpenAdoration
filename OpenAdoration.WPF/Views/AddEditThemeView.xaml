@@ -84,7 +84,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="12" />
-                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Font Family"
@@ -95,14 +95,30 @@
                                               ItemsSource="{x:Static vm:AddEditThemeViewModel.AvailableFontFamilies}"
                                               SelectedItem="{Binding FontFamily}" />
                                 </StackPanel>
+
+                                <!-- Font size ± spinner -->
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Size (pt)"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                FontSize="11"
                                                Margin="0,0,0,4" />
-                                    <TextBox Style="{StaticResource FieldTextBox}"
-                                             Tag="72"
-                                             Text="{Binding FontSize, UpdateSourceTrigger=PropertyChanged}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="−"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Padding="12,8"
+                                                Command="{Binding DecreaseFontSizeCommand}" />
+                                        <TextBlock Text="{Binding FontSize}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontSize="14"
+                                                   MinWidth="38"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0" />
+                                        <Button Content="+"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Padding="12,8"
+                                                Command="{Binding IncreaseFontSizeCommand}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
 
@@ -116,7 +132,39 @@
                                               ShowRecentColors="True"
                                               ShowAvailableColors="True"
                                               ColorMode="ColorCanvas"
-                                              Height="32" />
+                                              Height="32"
+                                              Margin="0,0,0,12" />
+
+                            <!-- Text Alignment -->
+                            <TextBlock Text="Text Alignment"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="11"
+                                       Margin="0,0,0,4" />
+                            <Border BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    HorizontalAlignment="Left"
+                                    ClipToBounds="True">
+                                <StackPanel Orientation="Horizontal">
+                                    <ToggleButton Content="Left"
+                                                  Style="{StaticResource AlignToggleButton}"
+                                                  IsChecked="{Binding IsAlignLeft, Mode=OneWay}"
+                                                  Command="{Binding SetAlignmentCommand}"
+                                                  CommandParameter="Left" />
+                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <ToggleButton Content="Center"
+                                                  Style="{StaticResource AlignToggleButton}"
+                                                  IsChecked="{Binding IsAlignCenter, Mode=OneWay}"
+                                                  Command="{Binding SetAlignmentCommand}"
+                                                  CommandParameter="Center" />
+                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <ToggleButton Content="Right"
+                                                  Style="{StaticResource AlignToggleButton}"
+                                                  IsChecked="{Binding IsAlignRight, Mode=OneWay}"
+                                                  Command="{Binding SetAlignmentCommand}"
+                                                  CommandParameter="Right" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
 
@@ -243,8 +291,8 @@
                                            FontFamily="{Binding FontFamily}"
                                            FontSize="{Binding FontSize}"
                                            Foreground="{Binding FontColor, Converter={StaticResource ColorToBrush}}"
-                                           TextAlignment="Center"
-                                           HorizontalAlignment="Center"
+                                           TextAlignment="{Binding TextAlignment}"
+                                           HorizontalAlignment="Stretch"
                                            VerticalAlignment="Center"
                                            TextWrapping="Wrap"
                                            Margin="120,80" />

@@ -80,6 +80,7 @@ public sealed class ThemeRepository : IThemeRepository
         existing.FontFamily          = theme.FontFamily;
         existing.FontSize            = theme.FontSize;
         existing.FontColor           = theme.FontColor;
+        existing.TextAlignment       = theme.TextAlignment;
         existing.BackgroundColor     = theme.BackgroundColor;
         existing.BackgroundImagePath = theme.BackgroundImagePath;
         existing.BackgroundVideoPath = theme.BackgroundVideoPath;

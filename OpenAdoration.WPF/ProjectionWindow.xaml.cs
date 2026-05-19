@@ -131,10 +131,11 @@ public partial class ProjectionWindow : Window
         if (_activeTheme is null) return;
 
         // Text style
-        SlideTextBlock.FontFamily = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
-        SlideTextBlock.FontSize   = _activeTheme.FontSize;
-        SlideTextBlock.LineHeight = _activeTheme.FontSize * 1.33;
-        SlideTextBlock.Foreground = HexToBrush(_activeTheme.FontColor);
+        SlideTextBlock.FontFamily  = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
+        SlideTextBlock.FontSize    = _activeTheme.FontSize;
+        SlideTextBlock.LineHeight  = _activeTheme.FontSize * 1.33;
+        SlideTextBlock.Foreground  = HexToBrush(_activeTheme.FontColor);
+        SlideTextBlock.TextAlignment = ParseTextAlignment(_activeTheme.TextAlignment);
 
         // Background color
         ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
@@ -205,6 +206,13 @@ public partial class ProjectionWindow : Window
         ThemeBackgroundVideo.Position = TimeSpan.Zero;
         ThemeBackgroundVideo.Play();
     }
+
+    private static System.Windows.TextAlignment ParseTextAlignment(string? s) => s switch
+    {
+        "Left"  => System.Windows.TextAlignment.Left,
+        "Right" => System.Windows.TextAlignment.Right,
+        _       => System.Windows.TextAlignment.Center
+    };
 
     private static SolidColorBrush HexToBrush(string hex)
     {

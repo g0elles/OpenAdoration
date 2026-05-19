@@ -28,6 +28,11 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
             .IsRequired()
             .HasMaxLength(9); // #AARRGGBB
 
+        builder.Property(t => t.TextAlignment)
+            .IsRequired()
+            .HasMaxLength(10)
+            .HasDefaultValue("Center");
+
         builder.Property(t => t.BackgroundColor)
             .IsRequired()
             .HasMaxLength(9);
@@ -43,9 +48,10 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
         {
             Id = 1,
             Name = "Default",
-            FontFamily = "Arial",
-            FontSize = 48,
-            FontColor = "#FFFFFF",
+            FontFamily    = "Arial",
+            FontSize      = 48,
+            FontColor     = "#FFFFFF",
+            TextAlignment = "Center",
             BackgroundColor = "#000000",
             BackgroundImagePath = null,
             BackgroundVideoPath = null,
