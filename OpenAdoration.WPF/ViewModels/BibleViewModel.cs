@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
-using OpenAdoration.WPF.Helpers;
+using OpenAdoration.WPF.Helpers.BibleImport;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -277,14 +277,14 @@ public partial class BibleViewModel : BaseViewModel
         if (IsBusy) return;
 
         IsImporting   = true;
-        ImportStatus  = "Parsing JSON…";
+        ImportStatus  = "Detecting format…";
         IsBusy        = true;
         ClearError();
 
         try
         {
-            ImportStatus = "Reading file…";
-            var (version, books, verses) = BibleJsonImporter.Import(filePath);
+            ImportStatus = "Parsing file…";
+            var (version, books, verses) = BibleFormatDispatcher.Import(filePath);
 
             ImportStatus = $"Importing {verses.Count:N0} verses…";
             await _bibleService.ImportVersionAsync(version, books, verses);

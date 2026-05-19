@@ -1,3 +1,4 @@
+using OpenAdoration.WPF.Helpers.BibleImport;
 using OpenAdoration.WPF.ViewModels;
 
 namespace OpenAdoration.WPF.Views;
@@ -20,8 +21,8 @@ public partial class BibleView : System.Windows.Controls.UserControl
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title  = "Import Bible — Select JSON File",
-            Filter = "JSON files|*.json|All files|*.*"
+            Title  = "Import Bible",
+            Filter = BibleFormatDispatcher.FileDialogFilter
         };
 
         if (dialog.ShowDialog() == true && DataContext is BibleViewModel vm)
