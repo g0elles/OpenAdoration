@@ -181,12 +181,9 @@
                                 <Rectangle Fill="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}" />
 
                                 <!-- Background image layer (optional) -->
-                                <Image Stretch="UniformToFill"
-                                       Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}">
-                                    <Image.Source>
-                                        <BitmapImage UriSource="{Binding BackgroundImagePath}" />
-                                    </Image.Source>
-                                </Image>
+                                <Image Source="{Binding BackgroundImagePath, Converter={StaticResource FilePathToImage}}"
+                                       Stretch="UniformToFill"
+                                       Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}" />
 
                                 <!-- Sample lyrics text -->
                                 <TextBlock Text="Sample lyrics line one&#x0a;Second line of the song"
