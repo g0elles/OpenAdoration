@@ -18,6 +18,7 @@
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
             <converters:HexColorToBrushConverter x:Key="HexToBrush" />
             <converters:FilePathToImageSourceConverter x:Key="FilePathToImage" />
+            <converters:ColorToBrushConverter x:Key="ColorToBrush" />
 
             <!-- ViewModel → View mapping for ContentControl navigation -->
             <DataTemplate DataType="{x:Type vm:SongsViewModel}">

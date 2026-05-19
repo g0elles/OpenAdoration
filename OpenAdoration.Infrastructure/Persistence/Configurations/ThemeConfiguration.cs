@@ -35,6 +35,9 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
         builder.Property(t => t.BackgroundImagePath)
             .HasMaxLength(1024);
 
+        builder.Property(t => t.BackgroundVideoPath)
+            .HasMaxLength(1024);
+
         // Seed the default theme so the app works on first launch without configuration
         builder.HasData(new Theme
         {
@@ -45,6 +48,7 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
             FontColor = "#FFFFFF",
             BackgroundColor = "#000000",
             BackgroundImagePath = null,
+            BackgroundVideoPath = null,
             IsDefault = true,
             CreatedAt = SeedDate,
             UpdatedAt = SeedDate

@@ -11,9 +11,10 @@ public class Theme : BaseEntity
     public int FontSize { get; set; } = 36;
     public string FontColor { get; set; } = "#FFFFFF";
 
-    // Background — one of these is active at a time
+    // Background — layers applied in order: Color → Image → Video (each overrides the one below)
     public string BackgroundColor { get; set; } = "#000000";
     public string? BackgroundImagePath { get; set; }
+    public string? BackgroundVideoPath { get; set; }
 
     public bool IsDefault { get; set; }
 }

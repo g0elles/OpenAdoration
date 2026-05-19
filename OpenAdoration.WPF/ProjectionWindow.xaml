@@ -18,6 +18,13 @@
                Stretch="UniformToFill"
                Visibility="Collapsed" />
 
+        <!-- Theme background video — optional, sits above image layer, loops automatically -->
+        <MediaElement x:Name="ThemeBackgroundVideo"
+                      LoadedBehavior="Manual"
+                      Stretch="UniformToFill"
+                      Visibility="Collapsed"
+                      MediaEnded="OnThemeVideoEnded" />
+
         <!-- Media layer — for SlideType.Media, sits above theme background -->
         <Image x:Name="BackgroundImage"
                Stretch="Uniform"

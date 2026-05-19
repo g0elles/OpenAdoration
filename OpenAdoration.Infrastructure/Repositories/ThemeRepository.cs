@@ -76,13 +76,14 @@ public sealed class ThemeRepository : IThemeRepository
         if (theme.IsDefault)
             await ClearDefaultFlagAsync(context, excludeId: theme.Id, ct);
 
-        existing.Name = theme.Name;
-        existing.FontFamily = theme.FontFamily;
-        existing.FontSize = theme.FontSize;
-        existing.FontColor = theme.FontColor;
-        existing.BackgroundColor = theme.BackgroundColor;
+        existing.Name                = theme.Name;
+        existing.FontFamily          = theme.FontFamily;
+        existing.FontSize            = theme.FontSize;
+        existing.FontColor           = theme.FontColor;
+        existing.BackgroundColor     = theme.BackgroundColor;
         existing.BackgroundImagePath = theme.BackgroundImagePath;
-        existing.IsDefault = theme.IsDefault;
+        existing.BackgroundVideoPath = theme.BackgroundVideoPath;
+        existing.IsDefault           = theme.IsDefault;
 
         await context.SaveChangesAsync(ct);
     }

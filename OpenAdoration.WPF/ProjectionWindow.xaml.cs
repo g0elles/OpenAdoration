@@ -139,7 +139,37 @@ public partial class ProjectionWindow : Window
         // Background color
         ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
 
-        // Background image (optional)
+        // Background video (highest priority — overrides image and color)
+        if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundVideoPath)
+            && File.Exists(_activeTheme.BackgroundVideoPath))
+        {
+            try
+            {
+                ThemeBackgroundImage.Source     = null;
+                ThemeBackgroundImage.Visibility = Visibility.Collapsed;
+
+                ThemeBackgroundVideo.Source     = new Uri(_activeTheme.BackgroundVideoPath, UriKind.Absolute);
+                ThemeBackgroundVideo.Visibility = Visibility.Visible;
+                ThemeBackgroundVideo.Play();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not load theme background video '{Path}'", _activeTheme.BackgroundVideoPath);
+                StopThemeVideo();
+                ApplyThemeImage();
+            }
+
+            return; // video loaded — skip image layer
+        }
+
+        StopThemeVideo();
+        ApplyThemeImage();
+    }
+
+    private void ApplyThemeImage()
+    {
+        if (_activeTheme is null) return;
+
         if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundImagePath)
             && File.Exists(_activeTheme.BackgroundImagePath))
         {
@@ -151,6 +181,7 @@ public partial class ProjectionWindow : Window
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Could not load theme background image '{Path}'", _activeTheme.BackgroundImagePath);
+                ThemeBackgroundImage.Source     = null;
                 ThemeBackgroundImage.Visibility = Visibility.Collapsed;
             }
         }
@@ -159,6 +190,20 @@ public partial class ProjectionWindow : Window
             ThemeBackgroundImage.Source     = null;
             ThemeBackgroundImage.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private void StopThemeVideo()
+    {
+        ThemeBackgroundVideo.Stop();
+        ThemeBackgroundVideo.Source     = null;
+        ThemeBackgroundVideo.Visibility = Visibility.Collapsed;
+    }
+
+    // Loops the video background by seeking back to the start when it finishes.
+    private void OnThemeVideoEnded(object sender, RoutedEventArgs e)
+    {
+        ThemeBackgroundVideo.Position = TimeSpan.Zero;
+        ThemeBackgroundVideo.Play();
     }
 
     private static SolidColorBrush HexToBrush(string hex)
@@ -246,6 +291,7 @@ public partial class ProjectionWindow : Window
 
     private void StopAndHide()
     {
+        StopThemeVideo();
         _activeTheme = null; // Force fresh theme load on next projection session
         ClearDisplay();
         Hide();

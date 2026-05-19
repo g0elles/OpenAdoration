@@ -14,15 +14,21 @@ public partial class AddEditThemeViewModel : BaseViewModel
 
     private int _themeId; // 0 = new
 
-    [ObservableProperty] private string  _name              = string.Empty;
-    [ObservableProperty] private string  _fontFamily        = "Arial";
-    [ObservableProperty] private int     _fontSize          = 72;
-    [ObservableProperty] private string  _fontColor         = "#FFFFFF";
-    [ObservableProperty] private string  _backgroundColor   = "#000000";
+    [ObservableProperty] private string  _name            = string.Empty;
+    [ObservableProperty] private string  _fontFamily      = "Arial";
+    [ObservableProperty] private int     _fontSize        = 72;
+
+    // Colors stored as WPF Color — converted to/from hex string only at DB boundaries
+    [ObservableProperty] private System.Windows.Media.Color?  _fontColor       = System.Windows.Media.Colors.White;
+    [ObservableProperty] private System.Windows.Media.Color?  _backgroundColor = System.Windows.Media.Colors.Black;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBackgroundImage))]
     private string? _backgroundImagePath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBackgroundVideo))]
+    private string? _backgroundVideoPath;
 
     [ObservableProperty] private bool _isDefault;
 
@@ -30,8 +36,9 @@ public partial class AddEditThemeViewModel : BaseViewModel
     public string FormTitle  => IsNew ? "New Theme" : "Edit Theme";
     public bool   HasBackgroundImage =>
         !string.IsNullOrWhiteSpace(BackgroundImagePath) && File.Exists(BackgroundImagePath);
+    public bool   HasBackgroundVideo =>
+        !string.IsNullOrWhiteSpace(BackgroundVideoPath) && File.Exists(BackgroundVideoPath);
 
-    /// <summary>Font families available in the picker — all standard Windows fonts.</summary>
     public static IReadOnlyList<string> AvailableFontFamilies { get; } =
     [
         "Arial",
@@ -53,16 +60,19 @@ public partial class AddEditThemeViewModel : BaseViewModel
         _logger       = logger;
     }
 
+    // ── Initialise ────────────────────────────────────────────────────────────
+
     public void InitialiseNew()
     {
-        _themeId           = 0;
-        Name               = string.Empty;
-        FontFamily         = "Arial";
-        FontSize           = 72;
-        FontColor          = "#FFFFFF";
-        BackgroundColor    = "#000000";
-        BackgroundImagePath = null;
-        IsDefault          = false;
+        _themeId             = 0;
+        Name                 = string.Empty;
+        FontFamily           = "Arial";
+        FontSize             = 72;
+        FontColor            = System.Windows.Media.Colors.White;
+        BackgroundColor      = System.Windows.Media.Colors.Black;
+        BackgroundImagePath  = null;
+        BackgroundVideoPath  = null;
+        IsDefault            = false;
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -70,14 +80,15 @@ public partial class AddEditThemeViewModel : BaseViewModel
 
     public void InitialiseEdit(Theme theme)
     {
-        _themeId           = theme.Id;
-        Name               = theme.Name;
-        FontFamily         = theme.FontFamily;
-        FontSize           = theme.FontSize;
-        FontColor          = theme.FontColor;
-        BackgroundColor    = theme.BackgroundColor;
-        BackgroundImagePath = theme.BackgroundImagePath;
-        IsDefault          = theme.IsDefault;
+        _themeId             = theme.Id;
+        Name                 = theme.Name;
+        FontFamily           = theme.FontFamily;
+        FontSize             = theme.FontSize;
+        FontColor            = ParseColor(theme.FontColor,      System.Windows.Media.Colors.White);
+        BackgroundColor      = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
+        BackgroundImagePath  = theme.BackgroundImagePath;
+        BackgroundVideoPath  = theme.BackgroundVideoPath;
+        IsDefault            = theme.IsDefault;
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -90,21 +101,11 @@ public partial class AddEditThemeViewModel : BaseViewModel
     {
         if (IsBusy) return;
 
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            SetError("Theme name is required.");
-            return;
-        }
-
-        if (FontSize <= 0)
-        {
-            SetError("Font size must be greater than zero.");
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(Name))  { SetError("Theme name is required."); return; }
+        if (FontSize <= 0)                     { SetError("Font size must be greater than zero."); return; }
 
         IsBusy = true;
         ClearError();
-
         try
         {
             var theme = BuildTheme();
@@ -148,9 +149,27 @@ public partial class AddEditThemeViewModel : BaseViewModel
         Name                = Name.Trim(),
         FontFamily          = FontFamily,
         FontSize            = FontSize,
-        FontColor           = FontColor,
-        BackgroundColor     = BackgroundColor,
-        BackgroundImagePath = string.IsNullOrWhiteSpace(BackgroundImagePath) ? null : BackgroundImagePath.Trim(),
+        FontColor           = ColorToHex(FontColor,       "#FFFFFF"),
+        BackgroundColor     = ColorToHex(BackgroundColor, "#000000"),
+        BackgroundImagePath = NullIfEmpty(BackgroundImagePath),
+        BackgroundVideoPath = NullIfEmpty(BackgroundVideoPath),
         IsDefault           = IsDefault
     };
+
+    private static System.Windows.Media.Color ParseColor(string? hex, System.Windows.Media.Color fallback)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return fallback;
+        try   { return (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex); }
+        catch { return fallback; }
+    }
+
+    private static string ColorToHex(System.Windows.Media.Color? color, string fallback)
+    {
+        if (color is null) return fallback;
+        var c = color.Value;
+        return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+    }
+
+    private static string? NullIfEmpty(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }
