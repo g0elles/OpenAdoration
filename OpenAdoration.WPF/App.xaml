@@ -19,6 +19,7 @@
             <converters:HexColorToBrushConverter x:Key="HexToBrush" />
             <converters:FilePathToImageSourceConverter x:Key="FilePathToImage" />
             <converters:ColorToBrushConverter x:Key="ColorToBrush" />
+            <converters:TestamentToLabelConverter x:Key="TestamentToLabel" />
 
             <!-- ViewModel → View mapping for ContentControl navigation -->
             <DataTemplate DataType="{x:Type vm:SongsViewModel}">

@@ -1,11 +1,438 @@
 <UserControl x:Class="OpenAdoration.WPF.Views.BibleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="{StaticResource SurfaceBrush}">
-        <TextBlock Text="Bible — coming soon"
-                   Foreground="{StaticResource TextSecondaryBrush}"
-                   FontSize="18"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:conv="clr-namespace:OpenAdoration.WPF.Converters"
+             xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:BibleViewModel}"
+             Background="{StaticResource SurfaceBrush}">
+
+    <UserControl.Resources>
+        <!-- Books grouped by Testament (OT / NT) -->
+        <CollectionViewSource x:Key="GroupedBooks" Source="{Binding Books}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="BookNumber" Direction="Ascending" />
+            </CollectionViewSource.SortDescriptions>
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Testament" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
+        <!-- ListBoxItem style for Books and Verses columns -->
+        <Style x:Key="BibleListItem" TargetType="ListBoxItem">
+            <Setter Property="Background"         Value="Transparent" />
+            <Setter Property="Foreground"         Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Padding"            Value="12,7" />
+            <Setter Property="Cursor"             Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsSelected"  Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ListBoxItem style for the Chapter tiles -->
+        <Style x:Key="ChapterTileItem" TargetType="ListBoxItem">
+            <Setter Property="Width"   Value="38" />
+            <Setter Property="Height"  Value="38" />
+            <Setter Property="Margin"  Value="2" />
+            <Setter Property="Cursor"  Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment"   Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd"
+                                Background="{StaticResource PrimaryBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background"   Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush"  Value="{StaticResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsSelected"  Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Group header (OLD TESTAMENT / NEW TESTAMENT) -->
+        <Style x:Key="TestamentHeader" TargetType="TextBlock">
+            <Setter Property="Foreground"   Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontSize"     Value="10" />
+            <Setter Property="FontWeight"   Value="SemiBold" />
+            <Setter Property="Margin"       Value="12,10,0,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+
+        <!-- ── Global busy overlay ─────────────────────────────────────────── -->
+        <Grid Panel.ZIndex="20"
+              Background="#B0000000"
+              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ImportStatus}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="13"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,6"
+                           Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="Loading…"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="15"
+                           HorizontalAlignment="Center"
+                           Visibility="{Binding IsImporting, Converter={StaticResource InverseBoolToVis}}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ── Empty-state (no Bible imported yet) ─────────────────────────── -->
+        <Grid Visibility="{Binding HasVersions, Converter={StaticResource InverseBoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="340">
+                <TextBlock Text="📖"
+                           FontSize="52"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,14" />
+                <TextBlock Text="No Bible version imported"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,8" />
+                <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="13"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,24">
+                    Import a Bible JSON file to get started.
+                    The file must contain a "name" and a "books" array.
+                </TextBlock>
+                <Button Content="Import Bible JSON…"
+                        Style="{StaticResource PrimaryButton}"
+                        Padding="20,10"
+                        HorizontalAlignment="Center"
+                        Click="OnImportClick" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ── Main browser (shown once a version is imported) ─────────────── -->
+        <DockPanel Visibility="{Binding HasVersions, Converter={StaticResource BoolToVis}}">
+
+            <!-- ── Toolbar ── -->
+            <Border DockPanel.Dock="Top"
+                    Background="{StaticResource PrimaryBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,10">
+                <Grid>
+                    <!-- Left: version selector + import/delete -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ComboBox ItemsSource="{Binding Versions}"
+                                  SelectedItem="{Binding SelectedVersion}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FieldComboBox}"
+                                  MinWidth="160"
+                                  Margin="0,0,8,0" />
+                        <Button Content="Import…"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                Margin="0,0,6,0"
+                                Click="OnImportClick" />
+                        <Button Content="Delete Version"
+                                Style="{StaticResource DangerButton}"
+                                Padding="12,6"
+                                Command="{Binding DeleteVersionCommand}"
+                                IsEnabled="{Binding SelectedVersion, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+
+                    <!-- Right: search -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <TextBox Style="{StaticResource FieldTextBox}"
+                                 Tag="Search…"
+                                 MinWidth="200"
+                                 Margin="0,0,6,0"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding SearchCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Content="Search"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                Margin="0,0,6,0"
+                                Command="{Binding SearchCommand}" />
+                        <Button Content="✕"
+                                Style="{StaticResource IconButton}"
+                                ToolTip="Clear search"
+                                Visibility="{Binding IsSearchActive, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding ClearSearchCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── Error bar ── -->
+            <Border DockPanel.Dock="Top"
+                    Background="#3E1A1A"
+                    Padding="16,8"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource DangerBrush}"
+                           FontSize="12" />
+            </Border>
+
+            <!-- ── Bottom projection controls ── -->
+            <Border DockPanel.Dock="Bottom"
+                    Background="{StaticResource PrimaryBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,10"
+                    Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left">
+                        <Button Content="◀  Prev"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                Margin="0,0,6,0"
+                                Command="{Binding PreviousVerseCommand}" />
+                        <Button Content="Next  ▶"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                Command="{Binding NextVerseCommand}" />
+                    </StackPanel>
+
+                    <!-- Current reference -->
+                    <TextBlock Text="{Binding SelectedVerse.Reference}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <Button Content="Blank"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                Margin="0,0,6,0"
+                                Command="{Binding ShowBlankCommand}" />
+                        <Button Content="Stop"
+                                Style="{StaticResource DangerButton}"
+                                Padding="12,6"
+                                Command="{Binding StopProjectionCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── Three-column body ── -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="190" />  <!-- Books -->
+                    <ColumnDefinition Width="1" />    <!-- Divider -->
+                    <ColumnDefinition Width="160" />  <!-- Chapters -->
+                    <ColumnDefinition Width="1" />    <!-- Divider -->
+                    <ColumnDefinition Width="*" />    <!-- Verses -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Column dividers -->
+                <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
+                <Rectangle Grid.Column="3" Fill="{StaticResource BorderBrush}" />
+
+                <!-- ── Books ── -->
+                <ListBox Grid.Column="0"
+                         ItemsSource="{Binding Source={StaticResource GroupedBooks}}"
+                         SelectedItem="{Binding SelectedBook}"
+                         ItemContainerStyle="{StaticResource BibleListItem}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"
+                                       FontSize="13" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+
+                    <!-- OT / NT group headers -->
+                    <ListBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name, Converter={StaticResource TestamentToLabel}}"
+                                               Style="{StaticResource TestamentHeader}" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListBox.GroupStyle>
+                </ListBox>
+
+                <!-- ── Chapters ── -->
+                <ListBox Grid.Column="2"
+                         ItemsSource="{Binding Chapters}"
+                         SelectedItem="{Binding SelectedChapter, Mode=TwoWay}"
+                         ItemContainerStyle="{StaticResource ChapterTileItem}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="6">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       FontSize="12"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- ── Verses ── -->
+                <Grid Grid.Column="4">
+                    <!-- Search results header -->
+                    <Border Background="{StaticResource PrimaryBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="14,8"
+                            VerticalAlignment="Top"
+                            Panel.ZIndex="1"
+                            Visibility="{Binding IsSearchActive, Converter={StaticResource BoolToVis}}">
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}">
+                            <Run Text="Search results for" />
+                            <Run Text="&quot;" /><Run Text="{Binding SearchText}" /><Run Text="&quot;" />
+                            <Run Text=" — click a verse to project" />
+                        </TextBlock>
+                    </Border>
+
+                    <ListBox ItemsSource="{Binding DisplayedVerses}"
+                             SelectedItem="{Binding SelectedVerse}"
+                             ItemContainerStyle="{StaticResource BibleListItem}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             Padding="0,0,0,0">
+                        <!-- Pad top when search header is visible -->
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSearchActive}" Value="True">
+                                        <Setter Property="Margin" Value="0,38,0,0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="30" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Verse number (superscript style) -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Verse}"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Top"
+                                               TextAlignment="Right"
+                                               Margin="0,2,6,0" />
+
+                                    <!-- Verse text (with book reference for search mode) -->
+                                    <StackPanel Grid.Column="1">
+                                        <!-- Book/chapter reference shown only in search results -->
+                                        <TextBlock Text="{Binding Reference}"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Margin="0,0,0,2">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsSearchActive,
+                                                            RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                     Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <TextBlock Text="{Binding Text}"
+                                                   FontSize="13"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="20" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Placeholder when no chapter is selected -->
+                    <TextBlock Text="Select a chapter to browse verses"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedChapter}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Grid>
+        </DockPanel>
     </Grid>
 </UserControl>
