@@ -26,82 +26,70 @@
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
 
-        <!-- ListBoxItem style for the Books column -->
-        <Style x:Key="BibleListItem" TargetType="ListBoxItem">
-            <Setter Property="Background"                 Value="Transparent" />
-            <Setter Property="Foreground"                 Value="{StaticResource TextPrimaryBrush}" />
-            <Setter Property="Padding"                    Value="12,7" />
-            <Setter Property="Cursor"                     Value="Hand" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}" />
-                                <Setter Property="Foreground" Value="White" />
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                    <Condition Property="IsSelected"  Value="False" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ActiveNavBrush}" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ListBoxItem style for Chapter tiles -->
-        <Style x:Key="ChapterTileItem" TargetType="ListBoxItem">
-            <Setter Property="Width"                    Value="38" />
-            <Setter Property="Height"                   Value="38" />
-            <Setter Property="Margin"                   Value="2" />
-            <Setter Property="Cursor"                   Value="Hand" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment"   Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Bd"
-                                Background="{StaticResource PrimaryBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background"  Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                                <Setter Property="Foreground" Value="White" />
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                    <Condition Property="IsSelected"  Value="False" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ActiveNavBrush}" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Group header: OLD TESTAMENT / NEW TESTAMENT -->
         <Style x:Key="TestamentHeader" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
             <Setter Property="FontSize"   Value="10" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin"     Value="12,10,0,4" />
+        </Style>
+
+        <!--
+            BookTreeItem — ListBoxItem with no background decoration.
+            Hover / selected highlighting is applied inside the DataTemplate
+            (on the book-name row only), so chapter tiles below it stay unaffected.
+        -->
+        <Style x:Key="BookTreeItem" TargetType="ListBoxItem">
+            <Setter Property="Background"                 Value="Transparent" />
+            <Setter Property="Foreground"                 Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding"                    Value="0" />
+            <Setter Property="Cursor"                     Value="Hand" />
+            <Setter Property="FocusVisualStyle"           Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter HorizontalAlignment="Stretch" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Chapter tile buttons inside the tree -->
+        <Style x:Key="ChapterTileButton" TargetType="Button">
+            <Setter Property="Background"      Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Foreground"      Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Width"           Value="32" />
+            <Setter Property="Height"          Value="30" />
+            <Setter Property="Margin"          Value="2" />
+            <Setter Property="FontSize"        Value="11" />
+            <Setter Property="Cursor"          Value="Hand" />
+            <Setter Property="Padding"         Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"  Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Dark-theme checkbox for verse rows — IsHitTestVisible=False so row click handles selection -->
@@ -306,12 +294,17 @@
             </Border>
 
             <!-- ── Action bar (bottom) ────────────────────────────────────── -->
+            <!--
+                Prev/Next are intentionally absent here.
+                The main window projection bar owns slide navigation.
+                Use ▶▶ Project to push the current verse selection to screen.
+            -->
             <Border DockPanel.Dock="Bottom"
                     Background="{StaticResource PrimaryBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="0,1,0,0" Padding="12,8">
                 <DockPanel>
-                    <!-- Manage buttons (right-aligned, secondary) -->
+                    <!-- Manage buttons (right-aligned) -->
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button Content="Import…"
                                 Style="{StaticResource SecondaryButton}"
@@ -327,21 +320,11 @@
 
                     <!-- Live-service controls (left) -->
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="◀"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6" Margin="0,0,4,0"
-                                Command="{Binding PreviousVerseCommand}"
-                                ToolTip="Previous verse" />
-                        <Button Content="▶"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6" Margin="0,0,12,0"
-                                Command="{Binding NextVerseCommand}"
-                                ToolTip="Next verse" />
                         <ToggleButton Content="🔒 Freeze"
                                       IsChecked="{Binding IsFrozen, Mode=TwoWay}"
                                       Style="{StaticResource AlignToggleButton}"
                                       Padding="12,6" Margin="0,0,12,0"
-                                      ToolTip="Hold current slide while you navigate to the next" />
+                                      ToolTip="Hold current slide on screen while you navigate to the next" />
                         <Button Content="+ Schedule"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="12,6" Margin="0,0,12,0"
@@ -381,31 +364,87 @@
                 </Grid>
             </Border>
 
-            <!-- ── Three-column body ──────────────────────────────────────── -->
+            <!-- ── Two-column body: tree (books+chapters) | verses ────────── -->
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="190" />
-                    <ColumnDefinition Width="1" />
-                    <ColumnDefinition Width="160" />
-                    <ColumnDefinition Width="1" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="230" />   <!-- Books + inline chapter tiles -->
+                    <ColumnDefinition Width="1" />     <!-- Divider -->
+                    <ColumnDefinition Width="*" />     <!-- Verses -->
                 </Grid.ColumnDefinitions>
 
                 <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
-                <Rectangle Grid.Column="3" Fill="{StaticResource BorderBrush}" />
 
-                <!-- ── Books ── -->
+                <!-- ── Books + chapters (tree-like) ── -->
                 <ListBox Grid.Column="0"
+                         x:Name="BooksListBox"
                          ItemsSource="{Binding Source={StaticResource GroupedBooks}}"
                          SelectedItem="{Binding SelectedBook}"
-                         ItemContainerStyle="{StaticResource BibleListItem}"
+                         ItemContainerStyle="{StaticResource BookTreeItem}"
                          Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Name}" FontSize="13" />
+                            <StackPanel>
+                                <!-- Book name row: highlighted when selected/hovered -->
+                                <Border x:Name="BookRow" Padding="12,8" Background="Transparent">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="13"
+                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
+                                                             Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="False" />
+                                                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+
+                                <!-- Chapter tiles: visible only when this book is selected -->
+                                <ItemsControl
+                                    ItemsSource="{Binding DataContext.Chapters, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    Margin="8,4,8,8">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="ItemsControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
+                                                             Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding}"
+                                                    Style="{StaticResource ChapterTileButton}"
+                                                    Command="{Binding DataContext.SelectChapterCommand,
+                                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
+
+                    <!-- OT / NT group headers -->
                     <ListBox.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
@@ -418,27 +457,8 @@
                     </ListBox.GroupStyle>
                 </ListBox>
 
-                <!-- ── Chapters ── -->
-                <ListBox Grid.Column="2"
-                         ItemsSource="{Binding Chapters}"
-                         SelectedItem="{Binding SelectedChapter, Mode=TwoWay}"
-                         ItemContainerStyle="{StaticResource ChapterTileItem}"
-                         Background="Transparent" BorderThickness="0" Padding="6">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding}" FontSize="12"
-                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-
                 <!-- ── Verses (checkable rows) ── -->
-                <Grid Grid.Column="4">
+                <Grid Grid.Column="2">
 
                     <!-- Search results header (keyword mode) -->
                     <Border Background="{StaticResource PrimaryBrush}"
@@ -464,11 +484,12 @@
                             </Style>
                         </ScrollViewer.Style>
 
-                        <ItemsControl ItemsSource="{Binding CheckableVerses}">
+                        <ItemsControl ItemsSource="{Binding CheckableVerses}"
+                                      Foreground="{StaticResource TextPrimaryBrush}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:BibleVerseCheckItem}">
                                     <Border x:Name="RowBorder"
-                                            Cursor="Hand" Padding="12,7"
+                                            Cursor="Hand" Padding="12,8"
                                             Background="Transparent">
                                         <Border.InputBindings>
                                             <MouseBinding MouseAction="LeftClick"
@@ -517,6 +538,7 @@
 
                                                 <TextBlock Text="{Binding Verse.Text}"
                                                            FontSize="13"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextWrapping="Wrap"
                                                            LineHeight="20" />
                                             </StackPanel>
@@ -545,8 +567,7 @@
                     </ScrollViewer>
 
                     <!-- Placeholder: no chapter selected and no search active -->
-                    <TextBlock Text="Select a chapter or type a reference above"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
@@ -559,6 +580,7 @@
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
+                        Select a book, then tap a chapter number
                     </TextBlock>
                 </Grid>
             </Grid>

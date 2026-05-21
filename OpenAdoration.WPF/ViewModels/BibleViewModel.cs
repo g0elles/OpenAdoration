@@ -323,8 +323,11 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         finally { _updatingSelection = false; }
 
         RebuildPreview();
-        if (!IsFrozen) ProjectCurrentSelection();
+        // Clicking a verse selects it for the preview — use ▶▶ Project to push to screen.
     }
+
+    [RelayCommand]
+    private void SelectChapter(int chapter) => SelectedChapter = chapter;
 
     [RelayCommand]
     private void SelectBookSuggestion(string bookName)
@@ -347,7 +350,12 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         }
 
         var parsed = BibleReferenceParser.TryParse(ReferenceInput, Books);
-        if (parsed is null) return;
+        if (parsed is null)
+        {
+            // Didn't match a reference — treat as implicit keyword search.
+            _ = RunSearchAsync();
+            return;
+        }
 
         var book = Books.FirstOrDefault(b =>
             b.Name.Equals(parsed.BookName, StringComparison.OrdinalIgnoreCase));
