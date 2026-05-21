@@ -196,7 +196,7 @@
                         </TextBox>
 
                         <!-- Book autocomplete popup (reference mode only) -->
-                        <Popup IsOpen="{Binding HasBookSuggestions}"
+                        <Popup IsOpen="{Binding HasBookSuggestions, Mode=OneWay}"
                                PlacementTarget="{x:Reference ReferenceBox}"
                                Placement="Bottom"
                                StaysOpen="True"
