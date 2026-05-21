@@ -1,21 +1,9 @@
-using Microsoft.Extensions.Logging;
-using OpenAdoration.Application.Services;
-
 namespace OpenAdoration.WPF.ViewModels;
 
+/// <summary>
+/// Stub ViewModel for the Media feature (Milestone 4).
+/// Services will be injected here when the feature is implemented.
+/// </summary>
 public partial class MediaViewModel : BaseViewModel
 {
-    private readonly IMediaService _mediaService;
-    private readonly IProjectionService _projectionService;
-    private readonly ILogger<MediaViewModel> _logger;
-
-    public MediaViewModel(
-        IMediaService mediaService,
-        IProjectionService projectionService,
-        ILogger<MediaViewModel> logger)
-    {
-        _mediaService      = mediaService;
-        _projectionService = projectionService;
-        _logger            = logger;
-    }
 }

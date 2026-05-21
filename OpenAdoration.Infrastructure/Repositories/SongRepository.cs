@@ -41,12 +41,16 @@ public sealed class SongRepository : ISongRepository
 
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
-        var normalized = term.ToLower();
-
+        // EF.Functions.Like translates to SQLite LIKE, which is case-insensitive for
+        // ASCII by default -- no need for ToLower() on either side.
+        // Matches against both Title and Author so operators can search "Tomlin" or
+        // "Amazing Grace" interchangeably (P3 roadmap checklist fix).
+        var pattern = $"%{term}%";
         return await context.Songs
             .AsNoTracking()
             .Include(s => s.Sections.OrderBy(ss => ss.Order))
-            .Where(s => s.Title.ToLower().Contains(normalized))
+            .Where(s => EF.Functions.Like(s.Title, pattern)
+                     || (s.Author != null && EF.Functions.Like(s.Author, pattern)))
             .OrderBy(s => s.Title)
             .ToListAsync(ct);
     }

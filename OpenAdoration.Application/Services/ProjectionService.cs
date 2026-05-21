@@ -149,26 +149,40 @@ public sealed class ProjectionService : IProjectionService
 
     private void RaiseSlideChanged(Slide? slide)
     {
-        try
+        // Iterate the invocation list individually so one throwing subscriber
+        // cannot prevent later subscribers from receiving the event.
+        var handlers = SlideChanged?.GetInvocationList();
+        if (handlers is null) return;
+
+        foreach (var handler in handlers)
         {
-            SlideChanged?.Invoke(this, slide);
-        }
-        catch (Exception ex)
-        {
-            // A subscriber crash must never bring down the projection engine
-            _logger.LogError(ex, "Unhandled exception in SlideChanged subscriber — projection continues");
+            try
+            {
+                ((EventHandler<Slide?>)handler)(this, slide);
+            }
+            catch (Exception ex)
+            {
+                // A subscriber crash must never bring down the projection engine
+                _logger.LogError(ex, "Unhandled exception in SlideChanged subscriber — projection continues");
+            }
         }
     }
 
     private void RaiseProjectionStateChanged(bool isProjecting)
     {
-        try
+        var handlers = ProjectionStateChanged?.GetInvocationList();
+        if (handlers is null) return;
+
+        foreach (var handler in handlers)
         {
-            ProjectionStateChanged?.Invoke(this, isProjecting);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled exception in ProjectionStateChanged subscriber — projection continues");
+            try
+            {
+                ((EventHandler<bool>)handler)(this, isProjecting);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception in ProjectionStateChanged subscriber — projection continues");
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -15,7 +15,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private readonly IDialogService          _dialogService;
     private readonly ILogger<SongsViewModel> _logger;
 
-    // Child VM — shares the same DI scope, created once per navigation to Songs
+    // Child VM -- shares the same DI scope, created once per navigation to Songs
     public AddEditSongViewModel EditViewModel { get; }
 
     [ObservableProperty] private ObservableCollection<Song> _songs = [];
@@ -26,6 +26,9 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private bool _isEditing;
 
     public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
+
+    // Debounce token -- replaced on every keystroke; old delay task cancels itself (R5)
+    private CancellationTokenSource? _searchDebounceCts;
 
     public SongsViewModel(
         ISongService            songService,
@@ -44,9 +47,32 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         EditViewModel.Cancelled += OnEditCancelled;
     }
 
-    partial void OnSearchTextChanged(string value) => SearchCommand.Execute(null);
+    partial void OnSearchTextChanged(string value)
+    {
+        // Debounce: wait 300 ms after the last keystroke before firing the search.
+        // Cancels the previous pending delay each time a new character arrives (R5).
+        // Cancel and dispose the old CTS before replacing it.  Not disposing is a
+        // small resource leak that accumulates per keystroke (P3).
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts?.Dispose();
+        _searchDebounceCts = new CancellationTokenSource();
+        _ = DebounceSearchAsync(_searchDebounceCts.Token);
+    }
 
-    // ── Commands ──────────────────────────────────────────────────────────────
+    private async Task DebounceSearchAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(300, ct);
+            SearchCommand.Execute(null);
+        }
+        catch (OperationCanceledException)
+        {
+            // Text changed before the delay elapsed -- discard this run
+        }
+    }
+
+    // -- Commands --------------------------------------------------------------
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -140,7 +166,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         _logger.LogInformation("Projecting song: {Title}", song.Title);
     }
 
-    // ── Event handlers from EditViewModel ─────────────────────────────────────
+    // -- Event handlers from EditViewModel -------------------------------------
 
     private async void OnSongSaved(object? sender, Song song)
     {
@@ -157,5 +183,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     {
         EditViewModel.Saved     -= OnSongSaved;
         EditViewModel.Cancelled -= OnEditCancelled;
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts?.Dispose();
     }
 }

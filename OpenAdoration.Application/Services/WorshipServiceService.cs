@@ -84,4 +84,80 @@ public sealed class WorshipServiceService : IWorshipServiceService
             throw;
         }
     }
+
+    public async Task<WorshipService?> GetWithItemsAsync(int serviceId, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Fetching worship service {ServiceId} with items", serviceId);
+        return await _repository.GetWithItemsAsync(serviceId, ct);
+    }
+
+    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding song {SongId} to service {ServiceId}", songId, serviceId);
+        try
+        {
+            await _repository.AddSongItemAsync(serviceId, songId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add song {SongId} to service {ServiceId}", songId, serviceId);
+            throw;
+        }
+    }
+
+    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding Bible {Book} {Chapter}:{VerseStart}-{VerseEnd} to service {ServiceId}", book, chapter, verseStart, verseEnd, serviceId);
+        try
+        {
+            await _repository.AddBibleItemAsync(serviceId, book, chapter, verseStart, verseEnd, bibleVersionId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add Bible item to service {ServiceId}", serviceId);
+            throw;
+        }
+    }
+
+    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding media {MediaFileId} to service {ServiceId}", mediaFileId, serviceId);
+        try
+        {
+            await _repository.AddMediaItemAsync(serviceId, mediaFileId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add media {MediaFileId} to service {ServiceId}", mediaFileId, serviceId);
+            throw;
+        }
+    }
+
+    public async Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Removing schedule item {ItemId}", scheduleItemId);
+        try
+        {
+            await _repository.RemoveItemAsync(scheduleItemId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove schedule item {ItemId}", scheduleItemId);
+            throw;
+        }
+    }
+
+    public async Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Reordering {Count} items in service {ServiceId}", orderedItemIds.Count, serviceId);
+        try
+        {
+            await _repository.ReorderItemsAsync(serviceId, orderedItemIds, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reorder items in service {ServiceId}", serviceId);
+            throw;
+        }
+    }
 }

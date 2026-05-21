@@ -1,45 +1,56 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
-using OpenAdoration.WPF.Helpers.BibleImport;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class BibleViewModel : BaseViewModel
+/// <summary>
+/// ViewModel for the Bible browser. Implements <see cref="IDisposable"/> so that
+/// singleton event subscriptions (<see cref="IProjectionService"/> and
+/// <see cref="IBibleImportService"/>) are released when the view is unloaded.
+/// </summary>
+public partial class BibleViewModel : BaseViewModel, IDisposable
 {
-    private readonly IBibleService      _bibleService;
-    private readonly IProjectionService _projectionService;
+    private readonly IBibleService           _bibleService;
+    private readonly IProjectionService      _projectionService;
+    private readonly IBibleImportService     _importService;
     private readonly ILogger<BibleViewModel> _logger;
 
-    // ── Versions ──────────────────────────────────────────────────────────────
+    // Cancellation tokens for rapid-selection races.
+    private CancellationTokenSource _booksCts  = new();
+    private CancellationTokenSource _versesCts = new();
+
+    // Cancellation token for in-flight searches.
+    private CancellationTokenSource? _searchCts;
+
+    // -- Versions --------------------------------------------------------------
     [ObservableProperty] private ObservableCollection<BibleVersion> _versions = new();
     [ObservableProperty] private BibleVersion? _selectedVersion;
 
     public bool HasVersions   => Versions.Count > 0;
     public bool NoVersionsYet => Versions.Count == 0 && !IsBusy;
 
-    // ── Books ─────────────────────────────────────────────────────────────────
+    // -- Books -----------------------------------------------------------------
     [ObservableProperty] private ObservableCollection<BibleBook> _books = new();
     [ObservableProperty] private BibleBook? _selectedBook;
 
-    // ── Chapters ──────────────────────────────────────────────────────────────
-    // Generated client-side from BibleBook.ChapterCount — no DB call needed.
+    // -- Chapters --------------------------------------------------------------
     [ObservableProperty] private ObservableCollection<int> _chapters = new();
 
-    // 0 = nothing selected (never stored in the collection, so ListBox deselects)
+    // 0 = nothing selected (never present in collection, so ListBox deselects cleanly)
     [ObservableProperty] private int _selectedChapter;
 
-    // ── Verses ────────────────────────────────────────────────────────────────
+    // -- Verses ----------------------------------------------------------------
     [ObservableProperty] private ObservableCollection<BibleVerse> _displayedVerses = new();
     [ObservableProperty] private BibleVerse? _selectedVerse;
 
-    private List<BibleVerse> _chapterVerses = new(); // cache for clearing search
+    private List<BibleVerse> _chapterVerses = new();
 
-    // ── Search ────────────────────────────────────────────────────────────────
+    // -- Search ----------------------------------------------------------------
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSearchActive))]
     private string _searchText = string.Empty;
@@ -47,12 +58,26 @@ public partial class BibleViewModel : BaseViewModel
     private List<BibleVerse> _searchResults = new();
     public  bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchText) && _searchResults.Count > 0;
 
-    // ── Import progress ───────────────────────────────────────────────────────
-    [ObservableProperty] private string _importStatus = string.Empty;
-    [ObservableProperty] private bool   _isImporting;
+    // -- Import progress (delegated to singleton IBibleImportService) ----------
+    public bool   IsImporting         => _importService.IsImporting;
+    public int    ImportProgress      => _importService.Progress;
+    public int    ImportTotal         => _importService.Total;
+    public string ImportStatusMessage => _importService.StatusMessage;
 
-    // ── Projection state ──────────────────────────────────────────────────────
-    public bool IsProjecting       => _projectionService.IsProjecting;
+    // Indeterminate while parsing (before Total is known); determinate once verse count is set.
+    public bool IsImportIndeterminate => _importService.IsImporting && _importService.Total == 0;
+
+    // Import button is disabled while an import is running.
+    public bool CanImport => !_importService.IsImporting;
+
+    // -- Import summary (shown after a successful import) ----------------------
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasImportSummary))]
+    private string _importSummary = string.Empty;
+
+    public bool HasImportSummary => !string.IsNullOrEmpty(ImportSummary);
+
+    // -- Projection state ------------------------------------------------------
     public bool CanGoPreviousVerse => CurrentVerseIndex > 0;
     public bool CanGoNextVerse     => CurrentVerseIndex >= 0
                                    && CurrentVerseIndex < DisplayedVerses.Count - 1;
@@ -60,31 +85,86 @@ public partial class BibleViewModel : BaseViewModel
     private int CurrentVerseIndex =>
         SelectedVerse is null ? -1 : DisplayedVerses.IndexOf(SelectedVerse);
 
-    // ── Constructor ───────────────────────────────────────────────────────────
+    // -- Constructor -----------------------------------------------------------
 
     public BibleViewModel(
-        IBibleService      bibleService,
-        IProjectionService projectionService,
+        IBibleService           bibleService,
+        IProjectionService      projectionService,
+        IBibleImportService     importService,
         ILogger<BibleViewModel> logger)
     {
         _bibleService      = bibleService;
         _projectionService = projectionService;
+        _importService     = importService;
         _logger            = logger;
 
-        _projectionService.ProjectionStateChanged += (_, _) =>
-        {
-            OnPropertyChanged(nameof(IsProjecting));
-            RefreshNavigationState();
-        };
+        _importService.StateChanged   += OnImportStateChanged;
+        _importService.ImportCompleted += OnImportCompleted;
+        _importService.ImportFailed    += OnImportFailed;
     }
 
-    // ── Load ──────────────────────────────────────────────────────────────────
+    private void OnImportStateChanged(object? sender, EventArgs _)
+    {
+        OnPropertyChanged(nameof(IsImporting));
+        OnPropertyChanged(nameof(ImportProgress));
+        OnPropertyChanged(nameof(ImportTotal));
+        OnPropertyChanged(nameof(ImportStatusMessage));
+        OnPropertyChanged(nameof(IsImportIndeterminate));
+        OnPropertyChanged(nameof(CanImport));
+        ImportVersionCommand.NotifyCanExecuteChanged();
+    }
+
+    private async void OnImportCompleted(object? sender, BibleImportCompletedArgs e)
+    {
+        ImportSummary = $"Imported {e.VerseCount:N0} verses ({e.VersionName})";
+        await LoadVersionsCoreAsync();
+    }
+
+    private void OnImportFailed(object? sender, BibleImportFailedArgs e)
+    {
+        SetError(e.Message);
+    }
+
+    // -- Dispose -- releases singleton event subscriptions --------------------
+
+    public void Dispose()
+    {
+        _importService.StateChanged   -= OnImportStateChanged;
+        _importService.ImportCompleted -= OnImportCompleted;
+        _importService.ImportFailed    -= OnImportFailed;
+
+        _booksCts.Cancel();
+        _booksCts.Dispose();
+        _versesCts.Cancel();
+        _versesCts.Dispose();
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+    }
+
+    // -- Import ----------------------------------------------------------------
+
+    [RelayCommand(CanExecute = nameof(CanImport))]
+    private void ImportVersion(string filePath)
+    {
+        ImportSummary = string.Empty;
+        ClearError();
+        _importService.StartImport(filePath);
+    }
+
+    [RelayCommand]
+    private void CancelImport() => _importService.Cancel();
+
+    // -- Load ------------------------------------------------------------------
 
     [RelayCommand]
     public async Task LoadAsync()
     {
         if (IsBusy) return;
+        await LoadVersionsCoreAsync();
+    }
 
+    private async Task LoadVersionsCoreAsync()
+    {
         IsBusy = true;
         ClearError();
         try
@@ -96,8 +176,6 @@ public partial class BibleViewModel : BaseViewModel
 
             NotifyVersionState();
 
-            // Preserve the previously-selected version if it still exists,
-            // otherwise default to the first one.
             SelectedVersion = Versions.FirstOrDefault(v => v.Id == SelectedVersion?.Id)
                            ?? Versions.FirstOrDefault();
         }
@@ -109,40 +187,50 @@ public partial class BibleViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
-            NotifyVersionState(); // ensure NoVersionsYet reflects IsBusy = false
+            NotifyVersionState();
         }
     }
 
-    // ── Version selection ─────────────────────────────────────────────────────
+    // -- Version selection -----------------------------------------------------
 
     partial void OnSelectedVersionChanged(BibleVersion? value)
     {
         ResetBooksAndBelow();
         if (value is not null)
-            _ = LoadBooksAsync(value.Id);
+        {
+            _booksCts.Cancel();
+            _booksCts.Dispose();
+            _booksCts = new CancellationTokenSource();
+            _ = LoadBooksAsync(value.Id, _booksCts.Token);
+        }
     }
 
-    private async Task LoadBooksAsync(int versionId)
+    private async Task LoadBooksAsync(int versionId, CancellationToken ct)
     {
         try
         {
             var list = await _bibleService.GetBooksAsync(versionId);
+
+            if (ct.IsCancellationRequested) return;
+
             Books.Clear();
             foreach (var b in list) Books.Add(b);
         }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
+            if (ct.IsCancellationRequested) return;
             _logger.LogError(ex, "Failed to load books for version {Id}", versionId);
             SetError("Could not load books.");
         }
     }
 
-    // ── Book selection ────────────────────────────────────────────────────────
+    // -- Book selection --------------------------------------------------------
 
     partial void OnSelectedBookChanged(BibleBook? value)
     {
         Chapters.Clear();
-        SelectedChapter = 0; // triggers OnSelectedChapterChanged(0) → clears verses
+        SelectedChapter = 0;
         SelectedVerse   = null;
 
         if (value is null) return;
@@ -151,7 +239,7 @@ public partial class BibleViewModel : BaseViewModel
             Chapters.Add(c);
     }
 
-    // ── Chapter selection ─────────────────────────────────────────────────────
+    // -- Chapter selection -----------------------------------------------------
 
     partial void OnSelectedChapterChanged(int value)
     {
@@ -160,27 +248,36 @@ public partial class BibleViewModel : BaseViewModel
         SelectedVerse = null;
 
         if (value > 0 && SelectedVersion is not null && SelectedBook is not null)
-            _ = LoadVersesAsync(SelectedVersion.Id, SelectedBook.Name, value);
+        {
+            _versesCts.Cancel();
+            _versesCts.Dispose();
+            _versesCts = new CancellationTokenSource();
+            _ = LoadVersesAsync(SelectedVersion.Id, SelectedBook.Name, value, _versesCts.Token);
+        }
     }
 
-    private async Task LoadVersesAsync(int versionId, string book, int chapter)
+    private async Task LoadVersesAsync(int versionId, string book, int chapter, CancellationToken ct)
     {
         try
         {
             var list = await _bibleService.GetVersesAsync(versionId, book, chapter);
-            _chapterVerses = list.ToList();
 
+            if (ct.IsCancellationRequested) return;
+
+            _chapterVerses = list.ToList();
             DisplayedVerses.Clear();
             foreach (var v in _chapterVerses) DisplayedVerses.Add(v);
         }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
+            if (ct.IsCancellationRequested) return;
             _logger.LogError(ex, "Failed to load {Book} {Chapter}", book, chapter);
             SetError("Could not load verses.");
         }
     }
 
-    // ── Verse projection — single-click to project ────────────────────────────
+    // -- Verse projection ------------------------------------------------------
 
     partial void OnSelectedVerseChanged(BibleVerse? value)
     {
@@ -190,13 +287,33 @@ public partial class BibleViewModel : BaseViewModel
 
         try
         {
-            var slide = _bibleService.GenerateSlide(new[] { value });
-            _projectionService.LoadSlides(new[] { slide }, value.Reference);
-            OnPropertyChanged(nameof(IsProjecting));
+            // Use all verses in the active list so Next/Prev slide navigates verse by verse.
+            // In search mode use search results; otherwise use the full chapter.
+            var sourceList = IsSearchActive ? _searchResults : _chapterVerses;
+
+            if (sourceList.Count == 0)
+            {
+                var single = _bibleService.GenerateSlide(new[] { value });
+                _projectionService.LoadSlides(new[] { single }, value.Reference);
+                return;
+            }
+
+            var slides     = sourceList.Select(v => _bibleService.GenerateSlide(new[] { v })).ToList();
+            var startIndex = sourceList.IndexOf(value);
+            if (startIndex < 0) startIndex = 0;
+
+            var contextLabel = IsSearchActive
+                ? value.Reference
+                : $"{value.Book} {value.Chapter}";
+
+            _projectionService.LoadSlides(slides, contextLabel);
+
+            if (startIndex > 0)
+                _projectionService.GoTo(startIndex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to project verse {Ref}", value.Reference);
+            _logger.LogError(ex, "Failed to project verse");
         }
     }
 
@@ -215,18 +332,7 @@ public partial class BibleViewModel : BaseViewModel
             SelectedVerse = DisplayedVerses[i + 1];
     }
 
-    [RelayCommand]
-    private void ShowBlank() => _projectionService.ShowBlank();
-
-    [RelayCommand]
-    private void StopProjection()
-    {
-        _projectionService.Stop();
-        SelectedVerse = null;
-        OnPropertyChanged(nameof(IsProjecting));
-    }
-
-    // ── Search ────────────────────────────────────────────────────────────────
+    // -- Search ----------------------------------------------------------------
 
     [RelayCommand]
     private async Task SearchAsync()
@@ -237,19 +343,29 @@ public partial class BibleViewModel : BaseViewModel
             return;
         }
 
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        _searchCts = new CancellationTokenSource();
+        var ct = _searchCts.Token;
+
         IsBusy = true;
         ClearError();
         try
         {
-            _searchResults = (await _bibleService.SearchAsync(SelectedVersion.Id, SearchText, maxResults: 200)).ToList();
+            var results = (await _bibleService.SearchAsync(
+                SelectedVersion.Id, SearchText, maxResults: 200, ct: ct)).ToList();
 
+            if (ct.IsCancellationRequested) return;
+
+            _searchResults = results;
             DisplayedVerses.Clear();
             foreach (var v in _searchResults) DisplayedVerses.Add(v);
             OnPropertyChanged(nameof(IsSearchActive));
         }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Bible search failed: '{Term}'", SearchText);
+            _logger.LogError(ex, "Bible search failed");
             SetError("Search failed. Please try again.");
         }
         finally
@@ -268,53 +384,7 @@ public partial class BibleViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsSearchActive));
     }
 
-    // ── Import ────────────────────────────────────────────────────────────────
-
-    /// <summary>Called from BibleView code-behind with the path chosen via OpenFileDialog.</summary>
-    [RelayCommand]
-    private async Task ImportVersionAsync(string filePath)
-    {
-        if (IsBusy) return;
-
-        IsImporting   = true;
-        ImportStatus  = "Detecting format…";
-        IsBusy        = true;
-        ClearError();
-
-        try
-        {
-            ImportStatus = "Parsing file…";
-            var (version, books, verses) = BibleFormatDispatcher.Import(filePath);
-
-            ImportStatus = $"Importing {verses.Count:N0} verses…";
-            await _bibleService.ImportVersionAsync(version, books, verses);
-
-            _logger.LogInformation("Bible imported: {Name} ({Books} books, {Verses} verses)",
-                version.Name, books.Count, verses.Count);
-
-            ImportStatus = string.Empty;
-            await LoadAsync();
-        }
-        catch (InvalidDataException ex)
-        {
-            _logger.LogWarning(ex, "Bible import — bad JSON format");
-            SetError($"Invalid file format: {ex.Message}");
-            ImportStatus = string.Empty;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Bible import failed");
-            SetError($"Import failed: {ex.Message}");
-            ImportStatus = string.Empty;
-        }
-        finally
-        {
-            IsImporting = false;
-            IsBusy      = false;
-        }
-    }
-
-    // ── Delete version ────────────────────────────────────────────────────────
+    // -- Delete version --------------------------------------------------------
 
     [RelayCommand]
     private async Task DeleteVersionAsync()
@@ -323,10 +393,12 @@ public partial class BibleViewModel : BaseViewModel
 
         IsBusy = true;
         ClearError();
+        bool deletedOk = false;
+
         try
         {
             await _bibleService.DeleteVersionAsync(SelectedVersion.Id);
-            await LoadAsync();
+            deletedOk = true;
         }
         catch (Exception ex)
         {
@@ -337,9 +409,12 @@ public partial class BibleViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+
+        if (deletedOk)
+            await LoadVersionsCoreAsync();
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // -- Private helpers -------------------------------------------------------
 
     private void ResetBooksAndBelow()
     {

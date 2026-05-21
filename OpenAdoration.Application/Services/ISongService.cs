@@ -12,6 +12,10 @@ public interface ISongService
     Task UpdateAsync(Song song, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 
-    /// <summary>Generates the ordered list of projection slides for a song.</summary>
-    IReadOnlyList<Slide> GenerateSlides(Song song);
+    /// <summary>
+    /// Generates the ordered list of projection slides for a song.
+    /// Pass <paramref name="themeId"/> to override the default theme on every generated slide.
+    /// When null, the default theme is used.
+    /// </summary>
+    IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null);
 }

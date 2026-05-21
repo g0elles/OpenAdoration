@@ -48,7 +48,7 @@ internal static class OsisXmlParser
             var info = OsisBookCatalog.GetOrFallback(currentBookOsisId, currentBookPos, currentBookName);
             books.Add(new BibleBook
             {
-                Name         = info.Name.Length > 0 ? info.Name : currentBookName,
+                Name         = currentBookName.Length > 0 ? currentBookName : info.Name,
                 Abbreviation = info.Abbreviation,
                 Testament    = info.Testament,
                 BookNumber   = info.Number > 0 ? info.Number : currentBookPos,

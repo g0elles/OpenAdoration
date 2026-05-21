@@ -10,6 +10,10 @@ public interface IMediaService
     Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 
-    /// <summary>Generates a media slide from a registered file.</summary>
-    Slide GenerateSlide(MediaFile file);
+    /// <summary>
+    /// Generates a media slide from a registered file.
+    /// Pass <paramref name="themeId"/> to override the default theme on the generated slide.
+    /// When null, the default theme is used.
+    /// </summary>
+    Slide GenerateSlide(MediaFile file, int? themeId = null);
 }

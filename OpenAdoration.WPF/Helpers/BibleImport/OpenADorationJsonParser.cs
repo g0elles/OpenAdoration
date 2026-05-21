@@ -26,19 +26,31 @@ namespace OpenAdoration.WPF.Helpers.BibleImport;
 /// </summary>
 internal static class OpenADorationJsonParser
 {
+    /// <summary>
+    /// Parses from a file path.  Opens and parses the file once.
+    /// Use <see cref="ParseElement"/> when the caller already holds an open
+    /// <see cref="JsonDocument"/> to avoid a second full-file read (P2-2).
+    /// </summary>
     public static BibleImportResult Parse(string filePath)
     {
         using var stream = File.OpenRead(filePath);
         using var doc    = JsonDocument.Parse(stream,
             new JsonDocumentOptions { AllowTrailingCommas = true });
+        return ParseElement(doc.RootElement);
+    }
 
-        var root = doc.RootElement;
-
+    /// <summary>
+    /// Parses from an already-loaded <see cref="JsonElement"/> root.
+    /// The caller must keep the owning <see cref="JsonDocument"/> alive until
+    /// this method returns.
+    /// </summary>
+    internal static BibleImportResult ParseElement(JsonElement root)
+    {
         var version = new BibleVersion
         {
             Name         = GetString(root, "name", "translation", "version_name", "title")
                            ?? throw new InvalidDataException("JSON must have a 'name' field."),
-            Abbreviation = GetString(root, "abbreviation", "version", "abbrev", "code") ?? "—",
+            Abbreviation = GetString(root, "abbreviation", "version", "abbrev", "code") ?? "--",
             Language     = GetString(root, "language", "lang") ?? "Unknown"
         };
 

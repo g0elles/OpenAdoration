@@ -88,7 +88,7 @@ public sealed class SongService : ISongService
         }
     }
 
-    public IReadOnlyList<Slide> GenerateSlides(Song song)
+    public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null)
     {
         ArgumentNullException.ThrowIfNull(song);
 
@@ -107,7 +107,8 @@ public sealed class SongService : ISongService
             .Select(s => new Slide(
                 content: s.Lyrics,
                 type: SlideType.Song,
-                label: s.Label))
+                label: s.Label,
+                themeId: themeId))
             .ToList();
 
         var skipped = ordered.Count - slides.Count;

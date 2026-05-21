@@ -34,6 +34,35 @@ public partial class App : WpfApp
         // Logging must be configured before the host is built
         LoggingConfiguration.Configure(logDir);
 
+        // ── Global exception handlers (L10) ───────────────────────────────────
+        // Catch unhandled exceptions on the WPF dispatcher, unobserved Task
+        // exceptions, and CLR-level unhandled exceptions. Log them all so
+        // crashes leave a trace even without a debugger attached.
+        DispatcherUnhandledException += (_, ex) =>
+        {
+            _logger?.LogCritical(ex.Exception, "Unhandled dispatcher exception");
+            ex.Handled = true;
+            System.Windows.MessageBox.Show(
+                "An unexpected error occurred.\n\n" +
+                $"Details have been logged to:\n{logDir}",
+                "Unexpected Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, ex) =>
+        {
+            _logger?.LogError(ex.Exception, "Unobserved task exception");
+            ex.SetObserved();
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, ex) =>
+        {
+            _logger?.LogCritical(ex.ExceptionObject as Exception,
+                "Unhandled AppDomain exception (IsTerminating={IsTerminating})",
+                ex.IsTerminating);
+        };
+
         _host = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging => logging.UseOpenAdorationSerilog())
             .ConfigureServices(services =>
@@ -73,13 +102,15 @@ public partial class App : WpfApp
     {
         _logger?.LogInformation("OpenAdoration shutting down");
 
-        LoggingConfiguration.CloseAndFlush();
-
+        // Stop the host first so all hosted services can log their shutdown steps,
+        // then flush — reversing this order drops any logs emitted during host stop.
         if (_host is not null)
         {
             await _host.StopAsync(TimeSpan.FromSeconds(3));
             _host.Dispose();
         }
+
+        LoggingConfiguration.CloseAndFlush();
 
         base.OnExit(e);
     }
@@ -87,6 +118,7 @@ public partial class App : WpfApp
     private static void RegisterViewModels(IServiceCollection services)
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
+        services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();

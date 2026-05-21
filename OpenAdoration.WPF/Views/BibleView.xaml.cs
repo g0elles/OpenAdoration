@@ -15,9 +15,17 @@ public partial class BibleView : System.Windows.Controls.UserControl
             if (DataContext is BibleViewModel vm)
                 await vm.LoadCommand.ExecuteAsync(null);
         };
+
+        // Release the singleton ProjectionService subscription when the view leaves
+        // the visual tree, preventing an event-leak on the transient BibleViewModel (R2)
+        Unloaded += (_, _) =>
+        {
+            if (DataContext is BibleViewModel vm)
+                vm.Dispose();
+        };
     }
 
-    private async void OnImportClick(object sender, System.Windows.RoutedEventArgs e)
+    private void OnImportClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -26,6 +34,6 @@ public partial class BibleView : System.Windows.Controls.UserControl
         };
 
         if (dialog.ShowDialog() == true && DataContext is BibleViewModel vm)
-            await vm.ImportVersionCommand.ExecuteAsync(dialog.FileName);
+            vm.ImportVersionCommand.Execute(dialog.FileName);
     }
 }

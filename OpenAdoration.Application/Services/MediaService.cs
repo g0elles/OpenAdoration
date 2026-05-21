@@ -63,17 +63,19 @@ public sealed class MediaService : IMediaService
         }
     }
 
-    public Slide GenerateSlide(MediaFile file)
+    public Slide GenerateSlide(MediaFile file, int? themeId = null)
     {
         ArgumentNullException.ThrowIfNull(file);
 
         if (!File.Exists(file.FilePath))
-            _logger.LogWarning("Media file {MediaId} not found on disk: {Path}", file.Id, file.FilePath);
+            // Log filename only -- full local paths expose usernames/folder structure in support logs.
+            _logger.LogWarning("Media file {MediaId} not found on disk: {FileName}", file.Id, Path.GetFileName(file.FilePath));
 
         return new Slide(
             content: file.FilePath,
             type: SlideType.Media,
             label: file.FileName,
-            mediaPath: file.FilePath);
+            mediaPath: file.FilePath,
+            themeId: themeId);
     }
 }

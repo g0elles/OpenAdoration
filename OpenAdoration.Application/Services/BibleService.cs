@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
@@ -70,11 +70,13 @@ public sealed class BibleService : IBibleService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(term);
 
-        _logger.LogDebug("Searching Bible version {VersionId} for: {Term}", versionId, term);
+        // Search term is intentionally not logged -- it may contain user-entered
+        // scripture phrases that should not appear in support logs (L2).
+        _logger.LogDebug("Searching Bible version {VersionId} (max {MaxResults})", versionId, maxResults);
 
         var results = await _repository.SearchAsync(versionId, term, maxResults, ct);
 
-        _logger.LogDebug("Bible search '{Term}' returned {Count} result(s)", term, results.Count);
+        _logger.LogDebug("Bible search returned {Count} result(s) for version {VersionId}", results.Count, versionId);
 
         return results;
     }
@@ -83,17 +85,18 @@ public sealed class BibleService : IBibleService
         BibleVersion version,
         IReadOnlyList<BibleBook> books,
         IReadOnlyList<BibleVerse> verses,
+        IProgress<int>? progress = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(version);
 
         _logger.LogInformation(
-            "Starting Bible import: {Name} ({Abbreviation}) — {Books} book(s), {Verses} verse(s)",
+            "Starting Bible import: {Name} ({Abbreviation}) -- {Books} book(s), {Verses} verse(s)",
             version.Name, version.Abbreviation, books.Count, verses.Count);
 
         try
         {
-            await _repository.ImportVersionAsync(version, books, verses, ct);
+            await _repository.ImportVersionAsync(version, books, verses, progress, ct);
 
             _logger.LogInformation(
                 "Bible import completed: {Name} ({Abbreviation})",
@@ -127,7 +130,7 @@ public sealed class BibleService : IBibleService
         }
     }
 
-    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses)
+    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null)
     {
         ArgumentNullException.ThrowIfNull(verses);
 
@@ -142,6 +145,6 @@ public sealed class BibleService : IBibleService
             ? verses[0].Reference
             : $"{verses[0].Book} {verses[0].Chapter}:{verses[0].Verse}-{verses[^1].Verse}";
 
-        return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label);
+        return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId);
     }
 }

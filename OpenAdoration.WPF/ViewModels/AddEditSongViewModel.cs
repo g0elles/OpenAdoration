@@ -81,6 +81,18 @@ public partial class AddEditSongViewModel : BaseViewModel
             return;
         }
 
+        if (!Sections.Any())
+        {
+            SetError("At least one section is required.");
+            return;
+        }
+
+        if (Sections.Any(s => string.IsNullOrWhiteSpace(s.Lyrics)))
+        {
+            SetError("All sections must have lyrics before saving.");
+            return;
+        }
+
         IsBusy = true;
         ClearError();
 

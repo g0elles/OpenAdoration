@@ -1,7 +1,7 @@
 # OpenAdoration — Architecture & Developer Reference
 
-> Last updated: 2026-05-11  
-> Status: Active development — Songs feature complete, remaining features stubbed
+> Last updated: 2026-05-19  
+> Status: Active development — Songs, Bible, and Themes complete; Service Schedule and Media planned
 
 ---
 
@@ -78,9 +78,10 @@ WPF  →  Application  →  Domain
 Infrastructure  →  Application  →  Domain
 ```
 
-- WPF and Infrastructure both reference Application but **never each other**.
+- **WPF is the composition root** — it references both Application (for service interfaces) and Infrastructure (solely to call `AddInfrastructure()` in `App.xaml.cs`). This is the only permitted Infrastructure reference from WPF; all other WPF code must go through Application interfaces.
+- Infrastructure references Application but never WPF.
 - Domain references nothing — it is the innermost ring.
-- All cross-layer communication goes through the interfaces defined in Application.
+- All cross-layer business logic goes through the interfaces defined in Application.
 
 ### 2.3 Key Design Decisions
 
@@ -272,12 +273,12 @@ The equivalent "API surface" is the Application service interfaces:
 ┌──────────────────────────────────────────────────────────────┐
 │ Songs                       │ SongSections                   │
 │─────────────────────────────│────────────────────────────────│
-│ Id          INT  PK         │ Id           INT  PK           │
-│ Title       TEXT NOT NULL   │ SongId       INT  FK → Songs   │
-│ Author      TEXT NULL       │ Type         INT  (enum)       │
-│ CreatedAt   DATETIME        │ SectionNumber INT              │
-│ UpdatedAt   DATETIME        │ Lyrics       TEXT NOT NULL     │
-│                             │ Order        INT  NOT NULL     │
+│ Id             INT  PK      │ Id           INT  PK           │
+│ Title          TEXT NOT NULL│ SongId       INT  FK → Songs   │
+│ Author         TEXT NULL    │ Type         INT  (enum)       │
+│ Classification TEXT NULL    │ SectionNumber INT              │
+│ CreatedAt      DATETIME     │ Lyrics       TEXT NOT NULL     │
+│ UpdatedAt      DATETIME     │ Order        INT  NOT NULL     │
 │                             │ CreatedAt    DATETIME          │
 │                             │ UpdatedAt    DATETIME          │
 │  1 Song ──< many Sections (Cascade delete)                   │
@@ -286,18 +287,21 @@ The equivalent "API surface" is the Application service interfaces:
 ┌──────────────────────────────────────────────────────────────┐
 │ Themes                                                       │
 │──────────────────────────────────────────────────────────────│
-│ Id                  INT   PK                                 │
-│ Name                TEXT  NOT NULL  (max 100)                │
-│ FontFamily          TEXT  NOT NULL  (max 100)                │
-│ FontSize            INT   NOT NULL                           │
-│ FontColor           TEXT  NOT NULL  (max 9, e.g. #FFFFFF)    │
-│ BackgroundColor     TEXT  NOT NULL  (max 9)                  │
-│ BackgroundImagePath TEXT  NULL      (max 1024)               │
-│ IsDefault           BOOL  NOT NULL                           │
-│ CreatedAt           DATETIME                                 │
-│ UpdatedAt           DATETIME                                 │
+│ Id                   INT   PK                                │
+│ Name                 TEXT  NOT NULL  (max 100)               │
+│ FontFamily           TEXT  NOT NULL  (max 100)               │
+│ FontSize             INT   NOT NULL                          │
+│ FontColor            TEXT  NOT NULL  (max 9, e.g. #FFFFFF)   │
+│ BackgroundColor      TEXT  NOT NULL  (max 9)                 │
+│ BackgroundImagePath  TEXT  NULL      (max 1024)              │
+│ BackgroundVideoPath  TEXT  NULL      (max 1024)              │
+│ TextAlignment        TEXT  NOT NULL  default "Center"        │
+│ IsDefault            BOOL  NOT NULL                          │
+│ CreatedAt            DATETIME                                │
+│ UpdatedAt            DATETIME                                │
 │                                                              │
-│  Seeded: Id=1, Name="Default", black bg, white 48pt Arial   │
+│  Seeded: Id=1, Name="Default", black bg, white 48pt Arial,  │
+│          TextAlignment="Center", IsDefault=true              │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -487,18 +491,28 @@ OpenAdoration.WPF/
     SongsViewModel.cs         ★       ← Load, search filter, add/edit/delete, project
     AddEditSongViewModel.cs   ★       ← Section management, Saved/Cancelled events
     SongSectionViewModel.cs           ← Per-section: type, lyrics, move/delete events
-    BibleViewModel.cs                 ← (stub)
-    ServiceScheduleViewModel.cs       ← (stub)
-    MediaViewModel.cs                 ← (stub)
-    ThemeViewModel.cs                 ← (stub)
+    BibleViewModel.cs          ★       ← Bible browser — version/book/chapter cascade, multi-format import
+    AddEditThemeViewModel.cs   ★       ← Theme editor — color pickers, alignment strip, live preview
+    ThemeViewModel.cs                  ← Theme CRUD + set default
+    ServiceScheduleViewModel.cs        ← (stub — Milestone 3)
+    MediaViewModel.cs                  ← (stub — Milestone 4)
   Views/
     SongsView.xaml            ★       ← List panel ↔ edit panel toggle by IsEditing
     AddEditSongView.xaml      ★       ← Title/Author + sections list + type buttons
-    BibleView.xaml / ServiceScheduleView.xaml / MediaView.xaml / ThemeView.xaml  (stubs)
+    BibleView.xaml            ★       ← 3-column Bible browser + import toolbar
+    AddEditThemeView.xaml              ← Theme editor form with live preview rectangle
+    ThemeView.xaml                     ← Theme list panel
+    ServiceScheduleView.xaml           ← (stub — Milestone 3)
+    MediaView.xaml                     ← (stub — Milestone 4)
   Styles/
     Colors.xaml                       ← All color/brush resources
     Base.xaml                 ★       ← All control styles (Button, TextBox, ComboBox, Cards)
 ```
+
+OpenAdoration.Tests.Infrastructure/
+  BibleImport/
+    BibleParserTests.cs           ← 5 [Fact] tests, one per format, via BibleFormatDispatcher
+    Fixtures/                     ← 5 minimal XML/JSON fixtures (1 book, 1 chapter, 3 verses each)
 
 ★ = highest-leverage files; start here when debugging
 
@@ -557,8 +571,8 @@ using WpfApp = System.Windows.Application;
 
 ### 9.1 First-time setup
 ```bash
-git clone https://github.com/g0elles/OpenAdorationMaui.git
-cd OpenAdorationMaui
+git clone https://github.com/g0elles/OpenAdoration.git
+cd OpenAdoration
 
 # Install EF Core tools (once per machine)
 dotnet tool install --global dotnet-ef
@@ -622,15 +636,21 @@ EF Core `Database.Command` and `Infrastructure` noise is suppressed to `Warning`
 dotnet build OpenAdoration.sln --configuration Release
 ```
 
+### 9.8 Run parser tests
+```bash
+dotnet test OpenAdoration.Tests.Infrastructure
+# Expected: 5/5 pass (Zefania, OSIS, USFX, Thiagobodruk, OpenAdoration JSON)
+```
+
 Output: `OpenAdoration.WPF\bin\Release\net10.0-windows\OpenAdoration.exe`
 
-### 9.8 Feature status at a glance
+### 9.9 Feature status at a glance
 
 | Feature | Domain | Service | Repository | ViewModel | View |
 |---|---|---|---|---|---|
 | Songs | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Bible | ✅ | ✅ | ✅ | stub | stub |
-| Service Schedule | ✅ | ✅ | ✅ | stub | stub |
+| Bible | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Themes | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Service Schedule | ✅ | partial | partial | stub | stub |
 | Media | ✅ | ✅ | ✅ | stub | stub |
-| Themes | ✅ | ✅ | ✅ | stub | stub |
 | Projection engine | — | ✅ | — | ✅ | ✅ |

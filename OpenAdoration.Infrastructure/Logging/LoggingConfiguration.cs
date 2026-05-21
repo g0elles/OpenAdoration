@@ -19,22 +19,37 @@ public static class LoggingConfiguration
 
         var logPath = Path.Combine(logDirectory, "openadoration-.log");
 
+        const LogEventLevel defaultLevel = LogEventLevel.Information;
+
+        // Short session ID for correlating all log entries within one app run (L3)
+        var sessionId  = Guid.NewGuid().ToString("N")[..8];
+        var appVersion = System.Reflection.Assembly.GetEntryAssembly()
+                             ?.GetName().Version?.ToString(3) ?? "unknown";
+        var osVersion  = Environment.OSVersion.VersionString;
+
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Is(defaultLevel)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Infrastructure", LogEventLevel.Warning)
             .Enrich.FromLogContext()
+            .Enrich.WithProperty("SessionId",  sessionId)   // (L3) per-run correlation ID
+            .Enrich.WithProperty("AppVersion", appVersion)  // (L3) version for support
+            .Enrich.WithProperty("OS",         osVersion)   // (L3) environment context
             .WriteTo.Debug(outputTemplate: "[{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
             .WriteTo.File(
                 path: logPath,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}",
-                shared: false,
+                fileSizeLimitBytes: 10_485_760,    // 10 MB per file (L6)
+                rollOnFileSizeLimit: true,          // roll when size is hit, not only on day change (L6)
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SessionId}] {SourceContext}: {Message:lj}{NewLine}{Exception}",
+                shared: true,                       // allows live tail with Get-Content -Wait (L9)
                 flushToDiskInterval: TimeSpan.FromSeconds(1))
             .CreateLogger();
 
-        Log.Information("Logging initialised. Log directory: {LogDirectory}", logDirectory);
+        Log.Information(
+            "Logging initialised — Session={SessionId}, Version={AppVersion}, OS={OS}, LogDirectory={LogDirectory}",
+            sessionId, appVersion, osVersion, logDirectory);
     }
 
     /// <summary>

@@ -1,0 +1,20 @@
+{
+  "name": "Minimal Test",
+  "abbreviation": "MIN",
+  "language": "en",
+  "books": [
+    {
+      "name": "Genesis",
+      "chapters": [
+        {
+          "number": 1,
+          "verses": [
+            { "number": 1, "text": "In the beginning God created the heavens and the earth." },
+            { "number": 2, "text": "Now the earth was formless and empty, darkness was over the surface of the deep." },
+            { "number": 3, "text": "And God said, Let there be light, and there was light." }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -103,23 +103,15 @@
 
     <Grid>
 
-        <!-- ── Global busy overlay ─────────────────────────────────────────── -->
+        <!-- ── Global busy overlay (load / search only — not import) ─────── -->
         <Grid Panel.ZIndex="20"
               Background="#B0000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding ImportStatus}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="13"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,6"
-                           Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}" />
-                <TextBlock Text="Loading…"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           FontSize="15"
-                           HorizontalAlignment="Center"
-                           Visibility="{Binding IsImporting, Converter={StaticResource InverseBoolToVis}}" />
-            </StackPanel>
+            <TextBlock Text="Loading…"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="15"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
         </Grid>
 
         <!-- ── Empty-state (no Bible imported yet) ─────────────────────────── -->
@@ -140,10 +132,10 @@
                            TextAlignment="Center"
                            TextWrapping="Wrap"
                            Margin="0,0,0,24">
-                    Import a Bible JSON file to get started.
-                    The file must contain a "name" and a "books" array.
+                    Import a Bible file to get started. Supported formats:
+                    Zefania XML, OSIS XML, USFX XML, and JSON.
                 </TextBlock>
-                <Button Content="Import Bible JSON…"
+                <Button Content="Import Bible File…"
                         Style="{StaticResource PrimaryButton}"
                         Padding="20,10"
                         HorizontalAlignment="Center"
@@ -165,14 +157,20 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding Versions}"
                                   SelectedItem="{Binding SelectedVersion}"
-                                  DisplayMemberPath="Name"
                                   Style="{StaticResource FieldComboBox}"
                                   MinWidth="160"
-                                  Margin="0,0,8,0" />
+                                  Margin="0,0,8,0">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <Button Content="Import…"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="12,6"
                                 Margin="0,0,6,0"
+                                IsEnabled="{Binding CanImport}"
                                 Click="OnImportClick" />
                         <Button Content="Delete Version"
                                 Style="{StaticResource DangerButton}"
@@ -208,6 +206,51 @@
                 </Grid>
             </Border>
 
+            <!-- ── Import progress strip (non-blocking — user can still browse/navigate) ── -->
+            <Border DockPanel.Dock="Top"
+                    Background="{StaticResource PrimaryBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="14,8"
+                    Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="{Binding ImportStatusMessage}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="12" />
+                        <ProgressBar Height="4"
+                                     Margin="0,5,0,0"
+                                     Value="{Binding ImportProgress, Mode=OneWay}"
+                                     Maximum="{Binding ImportTotal, Mode=OneWay}"
+                                     IsIndeterminate="{Binding IsImportIndeterminate, Mode=OneWay}"
+                                     Foreground="{StaticResource AccentBrush}"
+                                     Background="{StaticResource BorderBrush}" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Content="Cancel"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="10,4"
+                            VerticalAlignment="Center"
+                            Command="{Binding CancelImportCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- ── Import summary bar ── -->
+            <Border DockPanel.Dock="Top"
+                    Background="#162016"
+                    Padding="16,8"
+                    Visibility="{Binding HasImportSummary, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding ImportSummary}"
+                           Foreground="#4CAF50"
+                           FontSize="12" />
+            </Border>
+
             <!-- ── Error bar ── -->
             <Border DockPanel.Dock="Top"
                     Background="#3E1A1A"
@@ -216,52 +259,6 @@
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="{StaticResource DangerBrush}"
                            FontSize="12" />
-            </Border>
-
-            <!-- ── Bottom projection controls ── -->
-            <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="16,10"
-                    Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
-                <Grid>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Left">
-                        <Button Content="◀  Prev"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6"
-                                Margin="0,0,6,0"
-                                Command="{Binding PreviousVerseCommand}" />
-                        <Button Content="Next  ▶"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6"
-                                Command="{Binding NextVerseCommand}" />
-                    </StackPanel>
-
-                    <!-- Current reference -->
-                    <TextBlock Text="{Binding SelectedVerse.Reference}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
-
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
-                        <Button Content="Blank"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6"
-                                Margin="0,0,6,0"
-                                Command="{Binding ShowBlankCommand}" />
-                        <Button Content="Stop"
-                                Style="{StaticResource DangerButton}"
-                                Padding="12,6"
-                                Command="{Binding StopProjectionCommand}" />
-                    </StackPanel>
-                </Grid>
             </Border>
 
             <!-- ── Three-column body ── -->

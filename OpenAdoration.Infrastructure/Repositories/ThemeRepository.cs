@@ -89,6 +89,18 @@ public sealed class ThemeRepository : IThemeRepository
         await context.SaveChangesAsync(ct);
     }
 
+    public async Task SetDefaultAsync(int id, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var theme = await context.Themes.FindAsync([id], ct)
+            ?? throw new InvalidOperationException($"Theme with ID {id} was not found.");
+
+        await ClearDefaultFlagAsync(context, excludeId: id, ct);
+        theme.IsDefault = true;
+        await context.SaveChangesAsync(ct);
+    }
+
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

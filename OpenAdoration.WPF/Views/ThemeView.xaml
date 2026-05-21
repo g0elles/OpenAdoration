@@ -88,10 +88,28 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <!-- Theme rows -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Themes}">
-                            <ItemsControl.ItemTemplate>
+                    <!-- Theme rows — ListBox enables WPF virtualization (P2) -->
+                    <ListBox ItemsSource="{Binding Themes}"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Border Style="{StaticResource SongRowCard}">
                                         <Grid>
@@ -125,6 +143,14 @@
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal"
                                                             HorizontalAlignment="Right">
+                                                    <Button Content="★"
+                                                            Style="{StaticResource IconButton}"
+                                                            ToolTip="Set as default theme"
+                                                            Visibility="{Binding IsDefault, Converter={StaticResource InverseBoolToVis}}"
+                                                            Command="{Binding DataContext.SetDefaultCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Margin="0,0,2,0" />
                                                     <Button Content="✎"
                                                             Style="{StaticResource IconButton}"
                                                             ToolTip="Edit"
@@ -134,7 +160,7 @@
                                                             Margin="0,0,2,0" />
                                                     <Button Content="✕"
                                                             Style="{StaticResource IconDangerButton}"
-                                                            ToolTip="Delete"
+                                                            ToolTip="Cannot delete the default theme"
                                                             Command="{Binding DataContext.DeleteThemeCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}" />
@@ -147,9 +173,9 @@
                                                        FontSize="11"
                                                        Margin="0,3,0,0"
                                                        TextTrimming="CharacterEllipsis">
-                                                <Run Text="{Binding FontFamily}" />
+                                                <Run Text="{Binding FontFamily, Mode=OneWay}" />
                                                 <Run Text=" · " />
-                                                <Run Text="{Binding FontSize}" />
+                                                <Run Text="{Binding FontSize, Mode=OneWay}" />
                                                 <Run Text="pt" />
                                             </TextBlock>
 
@@ -174,9 +200,8 @@
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </Border>
         </Grid>

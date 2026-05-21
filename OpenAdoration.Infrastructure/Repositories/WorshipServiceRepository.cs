@@ -88,4 +88,145 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         context.WorshipServices.Remove(service);
         await context.SaveChangesAsync(ct);
     }
+
+    public async Task<WorshipService?> GetWithItemsAsync(int serviceId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var service = await context.WorshipServices
+            .Include(ws => ws.Items.OrderBy(i => i.Order))
+            .FirstOrDefaultAsync(ws => ws.Id == serviceId, ct);
+
+        if (service is null) return null;
+
+        // Populate nav properties for each subtype within this context
+        var songIds = service.Items.OfType<SongScheduleItem>().Select(i => i.SongId).ToList();
+        if (songIds.Count > 0)
+        {
+            var songs = await context.Songs
+                .Include(s => s.Sections)
+                .Where(s => songIds.Contains(s.Id))
+                .ToListAsync(ct);
+            var songMap = songs.ToDictionary(s => s.Id);
+            foreach (var item in service.Items.OfType<SongScheduleItem>())
+                item.Song = songMap[item.SongId];
+        }
+
+        var versionIds = service.Items.OfType<BibleScheduleItem>()
+            .Where(i => i.BibleVersionId.HasValue)
+            .Select(i => i.BibleVersionId!.Value)
+            .Distinct().ToList();
+        if (versionIds.Count > 0)
+        {
+            var versions = await context.BibleVersions
+                .Where(v => versionIds.Contains(v.Id))
+                .ToListAsync(ct);
+            var versionMap = versions.ToDictionary(v => v.Id);
+            foreach (var item in service.Items.OfType<BibleScheduleItem>().Where(i => i.BibleVersionId.HasValue))
+                item.BibleVersion = versionMap[item.BibleVersionId!.Value];
+        }
+
+        var mediaIds = service.Items.OfType<MediaScheduleItem>().Select(i => i.MediaFileId).ToList();
+        if (mediaIds.Count > 0)
+        {
+            var mediaFiles = await context.MediaFiles
+                .Where(m => mediaIds.Contains(m.Id))
+                .ToListAsync(ct);
+            var mediaMap = mediaFiles.ToDictionary(m => m.Id);
+            foreach (var item in service.Items.OfType<MediaScheduleItem>())
+                item.MediaFile = mediaMap[item.MediaFileId];
+        }
+
+        return service;
+    }
+
+    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var nextOrder = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .Select(i => (int?)i.Order)
+            .MaxAsync(ct) ?? -1;
+
+        context.ScheduleItems.Add(new SongScheduleItem
+        {
+            ServiceId = serviceId,
+            SongId    = songId,
+            ThemeId   = themeId,
+            Order     = nextOrder + 1
+        });
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var nextOrder = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .Select(i => (int?)i.Order)
+            .MaxAsync(ct) ?? -1;
+
+        context.ScheduleItems.Add(new BibleScheduleItem
+        {
+            ServiceId     = serviceId,
+            Book          = book,
+            Chapter       = chapter,
+            VerseStart    = verseStart,
+            VerseEnd      = verseEnd,
+            BibleVersionId = bibleVersionId,
+            ThemeId       = themeId,
+            Order         = nextOrder + 1
+        });
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var nextOrder = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .Select(i => (int?)i.Order)
+            .MaxAsync(ct) ?? -1;
+
+        context.ScheduleItems.Add(new MediaScheduleItem
+        {
+            ServiceId   = serviceId,
+            MediaFileId = mediaFileId,
+            ThemeId     = themeId,
+            Order       = nextOrder + 1
+        });
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var item = await context.ScheduleItems.FindAsync([scheduleItemId], ct)
+            ?? throw new InvalidOperationException($"ScheduleItem with ID {scheduleItemId} was not found.");
+
+        context.ScheduleItems.Remove(item);
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var items = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .ToListAsync(ct);
+
+        var indexMap = items.ToDictionary(i => i.Id);
+        for (var index = 0; index < orderedItemIds.Count; index++)
+        {
+            if (indexMap.TryGetValue(orderedItemIds[index], out var item))
+                item.Order = index;
+        }
+
+        await context.SaveChangesAsync(ct);
+    }
 }

@@ -7,6 +7,8 @@ using OpenAdoration.Domain.Entities;
 
 namespace OpenAdoration.WPF.ViewModels;
 
+public enum BackgroundType { Color, Image, Video }
+
 public partial class AddEditThemeViewModel : BaseViewModel
 {
     private readonly IThemeService _themeService;
@@ -14,13 +16,12 @@ public partial class AddEditThemeViewModel : BaseViewModel
 
     private int _themeId; // 0 = new
 
-    [ObservableProperty] private string  _name            = string.Empty;
-    [ObservableProperty] private string  _fontFamily      = "Arial";
-    [ObservableProperty] private int     _fontSize        = 72;
+    [ObservableProperty] private string  _name       = string.Empty;
+    [ObservableProperty] private string  _fontFamily = "Arial";
+    [ObservableProperty] private int     _fontSize   = 72;
 
     [ObservableProperty] private System.Windows.TextAlignment _textAlignment = System.Windows.TextAlignment.Center;
 
-    // Convenience bools so the alignment ToggleButtons can bind IsChecked one-way
     public bool IsAlignLeft   => TextAlignment == System.Windows.TextAlignment.Left;
     public bool IsAlignCenter => TextAlignment == System.Windows.TextAlignment.Center;
     public bool IsAlignRight  => TextAlignment == System.Windows.TextAlignment.Right;
@@ -32,9 +33,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsAlignRight));
     }
 
-    // Colors stored as WPF Color — converted to/from hex string only at DB boundaries
-    [ObservableProperty] private System.Windows.Media.Color?  _fontColor       = System.Windows.Media.Colors.White;
-    [ObservableProperty] private System.Windows.Media.Color?  _backgroundColor = System.Windows.Media.Colors.Black;
+    [ObservableProperty] private System.Windows.Media.Color? _fontColor       = System.Windows.Media.Colors.White;
+    [ObservableProperty] private System.Windows.Media.Color? _backgroundColor = System.Windows.Media.Colors.Black;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBackgroundImage))]
@@ -44,13 +44,24 @@ public partial class AddEditThemeViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(HasBackgroundVideo))]
     private string? _backgroundVideoPath;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBackgroundColor))]
+    [NotifyPropertyChangedFor(nameof(IsBackgroundImage))]
+    [NotifyPropertyChangedFor(nameof(IsBackgroundVideo))]
+    private BackgroundType _selectedBackgroundType = BackgroundType.Color;
+
     [ObservableProperty] private bool _isDefault;
 
-    public bool   IsNew      => _themeId == 0;
-    public string FormTitle  => IsNew ? "New Theme" : "Edit Theme";
-    public bool   HasBackgroundImage =>
+    public bool IsNew      => _themeId == 0;
+    public string FormTitle => IsNew ? "New Theme" : "Edit Theme";
+
+    public bool IsBackgroundColor => SelectedBackgroundType == BackgroundType.Color;
+    public bool IsBackgroundImage => SelectedBackgroundType == BackgroundType.Image;
+    public bool IsBackgroundVideo => SelectedBackgroundType == BackgroundType.Video;
+
+    public bool HasBackgroundImage =>
         !string.IsNullOrWhiteSpace(BackgroundImagePath) && File.Exists(BackgroundImagePath);
-    public bool   HasBackgroundVideo =>
+    public bool HasBackgroundVideo =>
         !string.IsNullOrWhiteSpace(BackgroundVideoPath) && File.Exists(BackgroundVideoPath);
 
     public static IReadOnlyList<string> AvailableFontFamilies { get; } =
@@ -78,16 +89,17 @@ public partial class AddEditThemeViewModel : BaseViewModel
 
     public void InitialiseNew()
     {
-        _themeId             = 0;
-        Name                 = string.Empty;
-        FontFamily           = "Arial";
-        FontSize             = 72;
-        TextAlignment        = System.Windows.TextAlignment.Center;
-        FontColor            = System.Windows.Media.Colors.White;
-        BackgroundColor      = System.Windows.Media.Colors.Black;
-        BackgroundImagePath  = null;
-        BackgroundVideoPath  = null;
-        IsDefault            = false;
+        _themeId               = 0;
+        Name                   = string.Empty;
+        FontFamily             = "Arial";
+        FontSize               = 72;
+        TextAlignment          = System.Windows.TextAlignment.Center;
+        FontColor              = System.Windows.Media.Colors.White;
+        BackgroundColor        = System.Windows.Media.Colors.Black;
+        BackgroundImagePath    = null;
+        BackgroundVideoPath    = null;
+        SelectedBackgroundType = BackgroundType.Color;
+        IsDefault              = false;
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -95,16 +107,21 @@ public partial class AddEditThemeViewModel : BaseViewModel
 
     public void InitialiseEdit(Theme theme)
     {
-        _themeId             = theme.Id;
-        Name                 = theme.Name;
-        FontFamily           = theme.FontFamily;
-        FontSize             = theme.FontSize;
-        TextAlignment        = ParseAlignment(theme.TextAlignment);
-        FontColor            = ParseColor(theme.FontColor,      System.Windows.Media.Colors.White);
-        BackgroundColor      = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
-        BackgroundImagePath  = theme.BackgroundImagePath;
-        BackgroundVideoPath  = theme.BackgroundVideoPath;
-        IsDefault            = theme.IsDefault;
+        _themeId            = theme.Id;
+        Name                = theme.Name;
+        FontFamily          = theme.FontFamily;
+        FontSize            = theme.FontSize;
+        TextAlignment       = ParseAlignment(theme.TextAlignment);
+        FontColor           = ParseColor(theme.FontColor,      System.Windows.Media.Colors.White);
+        BackgroundColor     = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
+        BackgroundImagePath = theme.BackgroundImagePath;
+        BackgroundVideoPath = theme.BackgroundVideoPath;
+        IsDefault           = theme.IsDefault;
+
+        SelectedBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
+            : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                   ? BackgroundType.Image
+            :                                                                            BackgroundType.Color;
+
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -117,8 +134,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
     {
         if (IsBusy) return;
 
-        if (string.IsNullOrWhiteSpace(Name))  { SetError("Theme name is required."); return; }
-        if (FontSize <= 0)                     { SetError("Font size must be greater than zero."); return; }
+        if (string.IsNullOrWhiteSpace(Name)) { SetError("Theme name is required."); return; }
+        if (FontSize <= 0)                   { SetError("Font size must be greater than zero."); return; }
 
         IsBusy = true;
         ClearError();
@@ -169,6 +186,17 @@ public partial class AddEditThemeViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private void SetBackgroundType(string type)
+    {
+        SelectedBackgroundType = type switch
+        {
+            "Image" => BackgroundType.Image,
+            "Video" => BackgroundType.Video,
+            _       => BackgroundType.Color
+        };
+    }
+
+    [RelayCommand]
     private void IncreaseFontSize()
     {
         if (FontSize < 300) FontSize = Math.Min(300, FontSize + 2);
@@ -191,8 +219,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         TextAlignment       = TextAlignment.ToString(),
         FontColor           = ColorToHex(FontColor,       "#FFFFFF"),
         BackgroundColor     = ColorToHex(BackgroundColor, "#000000"),
-        BackgroundImagePath = NullIfEmpty(BackgroundImagePath),
-        BackgroundVideoPath = NullIfEmpty(BackgroundVideoPath),
+        BackgroundImagePath = IsBackgroundImage ? NullIfEmpty(BackgroundImagePath) : null,
+        BackgroundVideoPath = IsBackgroundVideo ? NullIfEmpty(BackgroundVideoPath) : null,
         IsDefault           = IsDefault
     };
 

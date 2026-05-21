@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLBIBLE biblename="Minimal Test">
+  <INFORMATION>
+    <identifier>MIN</identifier>
+    <language>ENG</language>
+  </INFORMATION>
+  <BIBLEBOOK bnumber="1" bname="Genesis" bsname="Gen">
+    <CHAPTER cnumber="1">
+      <VERS vnumber="1">In the beginning God created the heavens and the earth.</VERS>
+      <VERS vnumber="2">Now the earth was formless and empty, darkness was over the surface of the deep.</VERS>
+      <VERS vnumber="3">And God said, Let there be light, and there was light.</VERS>
+    </CHAPTER>
+  </BIBLEBOOK>
+</XMLBIBLE>

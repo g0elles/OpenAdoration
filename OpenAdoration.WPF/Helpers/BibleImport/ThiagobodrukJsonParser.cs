@@ -25,14 +25,26 @@ namespace OpenAdoration.WPF.Helpers.BibleImport;
 /// </summary>
 internal static class ThiagobodrukJsonParser
 {
+    /// <summary>
+    /// Parses from a file path.  Opens and parses the file once.
+    /// Use <see cref="ParseElement"/> when the caller already holds an open
+    /// <see cref="JsonDocument"/> to avoid a second full-file read (P2-2).
+    /// </summary>
     public static BibleImportResult Parse(string filePath)
     {
         using var stream = File.OpenRead(filePath);
         using var doc    = JsonDocument.Parse(stream,
             new JsonDocumentOptions { AllowTrailingCommas = true });
+        return ParseElement(doc.RootElement, filePath);
+    }
 
-        var root = doc.RootElement;
-
+    /// <summary>
+    /// Parses from an already-loaded <see cref="JsonElement"/> root.
+    /// The caller must keep the owning <see cref="JsonDocument"/> alive until
+    /// this method returns.
+    /// </summary>
+    internal static BibleImportResult ParseElement(JsonElement root, string filePath)
+    {
         // The root may be an array directly, or an object with a "books" wrapper
         // whose chapters contain arrays of strings (thiagobodruk variant).
         JsonElement booksArray = root.ValueKind == JsonValueKind.Array
@@ -48,8 +60,8 @@ internal static class ThiagobodrukJsonParser
             Language     = "Unknown"
         };
 
-        var books  = new List<BibleBook>();
-        var verses = new List<BibleVerse>();
+        var books   = new List<BibleBook>();
+        var verses  = new List<BibleVerse>();
         int bookPos = 0;
 
         foreach (var bookEl in booksArray.EnumerateArray())
@@ -60,7 +72,7 @@ internal static class ThiagobodrukJsonParser
             var bookName = GetString(bookEl, "book", "name") ?? $"Book {bookPos}";
             var abbrev   = GetString(bookEl, "abbrev", "abbreviation") ?? bookName[..Math.Min(3, bookName.Length)];
 
-            // Books appear in canonical order → position = canonical number
+            // Books appear in canonical order -- position = canonical number
             int bookNumber = bookPos;
             var testament  = bookNumber >= 40 ? Testament.New : Testament.Old;
 

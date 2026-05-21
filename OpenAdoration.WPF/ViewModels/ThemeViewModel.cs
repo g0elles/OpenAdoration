@@ -76,6 +76,32 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
     }
 
     [RelayCommand]
+    private async Task SetDefaultAsync(Theme theme)
+    {
+        if (IsBusy || theme.IsDefault) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            await _themeService.SetDefaultAsync(theme.Id);
+            _logger.LogInformation("Theme {ThemeId} set as default", theme.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set default theme {ThemeId}", theme.Id);
+            SetError("Failed to set default theme.");
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        await LoadAsync();
+    }
+
+    private static bool CanDeleteTheme(Theme? theme) => theme?.IsDefault == false;
+
+    [RelayCommand(CanExecute = nameof(CanDeleteTheme))]
     private async Task DeleteThemeAsync(Theme theme)
     {
         if (!_dialogService.Confirm(

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
@@ -96,20 +97,63 @@ public sealed class BibleRepository : IBibleRepository
 
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
+        // Phase 1 — FTS5 index lookup: returns matching verse IDs in O(log n + results).
+        var matchedIds = await FtsSearchAsync(context, versionId, term, maxResults, ct);
+
+        if (matchedIds.Count == 0) return [];
+
+        // Phase 2 — PK fetch: one indexed lookup per matched ID.
         return await context.BibleVerses
             .AsNoTracking()
-            .Where(bv => bv.BibleVersionId == versionId && bv.Text.Contains(term))
+            .Where(bv => matchedIds.Contains(bv.Id))
             .OrderBy(bv => bv.Book)
             .ThenBy(bv => bv.Chapter)
             .ThenBy(bv => bv.Verse)
-            .Take(maxResults)
             .ToListAsync(ct);
     }
+
+    private static async Task<List<int>> FtsSearchAsync(
+        AppDbContext context, int versionId, string term, int maxResults, CancellationToken ct)
+    {
+        var conn = (SqliteConnection)context.Database.GetDbConnection();
+
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync(ct);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT rowid
+            FROM   BibleVersesFts
+            WHERE  BibleVersesFts MATCH @term
+              AND  BibleVersionId = @versionId
+            LIMIT  @maxResults
+            """;
+
+        cmd.Parameters.AddWithValue("@term",       EscapeFtsTerm(term));
+        cmd.Parameters.AddWithValue("@versionId",  versionId);
+        cmd.Parameters.AddWithValue("@maxResults", maxResults);
+
+        var ids = new List<int>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+            ids.Add(reader.GetInt32(0));
+
+        return ids;
+    }
+
+    /// <summary>
+    /// Wraps the user's search term in FTS5 phrase-quote syntax so it is treated
+    /// as a literal phrase (equivalent in intent to LIKE '%term%').
+    /// Internal double-quotes are escaped by doubling them per the FTS5 spec.
+    /// </summary>
+    private static string EscapeFtsTerm(string raw) =>
+        "\"" + raw.Trim().Replace("\"", "\"\"") + "\"";
 
     public async Task ImportVersionAsync(
         BibleVersion version,
         IReadOnlyList<BibleBook> books,
         IReadOnlyList<BibleVerse> verses,
+        IProgress<int>? progress = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -125,10 +169,16 @@ public sealed class BibleRepository : IBibleRepository
         if (verses.Count == 0)
             throw new ArgumentException("Bible import must include at least one verse.", nameof(verses));
 
+        // Normalise to uppercase so the unique index (case-sensitive by default in SQLite)
+        // enforces case-insensitive uniqueness at the DB boundary for all new imports (R5).
+        // EF.Functions.Like catches any pre-existing non-normalised rows via LIKE's
+        // ASCII-case-insensitive comparison.
+        version.Abbreviation = version.Abbreviation.Trim().ToUpperInvariant();
+
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
         var alreadyExists = await context.BibleVersions
-            .AnyAsync(bv => bv.Abbreviation == version.Abbreviation, ct);
+            .AnyAsync(bv => EF.Functions.Like(bv.Abbreviation, version.Abbreviation), ct);
 
         if (alreadyExists)
             throw new InvalidOperationException(
@@ -151,6 +201,7 @@ public sealed class BibleRepository : IBibleRepository
             await context.SaveChangesAsync(ct);
 
             // Insert verses in batches to avoid excessive memory pressure
+            int savedVerseCount = 0;
             foreach (var batch in verses.Chunk(VerseBatchSize))
             {
                 ct.ThrowIfCancellationRequested();
@@ -164,7 +215,16 @@ public sealed class BibleRepository : IBibleRepository
                 context.BibleVerses.AddRange(batch);
                 await context.SaveChangesAsync(ct);
                 context.ChangeTracker.Clear(); // Prevent unbounded memory growth
+
+                savedVerseCount += batch.Length;
+                progress?.Report(savedVerseCount);
             }
+
+            // Populate FTS index in one shot from the now-committed verse rows.
+            // Runs inside the same transaction — rolled back cleanly on cancellation.
+            await context.Database.ExecuteSqlAsync(
+                $"INSERT INTO BibleVersesFts(rowid, Text, BibleVersionId) SELECT Id, Text, BibleVersionId FROM BibleVerses WHERE BibleVersionId = {version.Id}",
+                ct);
 
             await transaction.CommitAsync(ct);
         }
@@ -181,6 +241,12 @@ public sealed class BibleRepository : IBibleRepository
 
         var version = await context.BibleVersions.FindAsync([versionId], ct)
             ?? throw new InvalidOperationException($"BibleVersion with ID {versionId} was not found.");
+
+        // Remove FTS rows before EF Core's cascade delete wipes BibleVerses,
+        // because the subquery below relies on BibleVerses still being present.
+        await context.Database.ExecuteSqlAsync(
+            $"DELETE FROM BibleVersesFts WHERE rowid IN (SELECT Id FROM BibleVerses WHERE BibleVersionId = {versionId})",
+            ct);
 
         context.BibleVersions.Remove(version);
         await context.SaveChangesAsync(ct);

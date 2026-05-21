@@ -49,8 +49,8 @@ OpenAdoration.WPF/              WPF application — windows, views, view models
 
 ```bash
 # Clone the repo
-git clone https://github.com/g0elles/OpenAdorationMaui.git
-cd OpenAdorationMaui
+git clone https://github.com/g0elles/OpenAdoration.git
+cd OpenAdoration
 
 # Create the initial database migration (first time only)
 dotnet ef migrations add InitialCreate \
@@ -81,11 +81,11 @@ Active development — MVP in progress.
 | Infrastructure / database | Done |
 | Application services | Done |
 | WPF shell + projection window | Done |
-| Song management | In progress |
-| Bible browser | Planned |
+| Song management | Done |
+| Bible browser | Done |
+| Themes | Done |
 | Service schedule | Planned |
 | Media | Planned |
-| Themes | Planned |
 
 ## Contributing
 

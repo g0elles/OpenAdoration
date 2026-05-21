@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "name": "Test Bible BSS",
+    "shortname": "TST",
+    "module": "test",
+    "lang": "English",
+    "lang_short": "en"
+  },
+  "verses": [
+    { "book_name": "Genesis", "book": 1, "chapter": 1, "verse": 1, "text": "In the beginning God created the heavens and the earth." },
+    { "book_name": "Genesis", "book": 1, "chapter": 1, "verse": 2, "text": "And the earth was formless and void." },
+    { "book_name": "Genesis", "book": 1, "chapter": 1, "verse": 3, "text": "And God said let there be light." }
+  ]
+}

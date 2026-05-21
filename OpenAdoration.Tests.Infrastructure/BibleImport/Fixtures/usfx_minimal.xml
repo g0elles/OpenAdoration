@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<usfx>
+  <languageCode>en</languageCode>
+  <book id="GEN">
+    <h>Genesis</h>
+    <toc level="2">Genesis</toc>
+    <toc level="3">Gen</toc>
+    <c id="1"/>
+    <p>
+      <v id="1"/>In the beginning God created the heavens and the earth.<ve/>
+      <v id="2"/>Now the earth was formless and empty, darkness was over the surface of the deep.<ve/>
+      <v id="3"/>And God said, Let there be light, and there was light.<ve/>
+    </p>
+  </book>
+</usfx>

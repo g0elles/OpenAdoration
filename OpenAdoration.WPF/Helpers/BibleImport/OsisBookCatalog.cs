@@ -88,6 +88,10 @@ internal static class OsisBookCatalog
         ["Rev"]    = new("Revelation",       "Rev",    66, Testament.New),
     };
 
+    // Reverse lookup: canonical book number (1–66) → BookInfo
+    private static readonly Lazy<Dictionary<int, BookInfo>> _byNumber = new(
+        () => _map.Values.ToDictionary(b => b.Number));
+
     /// <summary>Tries to resolve an OSIS/USFX book identifier.</summary>
     public static bool TryGet(string osisId, out BookInfo info)
         => _map.TryGetValue(osisId, out info);
@@ -105,5 +109,20 @@ internal static class OsisBookCatalog
             Abbreviation: osisId.Length <= 5 ? osisId : osisId[..5],
             Number:       fallbackNumber,
             Testament:    fallbackNumber >= 40 ? Testament.New : Testament.Old);
+    }
+
+    /// <summary>
+    /// Returns canonical info for a BibleSuperSearch integer book number (1–66).
+    /// Falls back to a generated entry for any number outside the canonical range.
+    /// </summary>
+    public static BookInfo GetByNumber(int bookNumber)
+    {
+        if (_byNumber.Value.TryGetValue(bookNumber, out var info)) return info;
+
+        return new BookInfo(
+            Name:         $"Book {bookNumber}",
+            Abbreviation: $"Bk{bookNumber}",
+            Number:       bookNumber,
+            Testament:    bookNumber >= 40 ? Testament.New : Testament.Old);
     }
 }

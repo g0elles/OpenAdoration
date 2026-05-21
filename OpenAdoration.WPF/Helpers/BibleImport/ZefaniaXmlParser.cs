@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
@@ -32,9 +33,19 @@ internal static class ZefaniaXmlParser
     private static readonly HashSet<string> SkipTags = new(StringComparer.OrdinalIgnoreCase)
         { "XREF", "NOTE", "GRAM" };
 
+    // Hardened XML reader settings — applied to all Zefania parses
+    private static readonly XmlReaderSettings HardenedSettings = new()
+    {
+        DtdProcessing           = DtdProcessing.Prohibit,   // reject DTD declarations (S1)
+        XmlResolver             = null,                       // no external resource fetches
+        IgnoreComments          = true,
+        MaxCharactersInDocument = 50_000_000                 // ~50 M chars ceiling
+    };
+
     public static BibleImportResult Parse(string filePath)
     {
-        var doc  = XDocument.Load(filePath);
+        using var xmlReader = XmlReader.Create(filePath, HardenedSettings);
+        var doc  = XDocument.Load(xmlReader);
         var root = doc.Root ?? throw new InvalidDataException("Empty XML file.");
 
         // ── Version metadata ──────────────────────────────────────────────────

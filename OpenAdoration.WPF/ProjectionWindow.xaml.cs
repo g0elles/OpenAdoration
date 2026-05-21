@@ -1,3 +1,4 @@
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
@@ -21,9 +22,22 @@ public partial class ProjectionWindow : Window
     // Prevents the operator's X click from destroying this Singleton window.
     private bool _allowClose;
 
-    // Cached theme for the current projection session. Cleared on Stop so
-    // each new session fetches the latest saved theme from the database.
+    // Active theme for the current slide (applied by ApplyTheme / RenderSlide).
     private Theme? _activeTheme;
+
+    // Monotonic counter incremented on every SlideChanged event.
+    // After each async suspension point the handler checks whether a newer event
+    // has already taken over, and abandons the render if so (P1-2: stale slide guard).
+    private int _renderSequence;
+
+    // Per-session theme resolution cache.  Both fields are written from
+    // thread-pool continuations (inside async void OnSlideChanged), so
+    // _themeCache uses ConcurrentDictionary for safe concurrent puts.
+    // _defaultTheme is a reference assignment (atomic on all supported .NET
+    // platforms) -- a benign double-write from two racing events is fine
+    // because both would write the same Theme object fetched from the DB.
+    private Theme?                                   _defaultTheme;
+    private readonly ConcurrentDictionary<int, Theme> _themeCache = new();
 
     public ProjectionWindow(
         IProjectionService   projectionService,
@@ -40,13 +54,13 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // -- Public API ------------------------------------------------------------
 
     /// <summary>
     /// Shows the window if it is not already visible.
     /// On dual-screen: fullscreen on the secondary monitor.
-    /// On single-screen: small floating window (800×450) in the bottom-right corner.
-    /// Safe to call multiple times — no-op if already shown.
+    /// On single-screen: small floating window (800x450) in the bottom-right corner.
+    /// Safe to call multiple times -- no-op if already shown.
     /// </summary>
     public void EnsureShown()
     {
@@ -62,7 +76,7 @@ public partial class ProjectionWindow : Window
         }
         else
         {
-            _logger.LogWarning("No secondary screen — opening projection as a floating window");
+            _logger.LogWarning("No secondary screen -- opening projection as a floating window");
             WindowStyle = WindowStyle.SingleBorderWindow;
             ResizeMode  = ResizeMode.CanResize;
             Title       = "Projection Preview";
@@ -85,20 +99,45 @@ public partial class ProjectionWindow : Window
         Show();
     }
 
-    // ── Projection service callbacks ─────────────────────────────────────────
+    // -- Projection service callbacks -----------------------------------------
 
     private async void OnSlideChanged(object? sender, Slide? slide)
     {
-        // Load the theme on first slide of each session; cached for subsequent slides.
-        if (_activeTheme is null)
-            await LoadThemeAsync();
+        // Each event gets a unique sequence number so stale completions can self-discard.
+        var seq = Interlocked.Increment(ref _renderSequence);
+        try
+        {
+            // Resolve the theme WITHOUT writing _activeTheme yet.
+            // This prevents a slow older event from overwriting _activeTheme that
+            // a faster newer event already resolved (R1 -- theme race fix).
+            var resolvedTheme = await ResolveThemeAsync(slide?.ThemeId);
 
-        Dispatcher.Invoke(() => RenderSlide(slide));
+            // Fast-path abandonment: if we are already stale, skip queuing to Dispatcher.
+            if (seq != _renderSequence) return;
+
+            // Assign _activeTheme and render inside the Dispatcher callback so both
+            // happen atomically on the UI thread.  Re-check seq inside the callback
+            // to guard against events that arrive between the await return and
+            // actual callback execution (R2 -- Dispatcher window guard).
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (seq != _renderSequence) return;
+                _activeTheme = resolvedTheme; // shared write only after freshness is confirmed
+                RenderSlide(slide);
+            });
+        }
+        catch (Exception ex)
+        {
+            // async void exceptions escape ProjectionService's per-handler guard, so
+            // we must catch here to prevent an unhandled exception on the UI sync context.
+            _logger.LogError(ex, "Unhandled exception in projection slide handler -- display may be stale");
+        }
     }
 
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
     {
-        Dispatcher.Invoke(() =>
+        // InvokeAsync -- non-blocking; safe even if called from a background thread (P10)
+        _ = Dispatcher.InvokeAsync(() =>
         {
             if (isProjecting)
                 EnsureShown();
@@ -107,21 +146,57 @@ public partial class ProjectionWindow : Window
         });
     }
 
-    // ── Theme ─────────────────────────────────────────────────────────────────
+    // -- Theme -----------------------------------------------------------------
 
-    private async Task LoadThemeAsync()
+    /// <summary>
+    /// Resolves and returns the <see cref="Theme"/> for <paramref name="themeId"/>,
+    /// or the default theme when <paramref name="themeId"/> is null.
+    /// Results are cached in <see cref="_themeCache"/> / <see cref="_defaultTheme"/> for
+    /// the duration of the projection session.
+    /// Does NOT write <see cref="_activeTheme"/> -- the caller does that inside a
+    /// Dispatcher action after confirming the render sequence is still current (R1).
+    /// </summary>
+    private async Task<Theme?> ResolveThemeAsync(int? themeId)
     {
+        // Cache hit -- return without any shared-state mutation (other than the cache itself).
+        if (themeId.HasValue)
+        {
+            if (_themeCache.TryGetValue(themeId.Value, out var cached))
+                return cached;
+        }
+        else if (_defaultTheme is not null)
+        {
+            return _defaultTheme;
+        }
+
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var themeService = scope.ServiceProvider.GetRequiredService<IThemeService>();
-            _activeTheme = await themeService.GetDefaultAsync();
-            _logger.LogDebug("Loaded theme: {Name}", _activeTheme.Name);
+
+            Theme theme;
+            if (themeId.HasValue)
+            {
+                // Fall back to the default theme if the requested ID no longer exists.
+                theme = await themeService.GetByIdAsync(themeId.Value)
+                        ?? await themeService.GetDefaultAsync();
+                _themeCache[themeId.Value] = theme; // ConcurrentDictionary -- safe from any thread
+            }
+            else
+            {
+                theme = await themeService.GetDefaultAsync();
+                _defaultTheme = theme; // reference assignment -- atomic on all .NET platforms
+            }
+
+            _logger.LogDebug("Resolved theme '{Name}' (ThemeId={ThemeId})",
+                theme.Name, themeId?.ToString() ?? "default");
+            return theme;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load default theme — using hardcoded fallback");
-            _activeTheme = null;
+            _logger.LogError(ex, "Failed to resolve theme (ThemeId={ThemeId}) -- using hardcoded fallback",
+                themeId?.ToString() ?? "default");
+            return null;
         }
     }
 
@@ -140,7 +215,7 @@ public partial class ProjectionWindow : Window
         // Background color
         ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
 
-        // Background video (highest priority — overrides image and color)
+        // Background video (highest priority -- overrides image and color)
         if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundVideoPath)
             && File.Exists(_activeTheme.BackgroundVideoPath))
         {
@@ -155,12 +230,14 @@ public partial class ProjectionWindow : Window
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Could not load theme background video '{Path}'", _activeTheme.BackgroundVideoPath);
+                // Log filename only -- full path stays out of support logs (S3)
+                _logger.LogWarning(ex, "Could not load theme background video '{FileName}'",
+                    Path.GetFileName(_activeTheme.BackgroundVideoPath));
                 StopThemeVideo();
                 ApplyThemeImage();
             }
 
-            return; // video loaded — skip image layer
+            return; // video loaded -- skip image layer
         }
 
         StopThemeVideo();
@@ -176,12 +253,23 @@ public partial class ProjectionWindow : Window
         {
             try
             {
-                ThemeBackgroundImage.Source     = new BitmapImage(new Uri(_activeTheme.BackgroundImagePath, UriKind.Absolute));
+                // Decode at most 1920 px wide -- caps memory use on high-res source images (P5)
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource       = new Uri(_activeTheme.BackgroundImagePath, UriKind.Absolute);
+                bitmap.CacheOption     = BitmapCacheOption.OnLoad;
+                bitmap.DecodePixelWidth = 1920;
+                bitmap.EndInit();
+                bitmap.Freeze(); // safe for cross-thread access
+
+                ThemeBackgroundImage.Source     = bitmap;
                 ThemeBackgroundImage.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Could not load theme background image '{Path}'", _activeTheme.BackgroundImagePath);
+                // Log filename only -- full path stays out of support logs (S3)
+                _logger.LogWarning(ex, "Could not load theme background image '{FileName}'",
+                    Path.GetFileName(_activeTheme.BackgroundImagePath));
                 ThemeBackgroundImage.Source     = null;
                 ThemeBackgroundImage.Visibility = Visibility.Collapsed;
             }
@@ -227,7 +315,7 @@ public partial class ProjectionWindow : Window
         }
     }
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
+    // -- Rendering -------------------------------------------------------------
 
     private void RenderSlide(Slide? slide)
     {
@@ -256,7 +344,7 @@ public partial class ProjectionWindow : Window
                 break;
 
             default:
-                _logger.LogWarning("Unknown SlideType {Type} — clearing display", slide.Type);
+                _logger.LogWarning("Unknown SlideType {Type} -- clearing display", slide.Type);
                 ClearDisplay();
                 break;
         }
@@ -273,20 +361,32 @@ public partial class ProjectionWindow : Window
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            _logger.LogWarning("Media file not found at '{Path}' — showing blank", path);
+            // Filename only in log -- full path not needed for diagnostics (S3)
+            _logger.LogWarning("Media slide file missing ('{FileName}') -- showing blank",
+                string.IsNullOrWhiteSpace(path) ? "(empty)" : Path.GetFileName(path));
             ShowBlankOverlay();
             return;
         }
 
         try
         {
+            // Decode at most 1920 px wide -- caps memory for high-res source images (P5)
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource        = new Uri(path, UriKind.Absolute);
+            bitmap.CacheOption      = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = 1920;
+            bitmap.EndInit();
+            bitmap.Freeze();
+
             HideAllLayers();
-            BackgroundImage.Source     = new BitmapImage(new Uri(path, UriKind.Absolute));
+            BackgroundImage.Source     = bitmap;
             BackgroundImage.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load media file '{Path}'", path);
+            _logger.LogError(ex, "Failed to load media file '{FileName}' -- showing blank",
+                Path.GetFileName(path)); // (S3)
             ShowBlankOverlay();
         }
     }
@@ -300,7 +400,11 @@ public partial class ProjectionWindow : Window
     private void StopAndHide()
     {
         StopThemeVideo();
-        _activeTheme = null; // Force fresh theme load on next projection session
+        // Clear per-session caches so the next session picks up any theme edits
+        // the operator made between services.
+        _activeTheme  = null;
+        _defaultTheme = null;
+        _themeCache.Clear();
         ClearDisplay();
         Hide();
     }
@@ -335,7 +439,7 @@ public partial class ProjectionWindow : Window
         CornerLabel.Visibility  = Visibility.Visible;
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // -- Lifecycle -------------------------------------------------------------
 
     public void CloseForReal()
     {
@@ -348,8 +452,10 @@ public partial class ProjectionWindow : Window
         if (!_allowClose)
         {
             e.Cancel = true;
-            Hide();
-            _logger.LogInformation("Projection window hidden (X clicked)");
+            if (_projectionService.IsProjecting)
+                _projectionService.Stop(); // StopAndHide() called via ProjectionStateChanged event
+            else
+                Hide();
             return;
         }
         base.OnClosing(e);

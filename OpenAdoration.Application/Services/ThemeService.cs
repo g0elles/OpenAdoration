@@ -79,6 +79,21 @@ public sealed class ThemeService : IThemeService
         }
     }
 
+    public async Task SetDefaultAsync(int id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Setting theme {ThemeId} as default", id);
+        try
+        {
+            await _repository.SetDefaultAsync(id, ct);
+            _logger.LogInformation("Theme {ThemeId} is now the default", id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set default theme {ThemeId}", id);
+            throw;
+        }
+    }
+
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         _logger.LogInformation("Deleting theme {ThemeId}", id);
