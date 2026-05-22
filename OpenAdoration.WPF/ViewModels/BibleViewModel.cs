@@ -28,6 +28,9 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private HashSet<int> _restoreVerseNums = new();
     private bool         _hasRestoreTarget;
 
+    // Survives scope disposal so the selected version is restored on every navigation back.
+    private static int? _lastVersionId;
+
     // Suppresses OnVerseItemPropertyChanged during bulk selection updates
     private bool _updatingSelection;
     // Guards against syncing the UI during the initial chapter-projection load
@@ -185,7 +188,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             Versions.Clear();
             foreach (var v in list) Versions.Add(v);
             NotifyVersionState();
-            SelectedVersion = Versions.FirstOrDefault(v => v.Id == SelectedVersion?.Id)
+            var preferredId = SelectedVersion?.Id ?? _lastVersionId;
+            SelectedVersion = Versions.FirstOrDefault(v => v.Id == preferredId)
                            ?? Versions.FirstOrDefault();
         }
         catch (Exception ex)
@@ -204,6 +208,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     partial void OnSelectedVersionChanged(BibleVersion? value)
     {
+        _lastVersionId = value?.Id;
         var bookName  = SelectedBook?.Name;
         var chapter   = SelectedChapter;
         var verseNums = GetCheckedVerseNumbers();
