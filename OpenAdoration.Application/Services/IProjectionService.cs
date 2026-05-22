@@ -22,6 +22,9 @@ public interface IProjectionService
     /// <summary>Fires when projection starts or stops.</summary>
     event EventHandler<bool> ProjectionStateChanged;
 
+    /// <summary>Fires when the active theme may have changed (e.g. theme was edited).</summary>
+    event EventHandler? ThemeChanged;
+
     /// <summary>Loads a set of slides and immediately shows the first one.</summary>
     void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel);
 
@@ -34,4 +37,10 @@ public interface IProjectionService
 
     /// <summary>Stops projection and clears state.</summary>
     void Stop();
+
+    /// <summary>Notifies all subscribers that the active theme has been modified.</summary>
+    void NotifyThemeChanged();
+
+    /// <summary>Re-fires the current slide so subscribers re-render it (e.g., after a theme change).</summary>
+    void RefreshCurrentSlide();
 }

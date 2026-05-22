@@ -52,6 +52,7 @@ public partial class ProjectionWindow : Window
 
         _projectionService.SlideChanged           += OnSlideChanged;
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
+        _projectionService.ThemeChanged           += OnThemeChanged;
     }
 
     // -- Public API ------------------------------------------------------------
@@ -143,6 +144,16 @@ public partial class ProjectionWindow : Window
                 EnsureShown();
             else
                 StopAndHide();
+        });
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            _defaultTheme = null;
+            _themeCache.Clear();
+            _projectionService.RefreshCurrentSlide();
         });
     }
 
@@ -394,7 +405,8 @@ public partial class ProjectionWindow : Window
     private void ShowBlankOverlay()
     {
         HideAllLayers();
-        BlankOverlay.Visibility = Visibility.Visible;
+        // Theme background layers (ThemeBackground/Image/Video) stay visible via ApplyTheme().
+        // Only text and media content is hidden — the operator's theme remains on screen.
     }
 
     private void StopAndHide()
@@ -465,6 +477,7 @@ public partial class ProjectionWindow : Window
     {
         _projectionService.SlideChanged           -= OnSlideChanged;
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
+        _projectionService.ThemeChanged           -= OnThemeChanged;
         base.OnClosed(e);
     }
 }

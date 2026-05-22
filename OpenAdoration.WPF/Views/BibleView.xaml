@@ -90,6 +90,21 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <!-- Highlight the tile for the currently selected chapter -->
+                <DataTrigger Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding Converter="{StaticResource IntEquality}">
+                            <Binding />
+                            <Binding RelativeSource="{RelativeSource AncestorType=UserControl}"
+                                     Path="DataContext.SelectedChapter" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <Setter Property="Background"  Value="{StaticResource AccentBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                    <Setter Property="Foreground"  Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Dark-theme checkbox for verse rows — IsHitTestVisible=False so row click handles selection -->
@@ -323,18 +338,28 @@
                         <ToggleButton Content="🔒 Freeze"
                                       IsChecked="{Binding IsFrozen, Mode=TwoWay}"
                                       Style="{StaticResource AlignToggleButton}"
-                                      Padding="12,6" Margin="0,0,12,0"
+                                      Padding="12,6" Margin="0,0,8,0"
                                       ToolTip="Hold current slide on screen while you navigate to the next" />
+                        <Button Content="◀"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="8,6" Margin="0,0,4,0"
+                                Command="{Binding PreviousVerseCommand}"
+                                ToolTip="Previous verse (projects immediately)" />
+                        <Button Content="▶"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="8,6" Margin="0,0,12,0"
+                                Command="{Binding NextVerseCommand}"
+                                ToolTip="Next verse (projects immediately)" />
                         <Button Content="+ Schedule"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="12,6" Margin="0,0,12,0"
                                 Command="{Binding AddSelectedToScheduleCommand}"
-                                IsEnabled="{Binding HasSlidePreview}" />
+                                IsEnabled="{Binding HasSelection}" />
                         <Button Content="▶▶ Project"
                                 Style="{StaticResource PrimaryButton}"
                                 Padding="16,6"
                                 Command="{Binding ProjectSelectedCommand}"
-                                IsEnabled="{Binding HasSlidePreview}" />
+                                IsEnabled="{Binding HasSelection}" />
                     </StackPanel>
                 </DockPanel>
             </Border>

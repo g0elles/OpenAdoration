@@ -12,6 +12,7 @@ public enum BackgroundType { Color, Image, Video }
 public partial class AddEditThemeViewModel : BaseViewModel
 {
     private readonly IThemeService _themeService;
+    private readonly IProjectionService _projectionService;
     private readonly ILogger<AddEditThemeViewModel> _logger;
 
     private int _themeId; // 0 = new
@@ -79,10 +80,11 @@ public partial class AddEditThemeViewModel : BaseViewModel
     public event EventHandler<Theme>? Saved;
     public event EventHandler?        Cancelled;
 
-    public AddEditThemeViewModel(IThemeService themeService, ILogger<AddEditThemeViewModel> logger)
+    public AddEditThemeViewModel(IThemeService themeService, IProjectionService projectionService, ILogger<AddEditThemeViewModel> logger)
     {
-        _themeService = themeService;
-        _logger       = logger;
+        _themeService      = themeService;
+        _projectionService = projectionService;
+        _logger            = logger;
     }
 
     // ── Initialise ────────────────────────────────────────────────────────────
@@ -155,6 +157,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
                 _logger.LogInformation("Theme updated: {ThemeId}", _themeId);
                 Saved?.Invoke(this, theme);
             }
+            _projectionService.NotifyThemeChanged();
         }
         catch (Exception ex)
         {

@@ -62,6 +62,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     [ObservableProperty] private string _slidePreviewLabel = string.Empty;
     public bool HasSlidePreview => !string.IsNullOrEmpty(SlidePreviewText);
+    public bool HasSelection    => CheckableVerses.Any(i => i.IsChecked);
+    private void NotifyHasSelection() => OnPropertyChanged(nameof(HasSelection));
 
     // ── Mode ──────────────────────────────────────────────────────────────
     [ObservableProperty] private bool _isFrozen;
@@ -260,8 +262,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         foreach (var item in CheckableVerses) UnsubscribeItem(item);
         CheckableVerses.Clear();
         _chapterVerses.Clear();
-        SlidePreviewText  = string.Empty;
-        SlidePreviewLabel = string.Empty;
+        NotifyHasSelection();
         RefreshNavState();
 
         if (value > 0 && SelectedVersion is not null && SelectedBook is not null)
@@ -322,8 +323,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         }
         finally { _updatingSelection = false; }
 
-        RebuildPreview();
-        // Clicking a verse selects it for the preview — use ▶▶ Project to push to screen.
+        NotifyHasSelection();
+        RefreshNavState();
     }
 
     [RelayCommand]
@@ -412,6 +413,21 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         CheckableVerses[last].IsChecked = false;
     }
 
+    private void NavigateToVerse(BibleVerseCheckItem item)
+    {
+        _updatingSelection = true;
+        try
+        {
+            foreach (var i in CheckableVerses) i.IsChecked = false;
+            item.IsChecked = true;
+        }
+        finally { _updatingSelection = false; }
+
+        NotifyHasSelection();
+        RefreshNavState();
+        if (!IsFrozen) ProjectCurrentSelection();
+    }
+
     private bool CanGoPreviousVerse() => FirstCheckedIndex() > 0;
 
     [RelayCommand(CanExecute = nameof(CanGoPreviousVerse))]
@@ -419,7 +435,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         var first  = FirstCheckedIndex();
         var target = first <= 0 ? 0 : first - 1;
-        SelectVerse(CheckableVerses[target]);
+        NavigateToVerse(CheckableVerses[target]);
     }
 
     private bool CanGoNextVerse() =>
@@ -430,7 +446,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         var last   = LastCheckedIndex();
         var target = last < 0 ? 0 : Math.Min(last + 1, CheckableVerses.Count - 1);
-        SelectVerse(CheckableVerses[target]);
+        NavigateToVerse(CheckableVerses[target]);
     }
 
     [RelayCommand]
@@ -550,25 +566,15 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private void OnVerseItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(BibleVerseCheckItem.IsChecked) || _updatingSelection) return;
-        RebuildPreview();
-        if (!IsFrozen && HasSlidePreview) ProjectCurrentSelection();
+        NotifyHasSelection();
+        RefreshNavState();
     }
 
     // ── Preview + projection ──────────────────────────────────────────────
 
     private void RebuildPreview()
     {
-        var selected = CheckableVerses.Where(i => i.IsChecked).Select(i => i.Verse).ToList();
-        if (selected.Count == 0)
-        {
-            SlidePreviewText  = string.Empty;
-            SlidePreviewLabel = string.Empty;
-            RefreshNavState();
-            return;
-        }
-        var slide         = _bibleService.GenerateSlide(selected);
-        SlidePreviewText  = slide.Content;
-        SlidePreviewLabel = slide.Label;
+        NotifyHasSelection();
         RefreshNavState();
     }
 
@@ -580,6 +586,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         {
             var slide = _bibleService.GenerateSlide(selected);
             _projectionService.LoadSlides(new[] { slide }, slide.Label);
+            SlidePreviewText  = slide.Content;
+            SlidePreviewLabel = slide.Label;
         }
         catch (Exception ex) { _logger.LogError(ex, "Failed to project Bible selection"); }
     }
@@ -604,8 +612,9 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         }
         finally { _updatingSelection = false; }
 
-        RebuildPreview();
-        if (!IsFrozen && HasSlidePreview)
+        NotifyHasSelection();
+        RefreshNavState();
+        if (!IsFrozen && CheckableVerses.Any(i => i.IsChecked))
             ProjectCurrentSelection();
     }
 
@@ -638,7 +647,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             SubscribeItem(item);
             CheckableVerses.Add(item);
         }
-        RebuildPreview();
+        NotifyHasSelection();
+        RefreshNavState();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────

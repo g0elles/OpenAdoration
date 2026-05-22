@@ -32,6 +32,7 @@ public sealed class ProjectionService : IProjectionService
 
     public event EventHandler<Slide?>? SlideChanged;
     public event EventHandler<bool>? ProjectionStateChanged;
+    public event EventHandler? ThemeChanged;
 
     public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel)
     {
@@ -145,6 +146,30 @@ public sealed class ProjectionService : IProjectionService
         RaiseProjectionStateChanged(false);
 
         _logger.LogInformation("Projection stopped");
+    }
+
+    public void NotifyThemeChanged()
+    {
+        var handlers = ThemeChanged?.GetInvocationList();
+        if (handlers is null) return;
+
+        foreach (var handler in handlers)
+        {
+            try
+            {
+                ((EventHandler)handler)(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception in ThemeChanged subscriber — projection continues");
+            }
+        }
+    }
+
+    public void RefreshCurrentSlide()
+    {
+        if (!_isProjecting) return;
+        RaiseSlideChanged(CurrentSlide);
     }
 
     private void RaiseSlideChanged(Slide? slide)

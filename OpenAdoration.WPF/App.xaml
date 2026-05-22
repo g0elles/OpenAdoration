@@ -20,6 +20,7 @@
             <converters:FilePathToImageSourceConverter x:Key="FilePathToImage" />
             <converters:ColorToBrushConverter x:Key="ColorToBrush" />
             <converters:TestamentToLabelConverter x:Key="TestamentToLabel" />
+            <converters:IntEqualityConverter x:Key="IntEquality" />
 
             <!-- ViewModel → View mapping for ContentControl navigation -->
             <DataTemplate DataType="{x:Type vm:SongsViewModel}">
