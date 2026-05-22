@@ -1,11 +1,190 @@
 <UserControl x:Class="OpenAdoration.WPF.Views.MediaView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="{StaticResource SurfaceBrush}">
-        <TextBlock Text="Media — coming soon"
-                   Foreground="{StaticResource TextSecondaryBrush}"
-                   FontSize="18"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:MediaViewModel}"
+             Loaded="OnLoaded"
+             Background="{StaticResource SurfaceBrush}">
+
+    <Grid>
+        <!-- Busy overlay -->
+        <Border Panel.ZIndex="20"
+                Background="#AA1E1E2E"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Loading…"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="16"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Border>
+
+        <DockPanel>
+            <!-- Toolbar -->
+            <Border DockPanel.Dock="Top"
+                    Background="{StaticResource PrimaryBrush}"
+                    Padding="20,14">
+                <Grid>
+                    <TextBlock Text="Media Library"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               VerticalAlignment="Center" />
+                    <Button Content="+ Import"
+                            Style="{StaticResource PrimaryButton}"
+                            Padding="16,7"
+                            HorizontalAlignment="Right"
+                            Command="{Binding ImportFileCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- Error bar -->
+            <Border DockPanel.Dock="Top"
+                    Background="{StaticResource DangerBrush}"
+                    Padding="20,10"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="White"
+                           FontSize="13" />
+            </Border>
+
+            <!-- Main content -->
+            <Grid>
+                <!-- Empty state -->
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasMedia, Converter={StaticResource InverseBoolToVis}}">
+                    <TextBlock Text="🖼"
+                               FontSize="56"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,16" />
+                    <TextBlock Text="No media files yet"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="18" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8" />
+                    <TextBlock Text="Import images or videos to use them in presentations."
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,24" />
+                    <Button Content="+ Import Media"
+                            Style="{StaticResource PrimaryButton}"
+                            Padding="20,9"
+                            HorizontalAlignment="Center"
+                            Command="{Binding ImportFileCommand}" />
+                </StackPanel>
+
+                <!-- Media grid -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding MediaFiles}" Margin="12">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Card -->
+                                <Border Width="180" Margin="8"
+                                        CornerRadius="6"
+                                        BorderThickness="1.5"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource IntEquality}">
+                                                            <Binding Path="Id" />
+                                                            <Binding RelativeSource="{RelativeSource AncestorType=UserControl}"
+                                                                     Path="DataContext.SelectedFile.Id"
+                                                                     FallbackValue="0"
+                                                                     TargetNullValue="0" />
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <StackPanel>
+                                        <!-- Thumbnail area -->
+                                        <Border Height="90"
+                                                CornerRadius="6,6,0,0"
+                                                ClipToBounds="True"
+                                                Background="#2A2A3E">
+                                            <Grid>
+                                                <!-- Image thumbnail (null for videos — FilePathToImage returns null) -->
+                                                <Image Source="{Binding FilePath, Converter={StaticResource FilePathToImage}}"
+                                                       Stretch="UniformToFill" />
+
+                                                <!-- Video icon overlay — visible only when Type is Video -->
+                                                <TextBlock Text="🎬"
+                                                           FontSize="32"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Type}" Value="Video">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Filename + actions -->
+                                        <StackPanel Margin="10,8,10,10">
+                                            <TextBlock Text="{Binding FileName}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding FileName}"
+                                                       Margin="0,0,0,8" />
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Button Grid.Column="0"
+                                                        Content="▶ Project"
+                                                        Style="{StaticResource PrimaryButton}"
+                                                        FontSize="11"
+                                                        Padding="0,5"
+                                                        Command="{Binding DataContext.ProjectFileCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+
+                                                <Button Grid.Column="1"
+                                                        Content="✕"
+                                                        Style="{StaticResource IconDangerButton}"
+                                                        Margin="6,0,0,0"
+                                                        ToolTip="Delete"
+                                                        Command="{Binding DataContext.DeleteFileCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </DockPanel>
     </Grid>
 </UserControl>
