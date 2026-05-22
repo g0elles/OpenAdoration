@@ -3,6 +3,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Helpers;
@@ -29,6 +30,10 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     // Suppresses OnVerseItemPropertyChanged during bulk selection updates
     private bool _updatingSelection;
+    // Guards against syncing the UI during the initial chapter-projection load
+    private bool _loadingProjection;
+    // True while the full chapter is loaded as individual slides (enables main-window Prev/Next)
+    private bool _isChapterProjection;
 
     private List<BibleVerse> _chapterVerses = new();
     private List<BibleVerse> _searchResults = new();
@@ -63,8 +68,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private string _slidePreviewLabel = string.Empty;
     public bool HasSlidePreview => !string.IsNullOrEmpty(SlidePreviewText);
     public bool HasSelection    => CheckableVerses.Any(i => i.IsChecked);
-    public bool HasPrevVerse    => FirstCheckedIndex() > 0;
-    public bool HasNextVerse    => CheckableVerses.Count > 0 && LastCheckedIndex() < CheckableVerses.Count - 1;
     private void NotifyHasSelection() => OnPropertyChanged(nameof(HasSelection));
 
     // ── Mode ──────────────────────────────────────────────────────────────
@@ -108,6 +111,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         _importService.ImportCompleted += OnImportCompleted;
         _importService.ImportFailed    += OnImportFailed;
 
+        _projectionService.SlideChanged += OnProjectionSlideChanged;
         BookSuggestions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasBookSuggestions));
     }
 
@@ -139,6 +143,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         _importService.StateChanged    -= OnImportStateChanged;
         _importService.ImportCompleted -= OnImportCompleted;
         _importService.ImportFailed    -= OnImportFailed;
+
+        _projectionService.SlideChanged -= OnProjectionSlideChanged;
 
         foreach (var item in CheckableVerses) UnsubscribeItem(item);
 
@@ -264,6 +270,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         foreach (var item in CheckableVerses) UnsubscribeItem(item);
         CheckableVerses.Clear();
         _chapterVerses.Clear();
+        _isChapterProjection = false;
         NotifyHasSelection();
         RefreshNavState();
 
@@ -415,42 +422,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         CheckableVerses[last].IsChecked = false;
     }
 
-    private void NavigateToVerse(BibleVerseCheckItem item)
-    {
-        _updatingSelection = true;
-        try
-        {
-            foreach (var i in CheckableVerses) i.IsChecked = false;
-            item.IsChecked = true;
-        }
-        finally { _updatingSelection = false; }
-
-        NotifyHasSelection();
-        RefreshNavState();
-        if (!IsFrozen) ProjectCurrentSelection();
-    }
-
-    private bool CanGoPreviousVerse() => FirstCheckedIndex() > 0;
-
-    [RelayCommand(CanExecute = nameof(CanGoPreviousVerse))]
-    private void PreviousVerse()
-    {
-        var first  = FirstCheckedIndex();
-        var target = first <= 0 ? 0 : first - 1;
-        NavigateToVerse(CheckableVerses[target]);
-    }
-
-    private bool CanGoNextVerse() =>
-        CheckableVerses.Count > 0 && LastCheckedIndex() < CheckableVerses.Count - 1;
-
-    [RelayCommand(CanExecute = nameof(CanGoNextVerse))]
-    private void NextVerse()
-    {
-        var last   = LastCheckedIndex();
-        var target = last < 0 ? 0 : Math.Min(last + 1, CheckableVerses.Count - 1);
-        NavigateToVerse(CheckableVerses[target]);
-    }
-
     [RelayCommand]
     private void AddSelectedToSchedule()
     {
@@ -552,6 +523,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         ReferenceInput = string.Empty;
         _searchResults.Clear();
         BookSuggestions.Clear();
+        _isChapterProjection = false;
 
         if (!value)
             RebuildCheckableVersesFromChapter();
@@ -586,12 +558,62 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         if (selected.Count == 0) return;
         try
         {
-            var slide = _bibleService.GenerateSlide(selected);
-            _projectionService.LoadSlides(new[] { slide }, slide.Label);
-            SlidePreviewText  = slide.Content;
-            SlidePreviewLabel = slide.Label;
+            if (!IsKeywordMode && _chapterVerses.Count > 0 && selected.Count == 1)
+            {
+                // Single verse in chapter mode: load the full chapter as individual slides so the
+                // main-window ◀/▶ can navigate verse-by-verse — same as songs navigate section-by-section.
+                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(new[] { v })).ToArray();
+                var label    = $"{selected[0].Book} {selected[0].Chapter}";
+                var startIdx = _chapterVerses.FindIndex(v => v.Verse == selected[0].Verse);
+                if (startIdx < 0) startIdx = 0;
+
+                _loadingProjection   = true;
+                _isChapterProjection = true;
+                try
+                {
+                    _projectionService.LoadSlides(slides, label);
+                    if (startIdx > 0) _projectionService.GoTo(startIdx);
+                    SlidePreviewText  = slides[startIdx].Content;
+                    SlidePreviewLabel = slides[startIdx].Label;
+                }
+                finally { _loadingProjection = false; }
+            }
+            else
+            {
+                // Multi-verse selection or keyword search: project as a single combined slide.
+                _isChapterProjection = false;
+                var slide = _bibleService.GenerateSlide(selected);
+                _projectionService.LoadSlides(new[] { slide }, slide.Label);
+                SlidePreviewText  = slide.Content;
+                SlidePreviewLabel = slide.Label;
+            }
         }
         catch (Exception ex) { _logger.LogError(ex, "Failed to project Bible selection"); }
+    }
+
+    private void OnProjectionSlideChanged(object? sender, Slide? slide)
+    {
+        // Sync the verse list UI when the main-window Prev/Next navigates within the chapter.
+        if (_loadingProjection || !_isChapterProjection || slide is null) return;
+
+        var idx = _projectionService.CurrentSlideIndex;
+        if (idx < 0 || idx >= _chapterVerses.Count) return;
+
+        var targetVerse = _chapterVerses[idx];
+        var item = CheckableVerses.FirstOrDefault(i => i.Verse.Verse == targetVerse.Verse);
+        if (item is null) return;
+
+        _updatingSelection = true;
+        try
+        {
+            foreach (var i in CheckableVerses) i.IsChecked = false;
+            item.IsChecked = true;
+        }
+        finally { _updatingSelection = false; }
+
+        NotifyHasSelection();
+        SlidePreviewText  = slide.Content;
+        SlidePreviewLabel = slide.Label;
     }
 
     // ── Restore helpers ───────────────────────────────────────────────────
@@ -625,13 +647,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private HashSet<int> GetCheckedVerseNumbers()
         => CheckableVerses.Where(i => i.IsChecked).Select(i => i.Verse.Verse).ToHashSet();
 
-    private int FirstCheckedIndex()
-    {
-        for (int i = 0; i < CheckableVerses.Count; i++)
-            if (CheckableVerses[i].IsChecked) return i;
-        return -1;
-    }
-
     private int LastCheckedIndex()
     {
         for (int i = CheckableVerses.Count - 1; i >= 0; i--)
@@ -659,22 +674,17 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         foreach (var item in CheckableVerses) UnsubscribeItem(item);
         Books.Clear(); Chapters.Clear();
-        SelectedBook    = null;
-        SelectedChapter = 0;
+        SelectedBook         = null;
+        SelectedChapter      = 0;
         CheckableVerses.Clear();
         _chapterVerses.Clear();
         _searchResults.Clear();
-        SlidePreviewText  = string.Empty;
-        SlidePreviewLabel = string.Empty;
+        _isChapterProjection = false;
+        SlidePreviewText     = string.Empty;
+        SlidePreviewLabel    = string.Empty;
     }
 
-    private void RefreshNavState()
-    {
-        PreviousVerseCommand.NotifyCanExecuteChanged();
-        NextVerseCommand.NotifyCanExecuteChanged();
-        OnPropertyChanged(nameof(HasPrevVerse));
-        OnPropertyChanged(nameof(HasNextVerse));
-    }
+    private void RefreshNavState() { }
 
     private void NotifyVersionState()
     {

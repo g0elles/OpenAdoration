@@ -338,20 +338,8 @@
                         <ToggleButton Content="🔒 Freeze"
                                       IsChecked="{Binding IsFrozen, Mode=TwoWay}"
                                       Style="{StaticResource AlignToggleButton}"
-                                      Padding="12,6" Margin="0,0,8,0"
+                                      Padding="12,6" Margin="0,0,12,0"
                                       ToolTip="Hold current slide on screen while you navigate to the next" />
-                        <Button Content="◀"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="8,6" Margin="0,0,4,0"
-                                Command="{Binding PreviousVerseCommand}"
-                                Visibility="{Binding HasPrevVerse, Converter={StaticResource BoolToVis}}"
-                                ToolTip="Previous verse (projects immediately)" />
-                        <Button Content="▶"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="8,6" Margin="0,0,12,0"
-                                Command="{Binding NextVerseCommand}"
-                                Visibility="{Binding HasNextVerse, Converter={StaticResource BoolToVis}}"
-                                ToolTip="Next verse (projects immediately)" />
                         <Button Content="+ Schedule"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="12,6" Margin="0,0,12,0"
