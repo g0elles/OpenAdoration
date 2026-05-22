@@ -63,6 +63,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private string _slidePreviewLabel = string.Empty;
     public bool HasSlidePreview => !string.IsNullOrEmpty(SlidePreviewText);
     public bool HasSelection    => CheckableVerses.Any(i => i.IsChecked);
+    public bool HasPrevVerse    => FirstCheckedIndex() > 0;
+    public bool HasNextVerse    => CheckableVerses.Count > 0 && LastCheckedIndex() < CheckableVerses.Count - 1;
     private void NotifyHasSelection() => OnPropertyChanged(nameof(HasSelection));
 
     // ── Mode ──────────────────────────────────────────────────────────────
@@ -670,6 +672,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         PreviousVerseCommand.NotifyCanExecuteChanged();
         NextVerseCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(HasPrevVerse));
+        OnPropertyChanged(nameof(HasNextVerse));
     }
 
     private void NotifyVersionState()
