@@ -18,19 +18,28 @@
                Stretch="UniformToFill"
                Visibility="Collapsed" />
 
-        <!-- Theme background video — optional, sits above image layer, loops automatically -->
+        <!-- Theme background video — ambient loop, always muted -->
         <MediaElement x:Name="ThemeBackgroundVideo"
                       LoadedBehavior="Manual"
                       Stretch="UniformToFill"
                       Visibility="Collapsed"
+                      IsMuted="True"
                       MediaEnded="OnThemeVideoEnded" />
 
-        <!-- Media layer — for SlideType.Media, sits above theme background -->
+        <!-- Media image layer — for SlideType.Media with image files -->
         <Image x:Name="BackgroundImage"
                Stretch="Uniform"
                VerticalAlignment="Center"
                HorizontalAlignment="Center"
                Visibility="Collapsed" />
+
+        <!-- Media video layer — for SlideType.Media with video files, plays with audio -->
+        <MediaElement x:Name="ContentVideo"
+                      LoadedBehavior="Manual"
+                      Stretch="Uniform"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"
+                      Visibility="Collapsed" />
 
         <!-- Text layer — Song lyrics and Bible verses -->
         <Viewbox x:Name="TextViewbox"

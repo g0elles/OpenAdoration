@@ -299,6 +299,13 @@ public partial class ProjectionWindow : Window
         ThemeBackgroundVideo.Visibility = Visibility.Collapsed;
     }
 
+    private void StopContentVideo()
+    {
+        ContentVideo.Stop();
+        ContentVideo.Source     = null;
+        ContentVideo.Visibility = Visibility.Collapsed;
+    }
+
     // Loops the video background by seeking back to the start when it finishes.
     private void OnThemeVideoEnded(object sender, RoutedEventArgs e)
     {
@@ -325,6 +332,10 @@ public partial class ProjectionWindow : Window
             return new SolidColorBrush(System.Windows.Media.Colors.White);
         }
     }
+
+    private static readonly HashSet<string> VideoExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+            { ".mp4", ".avi", ".wmv", ".mov", ".mkv", ".m4v" };
 
     // -- Rendering -------------------------------------------------------------
 
@@ -372,13 +383,37 @@ public partial class ProjectionWindow : Window
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            // Filename only in log -- full path not needed for diagnostics (S3)
             _logger.LogWarning("Media slide file missing ('{FileName}') -- showing blank",
                 string.IsNullOrWhiteSpace(path) ? "(empty)" : Path.GetFileName(path));
             ShowBlankOverlay();
             return;
         }
 
+        if (VideoExtensions.Contains(Path.GetExtension(path)))
+            ShowVideoMedia(path);
+        else
+            ShowImageMedia(path);
+    }
+
+    private void ShowVideoMedia(string path)
+    {
+        try
+        {
+            HideAllLayers();
+            ContentVideo.Source     = new Uri(path, UriKind.Absolute);
+            ContentVideo.Visibility = Visibility.Visible;
+            ContentVideo.Play();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load media video '{FileName}' -- showing blank",
+                Path.GetFileName(path));
+            ShowBlankOverlay();
+        }
+    }
+
+    private void ShowImageMedia(string path)
+    {
         try
         {
             // Decode at most 1920 px wide -- caps memory for high-res source images (P5)
@@ -396,8 +431,8 @@ public partial class ProjectionWindow : Window
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load media file '{FileName}' -- showing blank",
-                Path.GetFileName(path)); // (S3)
+            _logger.LogError(ex, "Failed to load media image '{FileName}' -- showing blank",
+                Path.GetFileName(path));
             ShowBlankOverlay();
         }
     }
@@ -412,6 +447,7 @@ public partial class ProjectionWindow : Window
     private void StopAndHide()
     {
         StopThemeVideo();
+        StopContentVideo();
         // Clear per-session caches so the next session picks up any theme edits
         // the operator made between services.
         _activeTheme  = null;
@@ -434,6 +470,7 @@ public partial class ProjectionWindow : Window
         BlankOverlay.Visibility    = Visibility.Collapsed;
         SlideTextBlock.Text        = string.Empty;
         BackgroundImage.Source     = null;
+        StopContentVideo();
     }
 
     private void UpdateCornerLabel(Slide slide)
