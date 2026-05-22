@@ -717,6 +717,9 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         if (ScheduleItems.Count == 0) { SetError("Add at least one item before starting."); return; }
         ClearError();
+        IsAddingSong  = false;
+        IsAddingBible = false;
+        IsAddingMedia = false;
         IsLiveMode       = true;
         CurrentLiveIndex = 0;
         RefreshLiveHighlight();

@@ -557,6 +557,8 @@
         <Grid Visibility="{Binding IsLiveMode, Converter={StaticResource BoolToVis}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" /> <!-- header -->
+                <RowDefinition Height="Auto" /> <!-- queue toolbar -->
+                <RowDefinition Height="Auto" /> <!-- add panels (collapsible) -->
                 <RowDefinition Height="*"    /> <!-- main area -->
                 <RowDefinition Height="Auto" /> <!-- bottom nav bar -->
             </Grid.RowDefinitions>
@@ -588,8 +590,294 @@
                 </Grid>
             </Border>
 
+            <!-- Queue toolbar: add items on the fly -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Queue:"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="12" VerticalAlignment="Center"
+                               Margin="0,0,12,0" />
+                    <Button Content="+ Song"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAddSongPanelCommand}"
+                            Margin="0,0,8,0" />
+                    <Button Content="+ Bible"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAddBiblePanelCommand}"
+                            Margin="0,0,8,0" />
+                    <Button Content="+ Media"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAddMediaPanelCommand}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Add panels (collapsible) — same pickers as the builder -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource PrimaryBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,12">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAddingSong}"  Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAddingBible}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAddingMedia}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <!-- Song picker -->
+                    <Grid Visibility="{Binding IsAddingSong, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="160" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBox Grid.Row="0"
+                                 Style="{StaticResource FieldTextBox}"
+                                 Tag="Search songs…"
+                                 Text="{Binding SongPickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,8" />
+                        <Border Grid.Row="1"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="4">
+                            <ListBox ItemsSource="{Binding SongPickerResults}"
+                                     SelectedItem="{Binding PickerSelectedSong}"
+                                     DisplayMemberPath="Title"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                        <Setter Property="Padding"    Value="10,6" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected"   Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+                        </Border>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add to Queue"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ConfirmAddSongCommand}"
+                                    IsEnabled="{Binding CanConfirmAddSong}"
+                                    Margin="0,0,8,0" />
+                            <Button Content="Cancel"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding CancelAddSongCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Bible picker -->
+                    <Grid Visibility="{Binding IsAddingBible, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="160" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="90" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="VERSION" Style="{StaticResource FieldLabel}" />
+                                <ComboBox Style="{StaticResource FieldComboBox}"
+                                          ItemsSource="{Binding BibleVersions}"
+                                          SelectedItem="{Binding SelectedAddBibleVersion}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="BOOK" Style="{StaticResource FieldLabel}" />
+                                <ComboBox Style="{StaticResource FieldComboBox}"
+                                          ItemsSource="{Binding AddBibleBooks}"
+                                          SelectedItem="{Binding SelectedAddBibleBook}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="CHAPTER" Style="{StaticResource FieldLabel}" />
+                                <ComboBox Style="{StaticResource FieldComboBox}"
+                                          ItemsSource="{Binding AddBibleChapters}"
+                                          SelectedItem="{Binding SelectedAddBibleChapterNumber}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1"
+                                   Text="{Binding BiblePickerSelectionLabel}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="12" Margin="0,0,0,6" />
+
+                        <Border Grid.Row="2"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="4"
+                                Margin="0,0,0,8" ClipToBounds="True">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding AddBibleVerses}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button HorizontalContentAlignment="Stretch"
+                                                    Padding="0" BorderThickness="0" Cursor="Hand"
+                                                    Command="{Binding DataContext.SelectVerseInPickerCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="VerseBd2"
+                                                                Background="Transparent" Padding="10,5">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="28" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0"
+                                                                           Text="{Binding Number}"
+                                                                           Foreground="{StaticResource AccentBrush}"
+                                                                           FontWeight="SemiBold" FontSize="12"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding Preview}"
+                                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                                           FontSize="12"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           VerticalAlignment="Center" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsInRange}" Value="True">
+                                                                <Setter TargetName="VerseBd2" Property="Background"
+                                                                        Value="{StaticResource AccentBrush}" />
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="VerseBd2" Property="Background"
+                                                                        Value="{StaticResource ActiveNavBrush}" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal">
+                            <Button Content="Add to Queue"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ConfirmAddBibleCommand}"
+                                    IsEnabled="{Binding CanConfirmAddBible}"
+                                    Margin="0,0,8,0" />
+                            <Button Content="Cancel"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding CancelAddBibleCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Media picker -->
+                    <Grid Visibility="{Binding IsAddingMedia, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="160" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="4"
+                                Margin="0,0,0,8">
+                            <ListBox ItemsSource="{Binding MediaPickerFiles}"
+                                     SelectedItem="{Binding PickerSelectedMedia}"
+                                     Background="Transparent" BorderThickness="0"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                        <Setter Property="Padding"    Value="10,7" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected"  Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="🖼" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Type}" Value="Video">
+                                                                <Setter Property="Text" Value="🎬" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding FileName}" FontSize="13" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <Button Content="Add to Queue"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ConfirmAddMediaCommand}"
+                                    IsEnabled="{Binding CanConfirmAddMedia}"
+                                    Margin="0,0,8,0" />
+                            <Button Content="Cancel"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding CancelAddMediaCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
             <!-- Main: schedule list (left) + context (right) -->
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220" />
                     <ColumnDefinition Width="1"  />
@@ -655,7 +943,7 @@
                 <!-- Separator -->
                 <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
 
-                <!-- Right: current item context -->
+                <!-- Right: now projecting -->
                 <Border Grid.Column="2"
                         Background="{StaticResource SurfaceBrush}"
                         Padding="24">
@@ -667,17 +955,19 @@
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontSize="18" FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
-                        <TextBlock Text="Use the main navigation bar (Next / Prev) to move between slides."
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Margin="0,16,0,0" />
+                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,16,0,0">
+                            Use ◀ / ▶ in the main bar to move between slides.
+                            Click any item on the left to jump to it.
+                            Use Queue to add more items on the fly.
+                        </TextBlock>
                     </StackPanel>
                 </Border>
             </Grid>
 
             <!-- Bottom nav bar -->
-            <Border Grid.Row="2"
+            <Border Grid.Row="4"
                     Background="{StaticResource PrimaryBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="0,1,0,0"
