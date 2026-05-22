@@ -195,8 +195,8 @@
                             Margin="0,0,8,0" />
                     <Button Content="+ Add Media"
                             Style="{StaticResource SecondaryButton}"
-                            IsEnabled="False"
-                            ToolTip="Import media first (available in Milestone 4)" />
+                            Command="{Binding ShowAddMediaPanelCommand}"
+                            Margin="0,0,8,0" />
                 </StackPanel>
             </Border>
 
@@ -214,6 +214,9 @@
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsAddingBible}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAddingMedia}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -279,17 +282,20 @@
                 <!-- Add Bible panel -->
                 <Grid Visibility="{Binding IsAddingBible, Converter={StaticResource BoolToVis}}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />  <!-- Version + Book + Chapter -->
+                        <RowDefinition Height="Auto" />  <!-- Selection hint -->
+                        <RowDefinition Height="160" />   <!-- Verse list -->
+                        <RowDefinition Height="Auto" />  <!-- Buttons -->
                     </Grid.RowDefinitions>
 
-                    <!-- Row 0: Version + Book -->
+                    <!-- Row 0: Version, Book, Chapter in one row -->
                     <Grid Grid.Row="0" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="VERSION" Style="{StaticResource FieldLabel}" />
@@ -315,52 +321,160 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                         </StackPanel>
-                    </Grid>
-
-                    <!-- Row 1: Chapter + Verses -->
-                    <Grid Grid.Row="1" Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="24" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="90" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
+                        <StackPanel Grid.Column="4">
                             <TextBlock Text="CHAPTER" Style="{StaticResource FieldLabel}" />
                             <ComboBox Style="{StaticResource FieldComboBox}"
                                       ItemsSource="{Binding AddBibleChapters}"
                                       SelectedItem="{Binding SelectedAddBibleChapterNumber}" />
                         </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="VERSE START" Style="{StaticResource FieldLabel}" />
-                            <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="1"
-                                     Text="{Binding BibleAddVerseStart, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                        <TextBlock Grid.Column="4" Text="–"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   FontSize="16"
-                                   VerticalAlignment="Bottom" Margin="0,0,0,8" />
-                        <StackPanel Grid.Column="6">
-                            <TextBlock Text="VERSE END" Style="{StaticResource FieldLabel}" />
-                            <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="(same)"
-                                     Text="{Binding BibleAddVerseEnd, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
                     </Grid>
 
-                    <!-- Row 2: Buttons -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal">
+                    <!-- Row 1: Selection hint / label -->
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding BiblePickerSelectionLabel}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="12"
+                               Margin="0,0,0,6" />
+
+                    <!-- Row 2: Verse list -->
+                    <Border Grid.Row="2"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Margin="0,0,0,8"
+                            ClipToBounds="True">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding AddBibleVerses}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button HorizontalContentAlignment="Stretch"
+                                                Padding="0" BorderThickness="0" Cursor="Hand"
+                                                Command="{Binding DataContext.SelectVerseInPickerCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="VerseBd"
+                                                            Background="Transparent"
+                                                            Padding="10,5">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="28" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="{Binding Number}"
+                                                                       Foreground="{StaticResource AccentBrush}"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="12"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Preview}"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                                       FontSize="12"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsInRange}" Value="True">
+                                                            <Setter TargetName="VerseBd" Property="Background"
+                                                                    Value="{StaticResource AccentBrush}" />
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="VerseBd" Property="Background"
+                                                                    Value="{StaticResource ActiveNavBrush}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Row 3: Buttons -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal">
                         <Button Content="Add"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding ConfirmAddBibleCommand}"
+                                IsEnabled="{Binding CanConfirmAddBible}"
                                 Margin="0,0,8,0" />
                         <Button Content="Cancel"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelAddBibleCommand}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Add Media panel -->
+                <Grid Visibility="{Binding IsAddingMedia, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="160" />  <!-- Media file list -->
+                        <RowDefinition Height="Auto" /> <!-- Buttons -->
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Margin="0,0,0,8">
+                        <ListBox ItemsSource="{Binding MediaPickerFiles}"
+                                 SelectedItem="{Binding PickerSelectedMedia}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                    <Setter Property="Padding"    Value="10,7" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="🖼" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Type}" Value="Video">
+                                                            <Setter Property="Text" Value="🎬" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding FileName}"
+                                                   FontSize="13"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal">
+                        <Button Content="Add Selected"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ConfirmAddMediaCommand}"
+                                IsEnabled="{Binding CanConfirmAddMedia}"
+                                Margin="0,0,8,0" />
+                        <Button Content="Cancel"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelAddMediaCommand}" />
                     </StackPanel>
                 </Grid>
 

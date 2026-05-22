@@ -58,8 +58,31 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private BibleBook? _selectedAddBibleBook;
     [ObservableProperty] private ObservableCollection<int> _addBibleChapters = [];
     [ObservableProperty] private int    _selectedAddBibleChapterNumber;
-    [ObservableProperty] private string _bibleAddVerseStart = string.Empty;
-    [ObservableProperty] private string _bibleAddVerseEnd   = string.Empty;
+    [ObservableProperty] private ObservableCollection<BibleVersePickerItem> _addBibleVerses = [];
+
+    private int _versePickerAnchor;
+    private int _versePickerEnd;
+
+    public bool   CanConfirmAddBible       => _versePickerAnchor > 0;
+    public string BiblePickerSelectionLabel
+    {
+        get
+        {
+            if (_versePickerAnchor == 0) return "Click a verse to select it, then click another to extend the range.";
+            var lo = Math.Min(_versePickerAnchor, _versePickerEnd);
+            var hi = Math.Max(_versePickerAnchor, _versePickerEnd);
+            return lo == hi ? $"Selected: verse {lo}" : $"Selected: verses {lo} – {hi}";
+        }
+    }
+
+    // Add Media panel
+    [ObservableProperty] private bool _isAddingMedia;
+    [ObservableProperty] private ObservableCollection<MediaFile> _mediaPickerFiles = [];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfirmAddMedia))]
+    private MediaFile? _pickerSelectedMedia;
+
+    public bool CanConfirmAddMedia => PickerSelectedMedia is not null;
 
     // ── Live mode ─────────────────────────────────────────────────────────────
 
@@ -247,6 +270,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         SelectedItem     = null;
         IsAddingSong     = false;
         IsAddingBible    = false;
+        IsAddingMedia    = false;
     }
 
     // ── Add Song ──────────────────────────────────────────────────────────────
@@ -255,6 +279,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private async Task ShowAddSongPanelAsync()
     {
         IsAddingBible      = false;
+        IsAddingMedia      = false;
         SongPickerSearchTerm = string.Empty;
         PickerSelectedSong   = null;
         IsAddingSong         = true;
@@ -325,13 +350,16 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private async Task ShowAddBiblePanelAsync()
     {
         IsAddingSong                  = false;
-        BibleAddVerseStart            = string.Empty;
-        BibleAddVerseEnd              = string.Empty;
+        IsAddingMedia                 = false;
         SelectedAddBibleBook          = null;
         SelectedAddBibleVersion       = null;
         AddBibleBooks                 = [];
         AddBibleChapters.Clear();
         SelectedAddBibleChapterNumber = 0;
+        _versePickerAnchor            = 0;
+        _versePickerEnd               = 0;
+        AddBibleVerses.Clear();
+        RefreshVersePickerHighlight();
         IsAddingBible                 = true;
 
         try
@@ -353,6 +381,10 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         AddBibleChapters.Clear();
         SelectedAddBibleChapterNumber = 0;
+        _versePickerAnchor = 0;
+        _versePickerEnd    = 0;
+        AddBibleVerses.Clear();
+        RefreshVersePickerHighlight();
         if (value is null) return;
 
         for (int i = 1; i <= value.ChapterCount; i++)
@@ -362,12 +394,38 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             SelectedAddBibleChapterNumber = 1;
     }
 
+    async partial void OnSelectedAddBibleChapterNumberChanged(int value)
+    {
+        _versePickerAnchor = 0;
+        _versePickerEnd    = 0;
+        AddBibleVerses.Clear();
+        RefreshVersePickerHighlight();
+
+        if (value <= 0 || SelectedAddBibleVersion is null || SelectedAddBibleBook is null) return;
+
+        try
+        {
+            var verses = await _bibleService.GetVersesAsync(
+                SelectedAddBibleVersion.Id, SelectedAddBibleBook.Name, value);
+            AddBibleVerses = new ObservableCollection<BibleVersePickerItem>(
+                verses.Select(v => new BibleVersePickerItem { Verse = v }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load verses for picker chapter {Chapter}", value);
+        }
+    }
+
     async partial void OnSelectedAddBibleVersionChanged(BibleVersion? value)
     {
         AddBibleBooks        = [];
         SelectedAddBibleBook = null;
         AddBibleChapters.Clear();
         SelectedAddBibleChapterNumber = 0;
+        _versePickerAnchor = 0;
+        _versePickerEnd    = 0;
+        AddBibleVerses.Clear();
+        RefreshVersePickerHighlight();
         if (value is null) return;
 
         try
@@ -386,7 +444,94 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void CancelAddBible()
     {
-        IsAddingBible = false;
+        IsAddingBible      = false;
+        _versePickerAnchor = 0;
+        _versePickerEnd    = 0;
+        RefreshVersePickerHighlight();
+    }
+
+    [RelayCommand]
+    private void SelectVerseInPicker(BibleVersePickerItem item)
+    {
+        if (_versePickerAnchor == 0 || item.Number < _versePickerAnchor)
+        {
+            // New anchor — start fresh selection
+            _versePickerAnchor = item.Number;
+            _versePickerEnd    = item.Number;
+        }
+        else if (item.Number == _versePickerAnchor && _versePickerAnchor == _versePickerEnd)
+        {
+            // Clicking the single selected verse deselects
+            _versePickerAnchor = 0;
+            _versePickerEnd    = 0;
+        }
+        else
+        {
+            // Extend range end
+            _versePickerEnd = item.Number;
+        }
+        RefreshVersePickerHighlight();
+    }
+
+    private void RefreshVersePickerHighlight()
+    {
+        var lo = Math.Min(_versePickerAnchor, _versePickerEnd);
+        var hi = Math.Max(_versePickerAnchor, _versePickerEnd);
+        foreach (var v in AddBibleVerses)
+            v.IsInRange = _versePickerAnchor > 0 && v.Number >= lo && v.Number <= hi;
+        OnPropertyChanged(nameof(BiblePickerSelectionLabel));
+        OnPropertyChanged(nameof(CanConfirmAddBible));
+    }
+
+    // ── Add Media ─────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task ShowAddMediaPanelAsync()
+    {
+        IsAddingSong        = false;
+        IsAddingBible       = false;
+        PickerSelectedMedia = null;
+        MediaPickerFiles    = [];
+        IsAddingMedia       = true;
+
+        try
+        {
+            var files = await _mediaService.GetAllAsync();
+            MediaPickerFiles = new ObservableCollection<MediaFile>(files);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load media files for picker");
+            SetError("Could not load media files.");
+            IsAddingMedia = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelAddMedia()
+    {
+        IsAddingMedia       = false;
+        PickerSelectedMedia = null;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmAddMediaAsync()
+    {
+        if (PickerSelectedMedia is null || OpenedService is null) return;
+
+        try
+        {
+            await _serviceService.AddMediaItemAsync(OpenedService.Id, PickerSelectedMedia.Id);
+            _logger.LogInformation("Added media {MediaId} to service {ServiceId}",
+                PickerSelectedMedia.Id, OpenedService.Id);
+            IsAddingMedia = false;
+            await RefreshScheduleItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add media item to service");
+            SetError("Could not add media file.");
+        }
     }
 
     [RelayCommand]
@@ -399,25 +544,12 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         }
 
         var chapter = SelectedAddBibleChapterNumber;
-        if (chapter < 1)
-        {
-            SetError("Select a chapter.");
-            return;
-        }
+        if (chapter < 1) { SetError("Select a chapter."); return; }
 
-        if (!int.TryParse(BibleAddVerseStart, out var verseStart) || verseStart < 1)
-        {
-            SetError("Enter a valid verse start number.");
-            return;
-        }
+        if (_versePickerAnchor <= 0) { SetError("Select at least one verse."); return; }
 
-        // Verse end defaults to verse start if empty
-        var verseEndText = string.IsNullOrWhiteSpace(BibleAddVerseEnd) ? BibleAddVerseStart : BibleAddVerseEnd;
-        if (!int.TryParse(verseEndText, out var verseEnd) || verseEnd < verseStart)
-        {
-            SetError("Verse end must be ≥ verse start.");
-            return;
-        }
+        var verseStart = Math.Min(_versePickerAnchor, _versePickerEnd);
+        var verseEnd   = Math.Max(_versePickerAnchor, _versePickerEnd);
 
         ClearError();
         try
