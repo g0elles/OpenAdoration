@@ -440,8 +440,7 @@ public partial class ProjectionWindow : Window
     private void ShowBlankOverlay()
     {
         HideAllLayers();
-        // Theme background layers (ThemeBackground/Image/Video) stay visible via ApplyTheme().
-        // Only text and media content is hidden — the operator's theme remains on screen.
+        BlankOverlay.Visibility = Visibility.Visible;
     }
 
     private void StopAndHide()

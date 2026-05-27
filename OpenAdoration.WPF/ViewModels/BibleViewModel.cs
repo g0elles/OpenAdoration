@@ -242,7 +242,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         try
         {
-            var list = await _bibleService.GetBooksAsync(versionId);
+            var list = await _bibleService.GetBooksAsync(versionId, ct);
             if (ct.IsCancellationRequested) return;
             Books.Clear();
             foreach (var b in list) Books.Add(b);
@@ -290,7 +290,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         try
         {
-            var list = await _bibleService.GetVersesAsync(versionId, book, chapter);
+            var list = await _bibleService.GetVersesAsync(versionId, book, chapter, ct);
             if (ct.IsCancellationRequested) return;
 
             _chapterVerses = list.ToList();

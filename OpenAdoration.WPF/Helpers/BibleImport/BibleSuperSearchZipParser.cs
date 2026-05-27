@@ -18,9 +18,39 @@ namespace OpenAdoration.WPF.Helpers.BibleImport;
 /// </summary>
 internal static class BibleSuperSearchZipParser
 {
+    private const int  MaxEntries              = 20;
+    private const long MaxInfoJsonBytes        = 1_000_000;           // 1 MB for metadata
+    private const long MaxVersesTxtBytes       = 200L * 1024 * 1024;  // 200 MB per-entry uncompressed
+    private const long MaxTotalUncompressed    = 250L * 1024 * 1024;  // 250 MB combined across all entries
+    private const int  MaxVerseLines           = 200_000;
+    private const int  MaxLineLength           = 5_000;               // characters per verse row
+    private const int  MaxVerseTextLength      = 2_000;               // characters for verse text column
+
     public static BibleImportResult Parse(string filePath)
     {
         using var zip = ZipFile.OpenRead(filePath);
+
+        if (zip.Entries.Count > MaxEntries)
+            throw new InvalidDataException(
+                $"ZIP contains {zip.Entries.Count} entries; maximum is {MaxEntries}.");
+
+        foreach (var entry in zip.Entries)
+        {
+            if (entry.Length > MaxVersesTxtBytes)
+                throw new InvalidDataException(
+                    $"ZIP entry '{entry.Name}' uncompressed size ({entry.Length / 1_048_576} MB) " +
+                    $"exceeds limit ({MaxVersesTxtBytes / 1_048_576} MB).");
+
+            if (entry.CompressedLength > 0 && entry.Length > entry.CompressedLength * 50)
+                throw new InvalidDataException(
+                    $"ZIP entry '{entry.Name}' has a suspiciously high compression ratio " +
+                    $"({entry.Length / Math.Max(1, entry.CompressedLength)}:1); aborting.");
+        }
+
+        var totalUncompressed = zip.Entries.Sum(e => e.Length);
+        if (totalUncompressed > MaxTotalUncompressed)
+            throw new InvalidDataException(
+                $"ZIP total uncompressed size ({totalUncompressed / 1_048_576} MB) exceeds limit ({MaxTotalUncompressed / 1_048_576} MB).");
 
         var (version, delim, bookCol, chapCol, verseCol, textCol) = ReadInfoJson(zip, filePath);
 
@@ -59,8 +89,12 @@ internal static class BibleSuperSearchZipParser
         var entry = zip.GetEntry("info.json")
             ?? throw new InvalidDataException("BibleSuperSearch ZIP is missing info.json.");
 
+        if (entry.Length > MaxInfoJsonBytes)
+            throw new InvalidDataException(
+                $"ZIP info.json uncompressed size ({entry.Length:N0} bytes) exceeds limit ({MaxInfoJsonBytes:N0} bytes).");
+
         using var stream = entry.Open();
-        using var doc    = JsonDocument.Parse(stream);
+        using var doc    = JsonDocument.Parse(stream, new JsonDocumentOptions { MaxDepth = 16 });
         var root = doc.RootElement;
 
         var version = new BibleVersion
@@ -112,10 +146,19 @@ internal static class BibleSuperSearchZipParser
         using var stream = entry.Open();
         using var reader = new StreamReader(stream, Encoding.UTF8);
 
+        int lineCount = 0;
         string? line;
         while ((line = reader.ReadLine()) != null)
         {
+            if (++lineCount > MaxVerseLines)
+                throw new InvalidDataException(
+                    $"ZIP verses file exceeds maximum line count ({MaxVerseLines:N0}).");
+
             if (line.Length == 0 || line[0] == '#') continue;
+
+            if (line.Length > MaxLineLength)
+                throw new InvalidDataException(
+                    $"ZIP verses file line {lineCount} exceeds maximum length ({MaxLineLength:N0} characters).");
 
             var cols = line.Split(delim);
             if (cols.Length < minCols) continue;
@@ -124,7 +167,11 @@ internal static class BibleSuperSearchZipParser
             if (!int.TryParse(cols[chapCol],  out int chapter)) continue;
             if (!int.TryParse(cols[verseCol], out int verse))   continue;
 
-            var text     = cols[textCol].Trim();
+            var text = cols[textCol].Trim();
+            if (text.Length > MaxVerseTextLength)
+                throw new InvalidDataException(
+                    $"ZIP verses file line {lineCount} verse text exceeds maximum length ({MaxVerseTextLength:N0} characters).");
+
             var bookInfo = OsisBookCatalog.GetByNumber(bookNum);
 
             versesList.Add(new BibleVerse

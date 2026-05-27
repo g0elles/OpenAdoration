@@ -20,9 +20,18 @@ public partial class MediaViewModel : BaseViewModel
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "OpenAdoration", "Media");
 
+    private static readonly HashSet<string> ImageExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+            { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp" };
+
     private static readonly HashSet<string> VideoExtensions =
         new(StringComparer.OrdinalIgnoreCase)
             { ".mp4", ".avi", ".wmv", ".mov", ".mkv", ".m4v" };
+
+    private static readonly HashSet<string> AllowedExtensions =
+        new(ImageExtensions.Concat(VideoExtensions), StringComparer.OrdinalIgnoreCase);
+
+    private const long MaxMediaFileSizeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
 
     [ObservableProperty] private ObservableCollection<MediaFile> _mediaFiles = new();
     [ObservableProperty] private MediaFile? _selectedFile;
@@ -93,10 +102,25 @@ public partial class MediaViewModel : BaseViewModel
 
             foreach (var sourcePath in dlg.FileNames)
             {
+                var ext = Path.GetExtension(sourcePath);
+                if (!AllowedExtensions.Contains(ext))
+                {
+                    _logger.LogWarning("Skipping '{FileName}' — unsupported extension '{Ext}'",
+                        Path.GetFileName(sourcePath), ext);
+                    continue;
+                }
+
+                var fileSize = new FileInfo(sourcePath).Length;
+                if (fileSize > MaxMediaFileSizeBytes)
+                {
+                    _logger.LogWarning("Skipping '{FileName}' — size {SizeMb} MB exceeds limit",
+                        Path.GetFileName(sourcePath), fileSize / 1_048_576);
+                    continue;
+                }
+
                 var destPath  = GetUniqueDestinationPath(sourcePath);
                 File.Copy(sourcePath, destPath);
 
-                var ext       = Path.GetExtension(sourcePath);
                 var mediaType = VideoExtensions.Contains(ext) ? MediaType.Video : MediaType.Image;
 
                 await _mediaService.AddAsync(new MediaFile
@@ -129,10 +153,19 @@ public partial class MediaViewModel : BaseViewModel
         {
             await _mediaService.DeleteAsync(file.Id);
 
-            try { File.Delete(file.FilePath); }
-            catch (Exception ex)
+            var resolvedPath = Path.GetFullPath(file.FilePath);
+            var storeRoot    = Path.GetFullPath(MediaStore) + Path.DirectorySeparatorChar;
+            if (resolvedPath.StartsWith(storeRoot, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning(ex, "Could not remove media file from disk: {FileName}", file.FileName);
+                try { File.Delete(resolvedPath); }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not remove media file from disk: {FileName}", file.FileName);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Skipping disk delete — path outside media store: {FileName}", file.FileName);
             }
 
             if (SelectedFile?.Id == file.Id) SelectedFile = null;

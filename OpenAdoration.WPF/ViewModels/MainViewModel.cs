@@ -15,6 +15,9 @@ public partial class MainViewModel : BaseViewModel, IDisposable
 
     // One scope per page — disposes scoped services when the user navigates away
     private IServiceScope? _currentScope;
+    // Kept alive while the user browses other pages during a live service
+    private IServiceScope?              _liveServiceScope;
+    private ServiceScheduleViewModel?  _liveServiceVm;
 
     [ObservableProperty]
     private BaseViewModel? _currentView;
@@ -83,9 +86,36 @@ public partial class MainViewModel : BaseViewModel, IDisposable
 
     private void NavigateTo<T>() where T : BaseViewModel
     {
-        var oldScope  = _currentScope;
-        _currentScope = _services.CreateScope();
-        CurrentView   = _currentScope.ServiceProvider.GetRequiredService<T>();
+        if (CurrentView is T)
+            return;
+
+        var oldScope = _currentScope;
+
+        // If leaving a live service, park the VM + scope instead of destroying them.
+        // ServiceScheduleViewModel is Transient so we must store the instance directly —
+        // calling GetRequiredService again on the same scope creates a new VM.
+        if (CurrentView is ServiceScheduleViewModel { IsLiveMode: true } liveVm)
+        {
+            _liveServiceScope = oldScope;
+            _liveServiceVm    = liveVm;
+            oldScope          = null;
+        }
+
+        // When returning to the service schedule reuse the parked VM and its scope
+        if (typeof(T) == typeof(ServiceScheduleViewModel) && _liveServiceVm != null)
+        {
+            _currentScope     = _liveServiceScope!;
+            _liveServiceScope = null;
+            var vm            = _liveServiceVm;
+            _liveServiceVm    = null;
+            CurrentView       = vm;
+        }
+        else
+        {
+            _currentScope = _services.CreateScope();
+            CurrentView   = _currentScope.ServiceProvider.GetRequiredService<T>();
+        }
+
         oldScope?.Dispose();
     }
 
@@ -120,6 +150,11 @@ public partial class MainViewModel : BaseViewModel, IDisposable
                 CurrentSlideLabel = string.Empty;
                 PreviewText       = string.Empty;
                 PreviewIsBlank    = false;
+
+                // Projection stopped while the live scope was parked — no longer needed
+                _liveServiceScope?.Dispose();
+                _liveServiceScope = null;
+                _liveServiceVm    = null;
             }
         });
     }
@@ -154,6 +189,9 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.SlideChanged           -= OnSlideChanged;
         _currentScope?.Dispose();
-        _currentScope = null;
+        _liveServiceScope?.Dispose();
+        _currentScope     = null;
+        _liveServiceScope = null;
+        _liveServiceVm    = null;
     }
 }

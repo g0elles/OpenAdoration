@@ -1,7 +1,7 @@
 # OpenAdoration — Architecture & Developer Reference
 
-> Last updated: 2026-05-19  
-> Status: Active development — Songs, Bible, and Themes complete; Service Schedule and Media planned
+> Last updated: 2026-05-21
+> Status: Pre-beta — all core features implemented; keyboard shortcuts and packaging remain
 
 ---
 
@@ -33,7 +33,7 @@ The app is **fully offline**. There are no network calls, no accounts, no cloud 
 │  Views/           UserControls, one per feature            │
 │  ViewModels/      ObservableObject + RelayCommand (MVVM)   │
 │  Converters/      IValueConverter implementations          │
-│  Helpers/         ScreenHelper (multi-monitor)             │
+│  Helpers/         ScreenHelper, BibleImport parsers        │
 │  Styles/          Colors.xaml, Base.xaml                   │
 └─────────────────────┬───────────────────────────────────────┘
                       │  interfaces only (no concrete refs)
@@ -81,7 +81,6 @@ Infrastructure  →  Application  →  Domain
 - **WPF is the composition root** — it references both Application (for service interfaces) and Infrastructure (solely to call `AddInfrastructure()` in `App.xaml.cs`). This is the only permitted Infrastructure reference from WPF; all other WPF code must go through Application interfaces.
 - Infrastructure references Application but never WPF.
 - Domain references nothing — it is the innermost ring.
-- All cross-layer business logic goes through the interfaces defined in Application.
 
 ### 2.3 Key Design Decisions
 
@@ -93,6 +92,9 @@ Infrastructure  →  Application  →  Domain
 | Navigation | ContentControl + DataTemplates | No navigation framework needed; ViewModel-first |
 | DbContext lifetime | `IDbContextFactory` (one ctx per operation) | Avoids long-lived tracking bugs, safe in async code |
 | Projection | Singleton `ProjectionService` | Owns state machine for the app's lifetime |
+| Theme resolution | `IServiceScopeFactory` + per-session cache | Scoped service resolved in async context without leaking |
+| Bible FTS | SQLite FTS5 virtual table | Fast full-text search over 31k+ verses without a server |
+| Media storage | Copy-on-import to `%LocalAppData%\OpenAdoration\Media\` | Files survive source deletion; path in DB is always valid |
 | Logging | Serilog (rolling daily file + debug sink) | Structured, queryable, non-blocking |
 | Multi-monitor | `System.Windows.Forms.Screen` | Only API that reliably enumerates physical screens in WPF |
 
@@ -126,7 +128,9 @@ Operator clicks "🎵 Songs" sidebar button
   │
   ▼
 MainViewModel.NavigateToSongsCommand
+  │  Creates new IServiceScope
   │  GetRequiredService<SongsViewModel>()   ← Transient: new VM each time
+  │  Disposes previous scope
   │
   ▼
 MainViewModel.CurrentView = SongsViewModel
@@ -143,7 +147,7 @@ SongsView.OnLoaded()
 SongsViewModel.LoadAsync()
   │  ISongService.GetAllAsync()
   │  ISongRepository.GetAllAsync()
-  │  AppDbContext  (created, queried, disposed)
+  │  AppDbContext (created, queried, disposed)
   │
   ▼
 Songs ObservableCollection populated → UI renders list
@@ -156,52 +160,125 @@ Operator clicks "▶ Project" on a song row
   │
   ▼
 SongsViewModel.ProjectSongCommand(song)
-  │  ISongService.GenerateSlides(song)
-  │    → one Slide per ordered SongSection
+  │  ISongService.GenerateSlides(song)  → one Slide per ordered SongSection
   │
   ▼
 IProjectionService.LoadSlides(slides, contextLabel)   ← Singleton
   │  _isProjecting = true
   │  _currentIndex = 0
-  │  RaiseSlideChanged(slides[0])   ← catches subscriber exceptions
+  │  RaiseSlideChanged(slides[0])      ← subscriber exceptions caught+logged
   │  RaiseProjectionStateChanged(true)
   │
   ├──▶ MainViewModel.OnSlideChanged()
-  │      CurrentSlideLabel = slide.Label
-  │      (updates "PROJECTING" bar in MainWindow)
+  │      Updates "PROJECTING" bar in MainWindow
   │
-  └──▶ ProjectionWindow.OnSlideChanged()
-         Dispatcher.Invoke(() => RenderSlide(slide))
-           │
-           ├─ SlideType.Song/Bible → ShowText(slide.Content)
-           ├─ SlideType.Media      → ShowMedia(slide.MediaPath)
-           └─ SlideType.Blank      → ShowBlankOverlay()
+  └──▶ ProjectionWindow.OnSlideChanged()    ← async void
+         seq = Interlocked.Increment(ref _renderSequence)
+         resolvedTheme = await ResolveThemeAsync(slide.ThemeId)
+         if (seq != _renderSequence) return;   ← stale-slide guard
+         Dispatcher.InvokeAsync(() =>
+           _activeTheme = resolvedTheme
+           RenderSlide(slide))
+             │
+             ├─ SlideType.Song/Bible → ShowText()   → TextViewbox visible
+             ├─ SlideType.Media (image) → ShowImageMedia() → BackgroundImage visible
+             ├─ SlideType.Media (video) → ShowVideoMedia() → ContentVideo.Play()
+             └─ SlideType.Blank → ShowBlankOverlay() → HideAllLayers() only
+                                                        (theme bg stays visible)
 ```
 
-### 3.4 Song Save Flow
+### 3.4 Theme Resolution (per slide)
+
+```
+ProjectionWindow.ResolveThemeAsync(themeId?)
+  │
+  ├─ themeId has value → check _themeCache[themeId]
+  │    hit  → return cached Theme (no DB call)
+  │    miss → CreateAsyncScope() → IThemeService.GetByIdAsync(themeId)
+  │             fallback to GetDefaultAsync() if not found
+  │             store in _themeCache[themeId]
+  │
+  └─ themeId null → check _defaultTheme
+       not null → return _defaultTheme
+       null     → CreateAsyncScope() → IThemeService.GetDefaultAsync()
+                   store in _defaultTheme (reference assignment — atomic)
+
+Cache invalidation: OnThemeChanged() clears both _defaultTheme and _themeCache,
+then calls _projectionService.RefreshCurrentSlide() to re-render with fresh theme.
+```
+
+### 3.5 Theme Change Propagation
+
+```
+Operator saves a theme in AddEditThemeViewModel
+  │
+  ▼
+IProjectionService.NotifyThemeChanged()
+  │  Fires ThemeChanged event (with per-subscriber exception guard)
+  │
+  ▼
+ProjectionWindow.OnThemeChanged()
+  │  Dispatcher.InvokeAsync(() =>
+  │    _defaultTheme = null
+  │    _themeCache.Clear()
+  │    _projectionService.RefreshCurrentSlide())
+  │
+  ▼
+ProjectionService.RefreshCurrentSlide()
+  │  if (!_isProjecting) return
+  │  RaiseSlideChanged(CurrentSlide)  ← triggers full re-render with fresh theme
+```
+
+### 3.6 Bible Full-Chapter Projection
+
+```
+Operator clicks a verse in the Bible browser
+  │
+  ▼
+BibleViewModel.ProjectCurrentSelection()
+  │  selected = single verse, chapter mode (not keyword search)
+  │
+  ▼
+  slides = _chapterVerses.Select(v => _bibleService.GenerateSlide([v])).ToArray()
+  label  = "John 3"
+  startIdx = index of selected verse in chapter list
+  │
+  ▼
+IProjectionService.LoadSlides(slides, label)   ← all verses as individual slides
+IProjectionService.GoTo(startIdx)              ← jump to clicked verse
+  │
+  ▼
+Main-window ◀/▶ now navigates between all verses in the chapter
+  │
+  ▼
+ProjectionService.SlideChanged → BibleViewModel.OnProjectionSlideChanged()
+  │  Syncs verse highlight + preview pane as operator navigates
+```
+
+### 3.7 Song Save Flow
 
 ```
 Operator fills in title + sections, clicks "Save Song"
   │
   ▼
 AddEditSongViewModel.SaveCommand
-  │  BuildEntity() → Song domain object (Id=0 for new, Id>0 for edit)
+  │  BuildEntity() → Song domain object
   │  Saved event raised
   │
   ▼
 SongsViewModel.OnSongSaved(song)
-  │  IsEditing = false / EditViewModel = null
   │
-  ├─ song.Id == 0 → ISongService.CreateAsync(song)
-  │                   ISongRepository.AddAsync(song)
-  │                   AppDbContext.SaveChangesAsync()
-  │                     StampTimestamps() → CreatedAt + UpdatedAt set
+  ├─ new → ISongService.CreateAsync(song)
+  │           ISongRepository.AddAsync(song)
+  │           AppDbContext.SaveChangesAsync()
+  │             StampTimestamps() → CreatedAt + UpdatedAt set
   │
-  └─ song.Id > 0 → ISongService.UpdateAsync(song)
-                    ISongRepository.UpdateAsync(song)
-                      RemoveRange(existing.Sections)   ← replace all sections
-                      Add new sections with Id=0
-                      AppDbContext.SaveChangesAsync()
+  └─ edit → ISongService.UpdateAsync(song)
+               ISongRepository.UpdateAsync(song)
+                 Load existing (tracked)
+                 RemoveRange(existing.Sections)   ← replace-all pattern
+                 Add new sections with Id=0       ← forces INSERT
+                 AppDbContext.SaveChangesAsync()
   │
   ▼
 SongsViewModel.LoadAsync()   ← full reload to reflect DB truth
@@ -209,11 +286,9 @@ SongsViewModel.LoadAsync()   ← full reload to reflect DB truth
 
 ---
 
-## 4. API Routes
+## 4. Application Service Interfaces
 
-This is a **desktop application** — there are no HTTP endpoints, REST APIs, or network services. All communication is internal between layers via C# interfaces.
-
-The equivalent "API surface" is the Application service interfaces:
+This is a **desktop application** — there are no HTTP endpoints. The Application layer interfaces are the equivalent "API surface."
 
 ### `ISongService`
 | Method | Description |
@@ -224,7 +299,7 @@ The equivalent "API surface" is the Application service interfaces:
 | `CreateAsync(song)` | Persist new song + sections |
 | `UpdateAsync(song)` | Replace song metadata + all sections |
 | `DeleteAsync(id)` | Hard delete song (cascades to sections) |
-| `GenerateSlides(song)` | Map ordered sections → `Slide[]` (pure, no I/O) |
+| `GenerateSlides(song, themeId?)` | Map ordered sections → `Slide[]` (pure, no I/O) |
 
 ### `IBibleService`
 | Method | Description |
@@ -232,14 +307,13 @@ The equivalent "API surface" is the Application service interfaces:
 | `GetVersionsAsync()` | All imported Bible translations |
 | `GetBooksAsync(versionId)` | Books in a version, ordered by BookNumber |
 | `GetVersesAsync(versionId, book, chapter)` | All verses for a chapter |
-| `GetVerseAsync(versionId, book, chapter, verse)` | Single verse lookup |
-| `SearchAsync(versionId, term, maxResults)` | Full-text LIKE search in verse text |
-| `ImportVersionAsync(version, books, verses)` | Bulk import (batched, transactional) |
+| `SearchAsync(versionId, term, maxResults)` | FTS5 full-text search |
+| `ImportVersionAsync(result)` | Bulk import — 1000-row batches + ChangeTracker.Clear() |
 | `DeleteVersionAsync(versionId)` | Remove a translation + all its data |
-| `GenerateSlide(verses)` | Compose verse(s) into a `Slide` (pure) |
+| `GenerateSlide(verses, themeId?)` | Compose verse(s) into a `Slide` (pure) |
 
 ### `IProjectionService` (Singleton)
-| Method | Description |
+| Method / Event | Description |
 |---|---|
 | `LoadSlides(slides, contextLabel)` | Start projection with a slide list |
 | `Next()` | Advance one slide |
@@ -247,24 +321,50 @@ The equivalent "API surface" is the Application service interfaces:
 | `GoTo(index)` | Jump to specific slide by index |
 | `ShowBlank()` | Show black screen without stopping |
 | `Stop()` | End projection, clear all state |
-| Event: `SlideChanged` | Fires on every slide transition |
-| Event: `ProjectionStateChanged` | Fires when projection starts/stops |
+| `NotifyThemeChanged()` | Fires `ThemeChanged` event — triggers cache clear + re-render |
+| `RefreshCurrentSlide()` | Re-fires `SlideChanged` with the current slide |
+| Event: `SlideChanged(Slide?)` | Fires on every slide transition |
+| Event: `ProjectionStateChanged(bool)` | Fires when projection starts/stops |
+| Event: `ThemeChanged` | Fires when a theme is saved |
 
 ### `IThemeService`
 | Method | Description |
 |---|---|
 | `GetAllAsync()` | All themes |
-| `GetDefaultAsync()` | The active default theme (throws if none — DB corruption) |
+| `GetByIdAsync(id)` | Single theme by ID (returns null if not found) |
+| `GetDefaultAsync()` | The active default theme |
 | `CreateAsync(theme)` | Add theme |
 | `UpdateAsync(theme)` | Update; handles default-flag exclusivity |
 | `DeleteAsync(id)` | Rejects if theme is the default |
+
+### `IMediaService`
+| Method | Description |
+|---|---|
+| `GetAllAsync()` | All imported media files |
+| `GetByIdAsync(id)` | Single media file by ID |
+| `AddAsync(file)` | Persist a new MediaFile record |
+| `DeleteAsync(id)` | Remove the DB record (caller removes the file) |
+| `GenerateSlide(file, themeId?)` | Create a `Slide` for projection (pure) |
+
+### `IWorshipServiceService`
+| Method | Description |
+|---|---|
+| `GetAllAsync()` | All services |
+| `GetWithItemsAsync(serviceId)` | Service with all schedule items (eager-loaded) |
+| `CreateAsync(service)` | New service |
+| `DeleteAsync(id)` | Delete service + all items |
+| `AddSongItemAsync(serviceId, songId, themeId?)` | Add song to schedule |
+| `AddBibleItemAsync(serviceId, book, chapter, verseStart, verseEnd, versionId?)` | Add Bible passage |
+| `AddMediaItemAsync(serviceId, mediaFileId, themeId?)` | Add media file |
+| `RemoveItemAsync(scheduleItemId)` | Remove one item |
+| `ReorderItemsAsync(serviceId, orderedIds)` | Persist new item order |
 
 ---
 
 ## 5. Database
 
-**Engine**: SQLite (file at `%LocalAppData%\OpenAdoration\openadoration.db`)  
-**ORM**: Entity Framework Core 9, Fluent API configuration  
+**Engine**: SQLite (file at `%LocalAppData%\OpenAdoration\openadoration.db`)
+**ORM**: Entity Framework Core 9, Fluent API configuration
 **Migrations**: auto-applied at startup via `MigrateAsync()`
 
 ### 5.1 Schema Overview
@@ -275,7 +375,7 @@ The equivalent "API surface" is the Application service interfaces:
 │─────────────────────────────│────────────────────────────────│
 │ Id             INT  PK      │ Id           INT  PK           │
 │ Title          TEXT NOT NULL│ SongId       INT  FK → Songs   │
-│ Author         TEXT NULL    │ Type         INT  (enum)       │
+│ Author         TEXT NULL    │ Type         INT  (SectionType)│
 │ Classification TEXT NULL    │ SectionNumber INT              │
 │ CreatedAt      DATETIME     │ Lyrics       TEXT NOT NULL     │
 │ UpdatedAt      DATETIME     │ Order        INT  NOT NULL     │
@@ -288,57 +388,53 @@ The equivalent "API surface" is the Application service interfaces:
 │ Themes                                                       │
 │──────────────────────────────────────────────────────────────│
 │ Id                   INT   PK                                │
-│ Name                 TEXT  NOT NULL  (max 100)               │
-│ FontFamily           TEXT  NOT NULL  (max 100)               │
+│ Name                 TEXT  NOT NULL                          │
+│ FontFamily           TEXT  NOT NULL                          │
 │ FontSize             INT   NOT NULL                          │
-│ FontColor            TEXT  NOT NULL  (max 9, e.g. #FFFFFF)   │
-│ BackgroundColor      TEXT  NOT NULL  (max 9)                 │
-│ BackgroundImagePath  TEXT  NULL      (max 1024)              │
-│ BackgroundVideoPath  TEXT  NULL      (max 1024)              │
+│ FontColor            TEXT  NOT NULL  (hex, e.g. #FFFFFF)     │
+│ BackgroundColor      TEXT  NOT NULL  (hex)                   │
+│ BackgroundImagePath  TEXT  NULL                              │
+│ BackgroundVideoPath  TEXT  NULL                              │
 │ TextAlignment        TEXT  NOT NULL  default "Center"        │
 │ IsDefault            BOOL  NOT NULL                          │
-│ CreatedAt            DATETIME                                │
-│ UpdatedAt            DATETIME                                │
+│ CreatedAt / UpdatedAt DATETIME                               │
 │                                                              │
-│  Seeded: Id=1, Name="Default", black bg, white 48pt Arial,  │
-│          TextAlignment="Center", IsDefault=true              │
+│  Seeded: Id=1, black bg, white 48pt Arial, IsDefault=true   │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ BibleVersions        │ BibleBooks           │ BibleVerses    │
-│──────────────────────│──────────────────────│────────────────│
-│ Id          INT  PK  │ Id           INT  PK │ Id    INT  PK  │
-│ Name        TEXT     │ BibleVersionId INT FK│ BibleVersionId │
-│ Abbreviation TEXT    │ Name         TEXT    │ Book  TEXT     │
-│ Language    TEXT     │ Abbreviation TEXT    │ Chapter INT    │
-│ CreatedAt   DATETIME │ Testament    INT     │ Verse  INT     │
-│ UpdatedAt   DATETIME │ BookNumber   INT     │ Text  TEXT     │
-│                      │ ChapterCount INT     │ CreatedAt      │
-│                      │ CreatedAt    DATETIME│ UpdatedAt      │
-│                      │ UpdatedAt    DATETIME│                │
+│ BibleVersions   │ BibleBooks            │ BibleVerses        │
+│─────────────────│───────────────────────│────────────────────│
+│ Id          PK  │ Id           PK       │ Id         PK      │
+│ Name            │ BibleVersionId FK     │ BibleVersionId FK  │
+│ Abbreviation    │ Name                  │ Book  TEXT         │
+│ Language        │ Abbreviation          │ Chapter INT        │
+│ CreatedAt/At    │ Testament INT (Old=0) │ Verse  INT         │
+│                 │ BookNumber INT        │ Text  TEXT         │
+│                 │ ChapterCount INT      │ CreatedAt/At       │
+│                 │ CreatedAt/At          │                    │
 │  1 Version ──< Books ──< Verses (all cascade on version delete)
+│                                                              │
+│ BibleVersesFts  (FTS5 virtual table)                         │
+│  rowid = BibleVerses.Id                                      │
+│  Text UNINDEXED BibleVersionId, tokenize=unicode61           │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ WorshipServices      │ ScheduleItems  (TPH — all in one table)│
+│ WorshipServices      │ ScheduleItems  (TPH — one table)     │
 │──────────────────────│──────────────────────────────────────│
 │ Id    INT  PK        │ Id         INT  PK                   │
 │ Name  TEXT           │ ServiceId  INT  FK → WorshipServices │
 │ Date  DATETIME       │ ItemType   TEXT  ← discriminator     │
-│ CreatedAt DATETIME   │ Order      INT  NOT NULL             │
-│ UpdatedAt DATETIME   │ ThemeId    INT? FK → Themes (SetNull)│
-│                      │ CreatedAt  DATETIME                  │
-│                      │ UpdatedAt  DATETIME                  │
+│ CreatedAt/At         │ Order      INT  NOT NULL             │
+│                      │ ThemeId    INT? FK → Themes (SetNull)│
+│                      │ CreatedAt/At                         │
 │                      │                                      │
-│                      │ -- Song rows also have:              │
-│                      │   SongId   INT FK → Songs            │
-│                      │                                      │
-│                      │ -- Bible rows also have:             │
-│                      │   Book, Chapter, VerseStart, VerseEnd│
-│                      │   BibleVersionId INT? FK             │
-│                      │                                      │
-│                      │ -- Media rows also have:             │
-│                      │   MediaFileId INT FK → MediaFiles    │
+│                      │ Song rows:   SongId INT FK           │
+│                      │ Bible rows:  Book, Chapter,          │
+│                      │             VerseStart, VerseEnd,    │
+│                      │             BibleVersionId INT? FK   │
+│                      │ Media rows:  MediaFileId INT FK      │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -346,37 +442,111 @@ The equivalent "API surface" is the Application service interfaces:
 │──────────────────────────────────────────────────────────────│
 │ Id        INT   PK                                           │
 │ FileName  TEXT  NOT NULL                                     │
-│ FilePath  TEXT  NOT NULL                                     │
-│ Type      INT   (enum: Image=0, Video=1)                     │
-│ CreatedAt DATETIME                                           │
-│ UpdatedAt DATETIME                                           │
+│ FilePath  TEXT  NOT NULL  (absolute path in managed store)   │
+│ Type      INT   (MediaType: Image=0, Video=1)                │
+│ CreatedAt / UpdatedAt DATETIME                               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Table Per Hierarchy (TPH) — ScheduleItems
+### 5.2 Applied Migrations
 
-All three schedule item types (`SongScheduleItem`, `BibleScheduleItem`, `MediaScheduleItem`) share a single `ScheduleItems` table. The `ItemType` TEXT column (`"Song"` / `"Bible"` / `"Media"`) is the EF Core discriminator. Columns for a given type are `NULL` in rows of other types.
+| Migration | What it adds |
+|---|---|
+| `20260505012006_InitialCreate` | Full schema; seeds default theme |
+| `20260511000000_AddSongClassification` | `Classification` column on Songs |
+| `20260518_AddThemeVideoBackground` | `BackgroundVideoPath` on Themes |
+| `20260519005541_AddThemeTextAlignment` | `TextAlignment` column on Themes |
+| `20260520041713_AddBibleVersesFts` | `BibleVersesFts` FTS5 virtual table |
 
-### 5.3 Timestamp Handling
+### 5.3 Table Per Hierarchy — ScheduleItems
 
-`AppDbContext.StampTimestamps()` intercepts every `SaveChanges` call:
-- `Added` → sets both `CreatedAt` and `UpdatedAt` to `DateTime.UtcNow`
-- `Modified` → sets only `UpdatedAt`; marks `CreatedAt` as not modified so it can't be overwritten
+All three schedule item types share one `ScheduleItems` table. `ItemType` TEXT (`"Song"` / `"Bible"` / `"Media"`) is the EF Core discriminator. Columns for other types are `NULL` in each row.
 
-The seed data in `ThemeConfiguration` uses a **static** date (`new DateTime(2025,1,1, 0,0,0, DateTimeKind.Utc)`) — never `DateTime.UtcNow`, which would change on every migration run and cause spurious migrations.
+### 5.4 Timestamp Handling
 
-### 5.4 Indexes
+`AppDbContext.StampTimestamps()` intercepts every `SaveChanges`:
+- `Added` → sets `CreatedAt` + `UpdatedAt` to `DateTime.UtcNow`
+- `Modified` → sets only `UpdatedAt`; marks `CreatedAt` as not-modified
+
+Seed data in `ThemeConfiguration` uses a **static** fixed date — never `DateTime.UtcNow`.
+
+### 5.5 Indexes
 
 | Table | Index |
 |---|---|
-| Songs | `Title` (speed up search + ordered list) |
+| Songs | `Title` (ordered list + search) |
 | ScheduleItems | `(ServiceId, Order)` composite |
 
 ---
 
-## 6. External Dependencies
+## 6. Bible Import
 
-OpenAdoration has **zero runtime network dependencies**. All data is local.
+### Format Detection (`BibleFormatDispatcher`)
+
+```
+.xml  → PeekXmlRoot() → route by root element name
+          XMLBIBLE / ZEFANIA / ... → ZefaniaXmlParser
+          osis                     → OsisXmlParser   (streaming XmlReader)
+          usfx                     → UsfxXmlParser   (streaming XmlReader)
+
+.json → JsonDocument peek
+          Array root               → ThiagobodrukJsonParser
+          {metadata, verses}       → BibleSuperSearchJsonParser  (checked first)
+          {books} arrays-of-arrays → ThiagobodrukJsonParser
+          {books} arrays-of-objects→ OpenADorationJsonParser
+
+.zip    → BibleSuperSearchZipParser  (info.json + verses.txt pipe-delimited)
+.sqlite → BibleSuperSearchSqliteParser (meta + verses tables)
+unknown → sniff: '<' → XML; else → JSON
+```
+
+### Book Name Resolution (`OsisBookCatalog`)
+
+Static dictionary of 66 books keyed by OSIS/USFX ID (e.g. `Gen`, `Exod`, `Matt`). Value = `BookInfo(Name, Abbreviation, Number, Testament)`.
+
+- `GetOrFallback(id, fallbackNumber, fallbackName)` — safe for non-standard IDs
+- `GetByNumber(int 1–66)` — lazy reverse dict; used by BibleSuperSearch parsers (integer book numbers only)
+
+Parsers that carry localized book names in the file (Zefania, OSIS, USFX, BibleSuperSearch JSON) use those names; parsers with only integer book numbers fall back to English names from the catalog.
+
+### Import Pattern (memory-safe)
+
+```csharp
+// BibleRepository.ImportVersionAsync
+foreach (var batch in verses.Chunk(1000))
+{
+    context.BibleVerses.AddRange(batch);
+    await context.SaveChangesAsync();
+    context.ChangeTracker.Clear();   // ← prevents accumulating 31k tracked entities
+}
+```
+
+---
+
+## 7. Projection Window — Layer Model
+
+`ProjectionWindow.xaml` stacks elements in Z-order (bottom to top):
+
+```
+ThemeBackground      ← Rectangle; always visible; theme BackgroundColor fill
+ThemeBackgroundImage ← Image; theme BackgroundImagePath; Collapsed if no image
+ThemeBackgroundVideo ← MediaElement; IsMuted=True; loops via MediaEnded; Collapsed if no video
+BackgroundImage      ← Image; media slides (images); Collapsed otherwise
+ContentVideo         ← MediaElement; media slides (videos); plays with audio; Collapsed otherwise
+TextViewbox          ← Viewbox+TextBlock; song/Bible text; Collapsed otherwise
+BlankOverlay         ← Rectangle (black fill); shown on blank slide — covers all layers
+CornerLabel          ← ZIndex=100; song title · section label; top-left; Collapsed if no label
+```
+
+**Blank slide behaviour**: `ShowBlankOverlay()` calls `HideAllLayers()` then sets `BlankOverlay.Visibility = Visible`. The opaque black fill covers all layers — including theme backgrounds — giving a fully black screen.
+
+**Per-session theme cache**: `_themeCache: ConcurrentDictionary<int,Theme>` + `_defaultTheme: Theme?`. Both are cleared on `ThemeChanged` and on `StopAndHide()` so the next session picks up any edits made between services.
+
+---
+
+## 8. External Dependencies
+
+No runtime network dependencies. All data is local.
 
 ### NuGet packages (runtime)
 
@@ -385,9 +555,10 @@ OpenAdoration has **zero runtime network dependencies**. All data is local.
 | `Microsoft.Extensions.Hosting` | 9.0.4 | DI container, generic host |
 | `Microsoft.EntityFrameworkCore` | 9.0.4 | ORM |
 | `Microsoft.EntityFrameworkCore.Sqlite` | 9.0.4 | SQLite provider |
-| `CommunityToolkit.Mvvm` | 8.4.0 | Source-generated MVVM (ObservableProperty, RelayCommand) |
+| `CommunityToolkit.Mvvm` | 8.4.0 | Source-generated MVVM |
+| `Extended.Wpf.Toolkit` | 5.0.0 | `xctk:ColorPicker` in theme editor |
 | `Serilog` | 4.2.0 | Structured logging core |
-| `Serilog.Extensions.Logging` | 9.0.0 | Bridge from MEL to Serilog |
+| `Serilog.Extensions.Logging` | 9.0.0 | MEL → Serilog bridge |
 | `Serilog.Sinks.File` | 6.0.0 | Rolling daily file output |
 | `Serilog.Sinks.Debug` | 3.0.0 | IDE debug output sink |
 
@@ -395,7 +566,7 @@ OpenAdoration has **zero runtime network dependencies**. All data is local.
 
 | Package | Purpose |
 |---|---|
-| `Microsoft.EntityFrameworkCore.Design` | EF Core CLI tooling (`dotnet ef migrations`) — present in both Infrastructure and WPF projects |
+| `Microsoft.EntityFrameworkCore.Design` | EF Core CLI (`dotnet ef migrations`) — must be in **both** Infrastructure and WPF `.csproj` |
 
 ### Platform dependencies
 
@@ -403,254 +574,205 @@ OpenAdoration has **zero runtime network dependencies**. All data is local.
 |---|---|
 | Windows 10+ | WPF requirement |
 | .NET 10 Runtime | Target framework |
-| `UseWindowsForms=true` in WPF `.csproj` | `System.Windows.Forms.Screen.AllScreens` — only reliable multi-monitor enumeration API |
+| `UseWindowsForms=true` | `System.Windows.Forms.Screen.AllScreens` — only reliable multi-monitor API |
 
 ---
 
-## 7. Key Files
+## 9. Key Files
 
 ```
-OpenAdoration.sln
-
 OpenAdoration.Domain/
-  Common/
-    BaseEntity.cs                    ← Id, CreatedAt, UpdatedAt for all entities
   Entities/
-    Song.cs                          ← Title, Author, Sections list
-    SongSection.cs                   ← Type, SectionNumber, Lyrics, Order, Label
-    WorshipService.cs                ← Name, Date, ordered Items list
-    ScheduleItem.cs          ★       ← Abstract base; Theme override per item
-    SongScheduleItem.cs              ← TPH subtype: points at Song
-    BibleScheduleItem.cs             ← TPH subtype: Book/Chapter/VerseStart/VerseEnd
-    MediaScheduleItem.cs             ← TPH subtype: points at MediaFile
-    BibleVersion.cs                  ← Name, Abbreviation, Language
-    BibleBook.cs                     ← BookNumber, Testament, ChapterCount
-    BibleVerse.cs                    ← Book, Chapter, Verse, Text, Reference
-    Theme.cs                         ← FontFamily/Size/Color, BackgroundColor/Image, IsDefault
-    MediaFile.cs                     ← FileName, FilePath, Type (Image/Video)
+    Song.cs, SongSection.cs
+    BibleVersion.cs, BibleBook.cs, BibleVerse.cs
+    Theme.cs                          ← FontFamily/Size/Color, BackgroundColor/Image/Video, TextAlignment
+    MediaFile.cs                      ← FileName, FilePath, Type (Image/Video)
+    WorshipService.cs
+    ScheduleItem.cs             ★     ← Abstract base; TPH discriminator
+    SongScheduleItem.cs, BibleScheduleItem.cs, MediaScheduleItem.cs
   Enums/
-    SectionType.cs                   ← Verse,Chorus,PreChorus,Bridge,Intro,Outro,Tag
-    MediaType.cs                     ← Image, Video
-    Testament.cs                     ← Old, New
+    SectionType.cs              ← Verse,Chorus,PreChorus,Bridge,Intro,Outro,Tag
+    MediaType.cs                ← Image=0, Video=1
+    Testament.cs                ← Old, New  (NOT OldTestament/NewTestament)
 
 OpenAdoration.Application/
   Common/
-    Slide.cs                 ★       ← Runtime projection unit — never stored
-    SlideType.cs                     ← Song, Bible, Media, Blank
-  Repositories/                      ← Interface definitions only
-    ISongRepository.cs
-    IBibleRepository.cs
-    IThemeRepository.cs
-    IMediaRepository.cs
-    IWorshipServiceRepository.cs
+    Slide.cs                    ★     ← Runtime projection unit — Content, Type, Label, MediaPath, ThemeId
+    SlideType.cs                      ← Song, Bible, Media, Blank
   Services/
-    IProjectionService.cs    ★       ← Projection state machine contract
-    ProjectionService.cs     ★       ← Singleton — the projection engine
-    ISongService.cs / SongService.cs
-    IBibleService.cs / BibleService.cs
-    IThemeService.cs / ThemeService.cs
-    IMediaService.cs / MediaService.cs
-    IWorshipServiceService.cs / WorshipServiceService.cs
+    IProjectionService.cs       ★     ← Contract: LoadSlides, Next/Prev/GoTo, Blank, Stop, ThemeChanged
+    ProjectionService.cs        ★     ← Singleton engine; per-subscriber exception guard
+    ISongService / SongService.cs
+    IBibleService / BibleService.cs
+    IThemeService / ThemeService.cs
+    IMediaService / MediaService.cs
+    IWorshipServiceService / WorshipServiceService.cs
 
 OpenAdoration.Infrastructure/
   Persistence/
-    AppDbContext.cs           ★       ← StampTimestamps(), ApplyConfigurationsFromAssembly
-    AppDbContextFactory.cs            ← Design-time factory for dotnet-ef tooling
+    AppDbContext.cs             ★     ← StampTimestamps(), ApplyConfigurationsFromAssembly
   Configurations/
-    SongConfiguration.cs              ← HasIndex(Title), Cascade delete sections
-    SongSectionConfiguration.cs
     ScheduleItemConfiguration.cs ★   ← TPH discriminator setup
-    ThemeConfiguration.cs            ← Seeds default theme with fixed timestamps
-    BibleVersionConfiguration.cs / BibleBookConfiguration.cs / BibleVerseConfiguration.cs
-    MediaFileConfiguration.cs
-    WorshipServiceConfiguration.cs
+    ThemeConfiguration.cs            ← Seeds default theme with static timestamp (G3)
   Repositories/
-    SongRepository.cs         ★       ← UpdateAsync: replace-all-sections pattern
-    BibleRepository.cs        ★       ← ImportVersionAsync: 1000-row batches + transaction
-    ThemeRepository.cs                ← DeleteAsync: rejects default; ClearDefaultFlagAsync
-    MediaRepository.cs
-    WorshipServiceRepository.cs
-  Logging/
-    LoggingConfiguration.cs   ★       ← Configure(), UseOpenAdorationSerilog(), CloseAndFlush()
+    SongRepository.cs           ★     ← UpdateAsync: replace-all-sections pattern
+    BibleRepository.cs          ★     ← ImportVersionAsync: 1000-row batches + ChangeTracker.Clear()
+    ThemeRepository.cs               ← DeleteAsync rejects default; ClearDefaultFlagAsync
+    MediaRepository.cs, WorshipServiceRepository.cs
   Extensions/
     InfrastructureServiceExtensions.cs ★ ← AddInfrastructure(), InitialiseDatabaseAsync()
-  Migrations/
-    20260505012006_InitialCreate.cs   ← Full schema, seeds default theme
 
 OpenAdoration.WPF/
-  App.xaml / App.xaml.cs     ★       ← DI host, startup/shutdown, DataTemplate nav mapping
-  MainWindow.xaml             ★       ← Shell: sidebar + ContentControl + projection bar
-  ProjectionWindow.xaml.cs    ★       ← RenderSlide(), Dispatcher.Invoke, ShowOnSecondaryScreen()
+  App.xaml / App.xaml.cs       ★     ← DI root; DataTemplate nav map; global converters
+  MainWindow.xaml               ★     ← Shell: sidebar + ContentControl + projection bar
+  ProjectionWindow.xaml         ★     ← Layer stack (see §7)
+  ProjectionWindow.xaml.cs      ★     ← RenderSlide(), ResolveThemeAsync(), Dispatcher.InvokeAsync()
   Helpers/
     ScreenHelper.cs                   ← GetSecondaryScreen(), PositionOnScreen()
+    BibleImport/
+      BibleFormatDispatcher.cs  ★     ← Auto-detect format + dispatch to parser
+      OsisBookCatalog.cs              ← 66 books; GetOrFallback(); GetByNumber()
+      ZefaniaXmlParser.cs, OsisXmlParser.cs, UsfxXmlParser.cs
+      ThiagobodrukJsonParser.cs, OpenADorationJsonParser.cs
+      BibleSuperSearchJsonParser.cs, BibleSuperSearchZipParser.cs, BibleSuperSearchSqliteParser.cs
   Converters/
+    FilePathToImageSourceConverter.cs ← Decodes image at 400px; returns null for video/missing
+    IntEqualityConverter.cs           ← IMultiValueConverter; used for chapter/card selected-state highlights
     InverseBoolToVisibilityConverter.cs
+    HexColorToBrushConverter.cs, ColorToBrushConverter.cs, TestamentToLabelConverter.cs
   ViewModels/
-    BaseViewModel.cs                  ← IsBusy, ErrorMessage, HasError
-    MainViewModel.cs          ★       ← Navigation + projection controls + state sync
-    SongsViewModel.cs         ★       ← Load, search filter, add/edit/delete, project
-    AddEditSongViewModel.cs   ★       ← Section management, Saved/Cancelled events
+    BaseViewModel.cs                  ← IsBusy, ErrorMessage, HasError, SetError(), ClearError()
+    MainViewModel.cs            ★     ← Scope-per-navigation, projection controls, state sync
+    SongsViewModel.cs           ★     ← CRUD + search + projection
+    AddEditSongViewModel.cs     ★     ← Section management; Saved/Cancelled events
     SongSectionViewModel.cs           ← Per-section: type, lyrics, move/delete events
-    BibleViewModel.cs          ★       ← Bible browser — version/book/chapter cascade, multi-format import
-    AddEditThemeViewModel.cs   ★       ← Theme editor — color pickers, alignment strip, live preview
-    ThemeViewModel.cs                  ← Theme CRUD + set default
-    ServiceScheduleViewModel.cs        ← (stub — Milestone 3)
-    MediaViewModel.cs                  ← (stub — Milestone 4)
+    BibleViewModel.cs           ★     ← Version/book/chapter cascade; verse picker; import; FTS search
+    BibleVerseCheckItem.cs            ← Observable verse item for Bible browser (IsChecked)
+    BibleVersePickerItem.cs           ← Observable verse item for service schedule picker (IsInRange)
+    AddEditThemeViewModel.cs    ★     ← BackgroundType enum; color pickers; font/alignment; live preview
+    ThemeViewModel.cs                 ← Theme CRUD + set-default
+    MediaViewModel.cs           ★     ← Import (copy-on-import); thumbnail cards; project; delete
+    ServiceScheduleViewModel.cs ★     ← Builder + live mode + on-the-fly queue editing
+    ScheduleItemViewModel.cs          ← Per-item: TypeIcon, DisplayTitle, move/delete/select events
   Views/
-    SongsView.xaml            ★       ← List panel ↔ edit panel toggle by IsEditing
-    AddEditSongView.xaml      ★       ← Title/Author + sections list + type buttons
-    BibleView.xaml            ★       ← 3-column Bible browser + import toolbar
-    AddEditThemeView.xaml              ← Theme editor form with live preview rectangle
-    ThemeView.xaml                     ← Theme list panel
-    ServiceScheduleView.xaml           ← (stub — Milestone 3)
-    MediaView.xaml                     ← (stub — Milestone 4)
+    SongsView.xaml              ★     ← List ↔ edit panel toggle
+    AddEditSongView.xaml        ★     ← Title/Author + section list + type buttons
+    BibleView.xaml              ★     ← 3-column browser + reference bar + verse list + FTS
+    AddEditThemeView.xaml             ← Theme form + live preview rectangle
+    ThemeView.xaml                    ← Theme list
+    MediaView.xaml              ★     ← Import toolbar + wrap grid of media cards
+    ServiceScheduleView.xaml    ★     ← Service list / builder / live mode (3 panels)
   Styles/
     Colors.xaml                       ← All color/brush resources
-    Base.xaml                 ★       ← All control styles (Button, TextBox, ComboBox, Cards)
-```
+    Base.xaml                   ★     ← All control styles (Button, TextBox, ComboBox, Cards, etc.)
 
 OpenAdoration.Tests.Infrastructure/
   BibleImport/
-    BibleParserTests.cs           ← 5 [Fact] tests, one per format, via BibleFormatDispatcher
-    Fixtures/                     ← 5 minimal XML/JSON fixtures (1 book, 1 chapter, 3 verses each)
+    BibleParserTests.cs         ← 8 [Fact] tests, one per format, via BibleFormatDispatcher
+    Fixtures/                   ← Minimal XML/JSON/ZIP/SQLite fixtures
 
 ★ = highest-leverage files; start here when debugging
+```
 
 ---
 
-## 8. Common Gotchas
+## 10. Common Gotchas
 
-### 8.1 `UseWindowsForms=true` causes type ambiguity
-**Problem**: Many WPF types (`UserControl`, `MessageBox`, `Application`, `Timer`) also exist in `System.Windows.Forms`. Adding `UseWindowsForms=true` (needed for `Screen.AllScreens`) pulls both namespaces in.  
-**Rule**: Always fully-qualify ambiguous types in code-behind files:
+### G1 — `UseWindowsForms=true` causes type ambiguity
+`UseWindowsForms=true` pulls `System.Windows.Forms` into scope. Always fully-qualify:
 ```csharp
 public partial class MyView : System.Windows.Controls.UserControl { }
 System.Windows.MessageBox.Show(...);
-using WpfApp = System.Windows.Application;
+Microsoft.Win32.OpenFileDialog   // NOT System.Windows.Forms.OpenFileDialog
+System.Windows.Media.Color       // NOT System.Drawing.Color
 ```
 
-### 8.2 EF Core Design package must be on the startup project
-**Problem**: `dotnet ef migrations` looks for design-time services on the `--startup-project`. `Microsoft.EntityFrameworkCore.Design` in Infrastructure has `PrivateAssets=all` so it doesn't flow transitively.  
-**Rule**: `Microsoft.EntityFrameworkCore.Design` must be listed in **both** `OpenAdoration.Infrastructure.csproj` AND `OpenAdoration.WPF.csproj`.
+### G3 — Never `DateTime.UtcNow` in seed data
+`HasData()` seeds with a `static readonly` fixed date. `DateTime.UtcNow` changes on every run and causes spurious migrations.
 
-### 8.3 Never use `DateTime.UtcNow` in entity seed data
-**Problem**: `HasData()` seed records with runtime timestamps change value on every run, causing EF Core to detect a "change" and generate a spurious migration.  
-**Rule**: All seed timestamps must be a `static readonly` fixed date (see `ThemeConfiguration.SeedDate`).
+### G4 — `IsBusy` guard in `LoadAsync`
+`LoadAsync` opens with `if (IsBusy) return;`. Never set `IsBusy = true` from a caller that then calls `LoadAsync` — the load silently does nothing.
 
-### 8.4 `IsBusy` guard in `LoadAsync`
-**Problem**: `LoadAsync` opens with `if (IsBusy) return;`. If any caller sets `IsBusy = true` before calling `LoadAsync`, the load silently does nothing.  
-**Rule**: Never set `IsBusy = true` from a caller that then calls `LoadAsync`. Let `LoadAsync` own its own busy state.
+### G7 — Bible import batch pattern
+`BibleRepository.ImportVersionAsync` inserts in batches of 1000 + `ChangeTracker.Clear()`. Do not remove — a full Bible is ~31k verses.
 
-### 8.5 `ProjectionService` subscribers must not throw
-**Problem**: `RaiseSlideChanged` and `RaiseProjectionStateChanged` catch all exceptions from subscribers and log them, because a UI bug must never crash the projection engine mid-service.  
-**Implication**: If your subscriber silently fails, the projection window won't update — check the log.
+### G8 — DataTemplate required for every navigated ViewModel
+`ContentControl` resolves views via `DataTemplate` in `App.xaml`. Missing template = blank content with no error.
 
-### 8.6 `SongRepository.UpdateAsync` replaces all sections
-**Problem**: EF Core's change tracking doesn't cleanly handle replacing a collection of owned entities when working with detached objects.  
-**Pattern used**: Load `existing` from DB (tracked), call `RemoveRange(existing.Sections)`, add incoming sections with `Id = 0` (forces INSERT, not UPDATE). Any attempt to re-use old section IDs will cause duplicate key or concurrency errors.
+### G9 — `ProjectionWindow` events must be unsubscribed
+`OnClosed()` must unsubscribe all `IProjectionService` events. Without this, the singleton holds a reference to the dead window.
 
-### 8.7 Bible import memory pressure
-**Problem**: A full Bible translation has ~31,000 verses. Loading all at once before insert exhausts memory.  
-**Pattern used**: `BibleRepository.ImportVersionAsync` inserts in batches of 1,000 and calls `ChangeTracker.Clear()` after each batch. Do not remove this — it prevents the context from accumulating all 31,000 tracked entities.
+### G10 — WPF dark-theme `ComboBoxItem` visibility
+`FieldComboBox` has a full `ControlTemplate` on `ItemContainerStyle`. Do not simplify — without it, dropdown items are invisible on dark backgrounds.
 
-### 8.8 `ContentPresenter` and DataTemplate resolution
-**Problem**: The `ContentControl` in `MainWindow` resolves the view via `DataTemplate` lookup in `App.xaml`. If the ViewModel type doesn't match the `DataType` in the template, nothing is shown (blank content, no error).  
-**Rule**: Every ViewModel navigated to via `MainViewModel.CurrentView` must have a corresponding `DataTemplate` in `App.xaml`.
+### G11 — Scope-per-navigation is mandatory
+`MainViewModel._currentScope` is disposed and replaced on every `NavigateTo<T>()`. Never resolve page-level ViewModels from the root `IServiceProvider`.
 
-### 8.9 `ProjectionWindow` events must be unsubscribed
-**Problem**: If `ProjectionWindow` is closed without unsubscribing from `IProjectionService` events, the `ProjectionService` singleton holds a reference to the closed window, preventing GC and causing `Dispatcher.Invoke` on a dead window.  
-**Handled by**: `ProjectionWindow.OnClosed()` unsubscribes both events.
+### G14 — `Testament` enum values are `Old` / `New`
+`Testament.OldTestament` does not exist — it is `Testament.Old`. This causes a compile error, not a runtime error.
 
-### 8.10 WPF dark-theme `ComboBoxItem` visibility
-**Problem**: WPF's default `ComboBoxItem` template uses `SystemColors.HighlightBrush`, ignoring `Background` and `Foreground` style setters entirely. On a dark theme, items render as dark text on a dark background (invisible).  
-**Fix**: `FieldComboBox` in `Base.xaml` includes a full `ControlTemplate` on `ComboBoxItem` that uses `{TemplateBinding Background}`. Do not remove the inner template — without it, the dropdown appears empty.
+### G16 — `BibleViewModel.SelectedChapter` uses 0 as sentinel
+`SelectedChapter` is `int`, not `int?`. The collection contains values 1..N. 0 = nothing selected. Guard: `if (value > 0) LoadVersesAsync()`.
+
+### G17 — `AlignToggleButton.IsChecked` must be `Mode=OneWay`
+`TwoWay` would overwrite the VM property with a `bool` instead of firing `SetAlignmentCommand` — binding type mismatch at runtime.
+
+### G18 — `Run.Text` on read-only properties must be `Mode=OneWay`
+`<Run Text="{Binding Count, Mode=OneWay}"/>` — `Run.Text` defaults to TwoWay; source-generated properties are read-only and cause a runtime BindingExpression error without `Mode=OneWay`.
 
 ---
 
-## 9. Common Operations
+## 11. Common Operations
 
-### 9.1 First-time setup
+### First-time setup
 ```bash
 git clone https://github.com/g0elles/OpenAdoration.git
 cd OpenAdoration
-
-# Install EF Core tools (once per machine)
-dotnet tool install --global dotnet-ef
-
-# Build
+dotnet tool install --global dotnet-ef   # once per machine
 dotnet build
-
-# Run — MigrateAsync() creates the DB automatically on first launch
-dotnet run --project OpenAdoration.WPF
+dotnet run --project OpenAdoration.WPF   # DB created automatically
 ```
 
-### 9.2 Adding an EF Core migration
+### Add an EF Core migration
 ```bash
 dotnet ef migrations add <MigrationName> \
   --project OpenAdoration.Infrastructure \
   --startup-project OpenAdoration.WPF
-
-# Migrations are applied automatically at startup via MigrateAsync()
-# No need to run `dotnet ef database update` manually
+# Applied automatically on next launch via MigrateAsync()
 ```
 
-### 9.3 Resetting the database
+### Reset the database
 ```powershell
-# Stop the app first, then:
 Remove-Item "$env:LOCALAPPDATA\OpenAdoration\openadoration.db" -Force
-# Next launch re-creates from scratch via MigrateAsync()
+# Next launch recreates from migrations + seed data
 ```
 
-### 9.4 Reading logs
+### Read logs
 ```powershell
-# Today's log:
-Get-Content "$env:LOCALAPPDATA\OpenAdoration\logs\openadoration-$(Get-Date -Format yyyyMMdd).log" -Tail 100
-
-# Stream live (like tail -f):
+# Live tail:
 Get-Content "$env:LOCALAPPDATA\OpenAdoration\logs\openadoration-$(Get-Date -Format yyyyMMdd).log" -Wait -Tail 50
 ```
 
-Log format:
-```
-2026-05-11 14:23:01.123 [INF] OpenAdoration.WPF.ViewModels.SongsViewModel: Failed to load songs
-```
-
-EF Core `Database.Command` and `Infrastructure` noise is suppressed to `Warning` level — only slow/failed queries appear.
-
-### 9.5 Debugging projection issues
-1. Check `[INF] ProjectionService: Loading N slide(s) for 'Song Title'` — confirms `LoadSlides` was called.
-2. Check `[INF] ProjectionService: Projection started` — confirms state machine entered projecting state.
-3. If the ProjectionWindow shows nothing: look for `[ERR]` lines in `ProjectionWindow` — subscriber exceptions are caught and logged but the slide still changes.
-4. If `ProjectionWindow` opens on the wrong screen: look for `[WRN] No secondary screen detected`.
-
-### 9.6 Adding a new feature (e.g. Bible browser)
-1. **Domain** — entities already exist (`BibleVersion`, `BibleBook`, `BibleVerse`)
-2. **Application** — `IBibleService` and `BibleService` are fully implemented
-3. **WPF ViewModel** — replace the stub in `BibleViewModel.cs` with full implementation
-4. **WPF View** — replace the stub `BibleView.xaml` with full UI
-5. **App.xaml** — DataTemplate already registered (`BibleViewModel → BibleView`)
-6. **No migration needed** — Bible tables already exist in `InitialCreate`
-
-### 9.7 Build the solution
-```bash
-dotnet build OpenAdoration.sln --configuration Release
-```
-
-### 9.8 Run parser tests
+### Run tests
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# Expected: 5/5 pass (Zefania, OSIS, USFX, Thiagobodruk, OpenAdoration JSON)
+# Expected: 8/8 pass (Zefania, OSIS, USFX, thiagobodruk, OpenAdoration JSON,
+#                      BibleSuperSearch JSON / ZIP / SQLite)
 ```
 
-Output: `OpenAdoration.WPF\bin\Release\net10.0-windows\OpenAdoration.exe`
+### Debug projection issues
+1. `[INF] ProjectionService: Loading N slide(s)` — confirms `LoadSlides` called
+2. `[INF] ProjectionService: Projection started` — confirms state entered
+3. Nothing on screen → look for `[ERR]` in `ProjectionWindow` — exceptions are caught and logged
+4. Wrong screen → `[WRN] No secondary screen detected` → floating preview mode
 
-### 9.9 Feature status at a glance
+### Feature status
 
-| Feature | Domain | Service | Repository | ViewModel | View |
+| Feature | Domain | Service | Repo | ViewModel | View |
 |---|---|---|---|---|---|
 | Songs | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Bible | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Themes | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Service Schedule | ✅ | partial | partial | stub | stub |
-| Media | ✅ | ✅ | ✅ | stub | stub |
+| Service Schedule | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Media | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Projection engine | — | ✅ | — | ✅ | ✅ |

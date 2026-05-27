@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <ApplicationIcon>Assets\openadoration.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>  <!-- needed for Screen.AllScreens multi-monitor -->
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,6 +12,10 @@
     <AssemblyName>OpenAdoration</AssemblyName>
     <RootNamespace>OpenAdoration.WPF</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\openadoration.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

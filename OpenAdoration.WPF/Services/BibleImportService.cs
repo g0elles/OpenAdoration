@@ -15,6 +15,8 @@ namespace OpenAdoration.WPF.Services;
 /// </summary>
 public sealed class BibleImportService : IBibleImportService
 {
+    private const int MaxImportVerseCount = 200_000;
+
     private readonly IServiceScopeFactory        _scopeFactory;
     private readonly ILogger<BibleImportService> _logger;
 
@@ -49,14 +51,15 @@ public sealed class BibleImportService : IBibleImportService
         StatusMessage = "Detecting format...";
         RaiseStateChanged();
 
-        // Progress<int> must be created on the UI thread so it captures the UI
-        // SynchronizationContext and automatically marshals Report() callbacks back to it.
-        var progress = new Progress<int>(count =>
-        {
-            Progress      = count;
-            StatusMessage = $"Importing {count:N0} / {Total:N0} verses...";
-            RaiseStateChanged();
-        });
+        // Use an explicit Dispatcher-based progress so state updates always land on the
+        // UI thread regardless of which thread calls StartImport().
+        IProgress<int> progress = new DispatcherProgress(count =>
+            InvokeOnUi(() =>
+            {
+                Progress      = count;
+                StatusMessage = $"Importing {count:N0} / {Total:N0} verses...";
+                RaiseStateChanged();
+            }));
 
         _ = Task.Run(() => RunImportAsync(filePath, progress, ct), ct);
     }
@@ -72,6 +75,10 @@ public sealed class BibleImportService : IBibleImportService
             // Synchronous parse runs on the thread-pool thread (caller is Task.Run).
             var result = BibleFormatDispatcher.Import(filePath);
             ct.ThrowIfCancellationRequested();
+
+            if (result.Verses.Count > MaxImportVerseCount)
+                throw new InvalidDataException(
+                    $"File contains {result.Verses.Count:N0} verses, which exceeds the import limit of {MaxImportVerseCount:N0}.");
 
             var (version, books, verses) = result;
             int total = verses.Count;
@@ -147,4 +154,9 @@ public sealed class BibleImportService : IBibleImportService
         InvalidDataException      => $"Invalid file format: {ex.Message}",
         _                         => "Import failed. Check the log for details."
     };
+
+    private sealed class DispatcherProgress(Action<int> callback) : IProgress<int>
+    {
+        public void Report(int value) => callback(value);
+    }
 }

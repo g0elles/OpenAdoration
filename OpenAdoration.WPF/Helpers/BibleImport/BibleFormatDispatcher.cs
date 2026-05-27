@@ -92,8 +92,10 @@ public static class BibleFormatDispatcher
     {
         var settings = new XmlReaderSettings
         {
-            DtdProcessing  = DtdProcessing.Ignore,
-            IgnoreComments = true
+            DtdProcessing           = DtdProcessing.Prohibit,
+            XmlResolver             = null,
+            MaxCharactersInDocument = 50_000_000,
+            IgnoreComments          = true
         };
 
         using var reader = XmlReader.Create(filePath, settings);

@@ -11,6 +11,7 @@ using OpenAdoration.WPF.ViewModels;
 
 // 'Application' alone is ambiguous with the OpenAdoration.Application namespace —
 // alias it so the compiler resolves to System.Windows.Application unambiguously.
+using Serilog;
 using WpfApp = System.Windows.Application;
 
 namespace OpenAdoration.WPF;
@@ -40,14 +41,35 @@ public partial class App : WpfApp
         // crashes leave a trace even without a debugger attached.
         DispatcherUnhandledException += (_, ex) =>
         {
-            _logger?.LogCritical(ex.Exception, "Unhandled dispatcher exception");
-            ex.Handled = true;
+            var isFatal = ex.Exception is OutOfMemoryException or AccessViolationException;
+
+            _logger?.LogCritical(ex.Exception, "Unhandled dispatcher exception (isFatal={IsFatal})", isFatal);
+            Log.Fatal(ex.Exception, "Unhandled dispatcher exception (static sink)");
+
+            if (isFatal)
+            {
+                System.Windows.MessageBox.Show(
+                    $"A critical error occurred and the application must close.\n\nDetails logged to:\n{logDir}",
+                    "Critical Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                return; // ex.Handled stays false → WPF terminates
+            }
+
+            // Reset projection so the display is not left in an unknown state.
+            try
+            {
+                _host?.Services.GetService<IProjectionService>()?.Stop();
+            }
+            catch { /* best-effort — swallow to avoid re-entering this handler */ }
+
             System.Windows.MessageBox.Show(
-                "An unexpected error occurred.\n\n" +
-                $"Details have been logged to:\n{logDir}",
+                $"An unexpected error occurred. Projection has been stopped as a precaution.\n\nDetails logged to:\n{logDir}",
                 "Unexpected Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+
+            ex.Handled = true;
         };
 
         TaskScheduler.UnobservedTaskException += (_, ex) =>

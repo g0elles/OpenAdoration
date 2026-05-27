@@ -3,18 +3,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
         Title="OpenAdoration"
+        Icon="Assets/openadoration.ico"
         MinWidth="1024" MinHeight="600"
         Width="1280" Height="720"
         Background="{StaticResource PrimaryBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- ── Menu bar ── -->
+        <Border Grid.Row="0"
+                Background="{StaticResource PrimaryBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1">
+            <Menu Background="Transparent">
+                <MenuItem Header="Help">
+                    <MenuItem Header="About OpenAdoration"
+                              Click="OnAboutClick" />
+                </MenuItem>
+            </Menu>
+        </Border>
+
         <!-- ── Content area (sidebar + page) ── -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
@@ -72,7 +87,7 @@
         </Grid>
 
         <!-- ── Projection control bar ── -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="{StaticResource PrimaryBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0"
@@ -93,7 +108,6 @@
                         CornerRadius="3"
                         Margin="0,0,12,0">
                     <Grid>
-                        <!-- Live preview text -->
                         <TextBlock Text="{Binding PreviewText}"
                                    Foreground="White"
                                    FontSize="7"
@@ -104,7 +118,6 @@
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center" />
 
-                        <!-- BLANK indicator -->
                         <Border Background="#CC000000"
                                 Visibility="{Binding PreviewIsBlank, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="BLANK"
@@ -115,7 +128,6 @@
                                        VerticalAlignment="Center" />
                         </Border>
 
-                        <!-- NO SIGNAL overlay when not projecting -->
                         <Border Background="#CC0D0D14"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
                             <TextBlock Text="NO SIGNAL"

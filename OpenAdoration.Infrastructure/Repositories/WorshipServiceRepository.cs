@@ -109,7 +109,12 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
                 .ToListAsync(ct);
             var songMap = songs.ToDictionary(s => s.Id);
             foreach (var item in service.Items.OfType<SongScheduleItem>())
-                item.Song = songMap[item.SongId];
+            {
+                if (!songMap.TryGetValue(item.SongId, out var song))
+                    throw new InvalidOperationException(
+                        $"SongScheduleItem {item.Id} references missing Song {item.SongId}.");
+                item.Song = song;
+            }
         }
 
         var versionIds = service.Items.OfType<BibleScheduleItem>()
@@ -123,7 +128,12 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
                 .ToListAsync(ct);
             var versionMap = versions.ToDictionary(v => v.Id);
             foreach (var item in service.Items.OfType<BibleScheduleItem>().Where(i => i.BibleVersionId.HasValue))
-                item.BibleVersion = versionMap[item.BibleVersionId!.Value];
+            {
+                if (!versionMap.TryGetValue(item.BibleVersionId!.Value, out var version))
+                    throw new InvalidOperationException(
+                        $"BibleScheduleItem {item.Id} references missing BibleVersion {item.BibleVersionId.Value}.");
+                item.BibleVersion = version;
+            }
         }
 
         var mediaIds = service.Items.OfType<MediaScheduleItem>().Select(i => i.MediaFileId).ToList();
@@ -134,7 +144,12 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
                 .ToListAsync(ct);
             var mediaMap = mediaFiles.ToDictionary(m => m.Id);
             foreach (var item in service.Items.OfType<MediaScheduleItem>())
-                item.MediaFile = mediaMap[item.MediaFileId];
+            {
+                if (!mediaMap.TryGetValue(item.MediaFileId, out var mediaFile))
+                    throw new InvalidOperationException(
+                        $"MediaScheduleItem {item.Id} references missing MediaFile {item.MediaFileId}.");
+                item.MediaFile = mediaFile;
+            }
         }
 
         return service;
@@ -220,12 +235,16 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
             .Where(i => i.ServiceId == serviceId)
             .ToListAsync(ct);
 
+        var actualIds   = items.Select(i => i.Id).ToHashSet();
+        var providedIds = new HashSet<int>(orderedItemIds);
+        if (!actualIds.SetEquals(providedIds))
+            throw new InvalidOperationException(
+                $"ReorderItemsAsync: provided IDs do not exactly match service {serviceId}'s items " +
+                $"(expected {actualIds.Count}, got {orderedItemIds.Count} with {providedIds.Except(actualIds).Count()} unknown).");
+
         var indexMap = items.ToDictionary(i => i.Id);
         for (var index = 0; index < orderedItemIds.Count; index++)
-        {
-            if (indexMap.TryGetValue(orderedItemIds[index], out var item))
-                item.Order = index;
-        }
+            indexMap[orderedItemIds[index]].Order = index;
 
         await context.SaveChangesAsync(ct);
     }

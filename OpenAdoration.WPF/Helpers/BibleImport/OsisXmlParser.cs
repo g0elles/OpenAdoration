@@ -81,9 +81,11 @@ internal static class OsisXmlParser
 
         var settings = new XmlReaderSettings
         {
-            DtdProcessing    = DtdProcessing.Ignore,
-            IgnoreComments   = true,
-            IgnoreWhitespace = false
+            DtdProcessing           = DtdProcessing.Prohibit,
+            XmlResolver             = null,
+            MaxCharactersInDocument = 50_000_000,
+            IgnoreComments          = true,
+            IgnoreWhitespace        = false
         };
 
         using var reader = XmlReader.Create(filePath, settings);
