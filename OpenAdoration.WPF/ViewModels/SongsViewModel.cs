@@ -62,15 +62,9 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
 
     private async Task DebounceSearchAsync(CancellationToken ct)
     {
-        try
-        {
-            await Task.Delay(300, ct);
+        await Task.Delay(300);
+        if (!ct.IsCancellationRequested)
             SearchCommand.Execute(null);
-        }
-        catch (OperationCanceledException)
-        {
-            // Text changed before the delay elapsed -- discard this run
-        }
     }
 
     // -- Commands --------------------------------------------------------------
