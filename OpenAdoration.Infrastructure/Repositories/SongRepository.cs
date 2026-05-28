@@ -98,8 +98,14 @@ public sealed class SongRepository : ISongRepository
         return ids;
     }
 
-    private static string EscapeFtsTerm(string raw) =>
-        "\"" + raw.Trim().Replace("\"", "\"\"") + "\"";
+    // Each word gets a trailing * for prefix matching so "cura" matches "curará", "curas", etc.
+    // Special FTS5 chars are stripped to prevent query syntax errors.
+    private static string EscapeFtsTerm(string raw)
+    {
+        var words = raw.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w =>
+            w.Replace("\"", "").Replace("*", "").Replace("^", "") + "*"));
+    }
 
     public async Task<Song> AddAsync(Song song, CancellationToken ct = default)
     {
