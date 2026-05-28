@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
@@ -55,6 +56,57 @@ public sealed class SongRepository : ISongRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(term);
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var songIds = await FtsLyricsSearchAsync(context, term, ct);
+        if (songIds.Count == 0) return [];
+
+        return await context.Songs
+            .AsNoTracking()
+            .Include(s => s.Sections.OrderBy(ss => ss.Order))
+            .Where(s => songIds.Contains(s.Id))
+            .OrderBy(s => s.Title)
+            .ToListAsync(ct);
+    }
+
+    private static async Task<List<int>> FtsLyricsSearchAsync(
+        AppDbContext context, string term, CancellationToken ct)
+    {
+        var conn = (SqliteConnection)context.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync(ct);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT DISTINCT ss.SongId
+            FROM   SongSectionsFts fts
+            JOIN   SongSections ss ON ss.Id = fts.rowid
+            WHERE  SongSectionsFts MATCH @term
+            ORDER  BY ss.SongId
+            """;
+        cmd.Parameters.AddWithValue("@term", EscapeFtsTerm(term));
+
+        var ids = new List<int>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+            ids.Add(reader.GetInt32(0));
+
+        return ids;
+    }
+
+    // Each word gets a trailing * for prefix matching so "cura" matches "curará", "curas", etc.
+    // Special FTS5 chars are stripped to prevent query syntax errors.
+    private static string EscapeFtsTerm(string raw)
+    {
+        var words = raw.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w =>
+            w.Replace("\"", "").Replace("*", "").Replace("^", "") + "*"));
+    }
+
     public async Task<Song> AddAsync(Song song, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(song);
@@ -87,6 +139,7 @@ public sealed class SongRepository : ISongRepository
         existing.Title          = song.Title;
         existing.Author         = song.Author;
         existing.Classification = song.Classification;
+        existing.VerseOrder     = song.VerseOrder;
 
         // Replace sections entirely to avoid stale or orphaned section rows
         context.SongSections.RemoveRange(existing.Sections);

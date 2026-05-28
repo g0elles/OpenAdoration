@@ -42,6 +42,21 @@ public sealed class SongService : ISongService
         return results;
     }
 
+    public async Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(term);
+
+        try
+        {
+            return await _repository.SearchByLyricsAsync(term, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Lyrics FTS search failed for term '{Term}' — index may not exist yet", term);
+            return [];
+        }
+    }
+
     public async Task<Song> CreateAsync(Song song, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(song);

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Helpers.SongImport;
 using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -61,15 +62,9 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
 
     private async Task DebounceSearchAsync(CancellationToken ct)
     {
-        try
-        {
-            await Task.Delay(300, ct);
+        await Task.Delay(300);
+        if (!ct.IsCancellationRequested)
             SearchCommand.Execute(null);
-        }
-        catch (OperationCanceledException)
-        {
-            // Text changed before the delay elapsed -- discard this run
-        }
     }
 
     // -- Commands --------------------------------------------------------------
@@ -82,9 +77,18 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         ClearError();
         try
         {
-            var list = string.IsNullOrWhiteSpace(SearchText)
-                ? await _songService.GetAllAsync()
-                : await _songService.SearchByTitleAsync(SearchText);
+            IReadOnlyList<Song> list;
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                list = await _songService.GetAllAsync();
+            }
+            else
+            {
+                // Two-step: title/author match first (fast); fall back to lyrics FTS only when empty.
+                list = await _songService.SearchByTitleAsync(SearchText);
+                if (list.Count == 0)
+                    list = await _songService.SearchByLyricsAsync(SearchText);
+            }
 
             Songs = new ObservableCollection<Song>(list);
         }
@@ -151,6 +155,40 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         }
         // Only reached on success (IsBusy already reset by finally)
         await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task ImportSongAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Import Song",
+            Filter = "OpenLyrics XML (*.xml)|*.xml",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+
+        try
+        {
+            var song = OpenLyricsParser.Parse(dialog.FileName);
+            await _songService.CreateAsync(song);
+            _logger.LogInformation("Imported song '{Title}' from {File}", song.Title, dialog.FileName);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import song from {File}", dialog.FileName);
+            SetError("Import failed. The file may not be a valid OpenLyrics XML.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
