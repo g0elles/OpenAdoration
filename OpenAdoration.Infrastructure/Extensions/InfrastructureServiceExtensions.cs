@@ -41,6 +41,9 @@ public static class InfrastructureServiceExtensions
         // Projection is singleton — owns the live session state for the app's lifetime
         services.AddSingleton<IProjectionService, ProjectionService>();
 
+        // Token resolution: stateless, singleton is fine
+        services.AddSingleton<ITokenResolver, TokenResolver>();
+
         return services;
     }
 

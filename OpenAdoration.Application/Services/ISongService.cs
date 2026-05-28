@@ -8,6 +8,11 @@ public interface ISongService
     Task<Song?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Song>> SearchByTitleAsync(string term, CancellationToken ct = default);
+    /// <summary>
+    /// Full-text lyrics search via FTS5 index. Falls back to empty list if the
+    /// SongSectionsFts table does not exist yet (pre-migration databases).
+    /// </summary>
+    Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default);
     Task<Song> CreateAsync(Song song, CancellationToken ct = default);
     Task UpdateAsync(Song song, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);

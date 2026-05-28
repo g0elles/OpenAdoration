@@ -33,6 +33,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    Text="Songs"
@@ -41,6 +42,13 @@
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                         <Button Grid.Column="1"
+                                Content="Import"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ImportSongCommand}"
+                                Padding="10,6"
+                                Margin="0,0,6,0"
+                                ToolTip="Import OpenLyrics XML file" />
+                        <Button Grid.Column="2"
                                 Content="+ New"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding NewSongCommand}"
