@@ -17,6 +17,7 @@ public partial class ProjectionWindow : Window
     private readonly IProjectionService   _projectionService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ITokenResolver       _tokenResolver;
+    private readonly IAppSettingsService  _appSettings;
     private readonly ILogger<ProjectionWindow> _logger;
 
     // True only when MainWindow explicitly calls CloseForReal() on shutdown.
@@ -44,6 +45,7 @@ public partial class ProjectionWindow : Window
         IProjectionService   projectionService,
         IServiceScopeFactory scopeFactory,
         ITokenResolver       tokenResolver,
+        IAppSettingsService  appSettings,
         ILogger<ProjectionWindow> logger)
     {
         InitializeComponent();
@@ -51,6 +53,7 @@ public partial class ProjectionWindow : Window
         _projectionService = projectionService;
         _scopeFactory      = scopeFactory;
         _tokenResolver     = tokenResolver;
+        _appSettings       = appSettings;
         _logger            = logger;
 
         _projectionService.SlideChanged           += OnSlideChanged;
@@ -402,6 +405,28 @@ public partial class ProjectionWindow : Window
                 ClearDisplay();
                 break;
         }
+
+        PlayTransition();
+    }
+
+    // Fades the foreground content in on each slide change. Theme background stays static.
+    private void PlayTransition()
+    {
+        var ms = _appSettings.Current.SlideTransitionMilliseconds;
+        if (ms <= 0)
+        {
+            ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+            ContentLayers.Opacity = 1;
+            return;
+        }
+
+        var fade = new System.Windows.Media.Animation.DoubleAnimation
+        {
+            From     = 0,
+            To       = 1,
+            Duration = TimeSpan.FromMilliseconds(ms)
+        };
+        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, fade);
     }
 
     private void ShowText(string content, SlideContext context)
@@ -507,6 +532,10 @@ public partial class ProjectionWindow : Window
 
     private void StopAndHide()
     {
+        // Drop any in-flight fade so the next session starts fully opaque.
+        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+        ContentLayers.Opacity = 1;
+
         StopThemeVideo();
         StopContentVideo();
         // Clear per-session caches so the next session picks up any theme edits

@@ -26,6 +26,10 @@
                       IsMuted="True"
                       MediaEnded="OnThemeVideoEnded" />
 
+        <!-- Foreground content layers — opacity-animated on slide change for a fade transition.
+             Theme background layers stay outside so they don't flicker between slides. -->
+        <Grid x:Name="ContentLayers">
+
         <!-- Media image layer — for SlideType.Media with image files -->
         <Image x:Name="BackgroundImage"
                Stretch="Uniform"
@@ -94,6 +98,8 @@
         <Rectangle x:Name="BlankOverlay"
                    Fill="Black"
                    Visibility="Collapsed" />
+
+        </Grid> <!-- end ContentLayers -->
 
         <!-- Corner label: fallback when theme has no HeaderTemplate (top-left, subtle) -->
         <StackPanel x:Name="CornerLabel"

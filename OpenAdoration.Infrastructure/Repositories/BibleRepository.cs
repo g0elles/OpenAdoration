@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Infrastructure.Persistence;
@@ -88,7 +89,7 @@ public sealed class BibleRepository : IBibleRepository
     }
 
     public async Task<IReadOnlyList<BibleVerse>> SearchAsync(
-        int versionId, string term, int maxResults = 100, CancellationToken ct = default)
+        int versionId, string term, BibleSearchMode mode = BibleSearchMode.Keyword, int maxResults = 100, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(term);
 
@@ -98,7 +99,7 @@ public sealed class BibleRepository : IBibleRepository
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
         // Phase 1 — FTS5 index lookup: returns matching verse IDs in O(log n + results).
-        var matchedIds = await FtsSearchAsync(context, versionId, term, maxResults, ct);
+        var matchedIds = await FtsSearchAsync(context, versionId, BuildFtsTerm(term, mode), maxResults, ct);
 
         if (matchedIds.Count == 0) return [];
 
@@ -129,7 +130,7 @@ public sealed class BibleRepository : IBibleRepository
             LIMIT  @maxResults
             """;
 
-        cmd.Parameters.AddWithValue("@term",       EscapeFtsTerm(term));
+        cmd.Parameters.AddWithValue("@term",       term);
         cmd.Parameters.AddWithValue("@versionId",  versionId);
         cmd.Parameters.AddWithValue("@maxResults", maxResults);
 
@@ -142,12 +143,27 @@ public sealed class BibleRepository : IBibleRepository
     }
 
     /// <summary>
-    /// Wraps the user's search term in FTS5 phrase-quote syntax so it is treated
-    /// as a literal phrase (equivalent in intent to LIKE '%term%').
-    /// Internal double-quotes are escaped by doubling them per the FTS5 spec.
+    /// Builds the FTS5 MATCH expression for the requested search mode.
+    /// <list type="bullet">
+    ///   <item><b>Phrase</b> — the whole term wrapped in FTS5 phrase quotes (literal sequence,
+    ///   equivalent in intent to LIKE '%term%'); internal quotes doubled per the FTS5 spec.</item>
+    ///   <item><b>Keyword</b> — each word quoted with a trailing <c>*</c> for prefix matching,
+    ///   joined by space (implicit AND), so "love mercy" finds verses containing both words
+    ///   in any order. Empty input falls back to a harmless phrase query.</item>
+    /// </list>
     /// </summary>
-    private static string EscapeFtsTerm(string raw) =>
-        "\"" + raw.Trim().Replace("\"", "\"\"") + "\"";
+    private static string BuildFtsTerm(string raw, BibleSearchMode mode)
+    {
+        if (mode == BibleSearchMode.Phrase)
+            return "\"" + raw.Trim().Replace("\"", "\"\"") + "\"";
+
+        var words = raw.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0)
+            return "\"" + raw.Trim().Replace("\"", "\"\"") + "\"";
+
+        return string.Join(" ", words.Select(w =>
+            "\"" + w.Replace("\"", "\"\"") + "\"*"));
+    }
 
     public async Task ImportVersionAsync(
         BibleVersion version,

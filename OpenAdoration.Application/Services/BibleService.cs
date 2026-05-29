@@ -66,15 +66,15 @@ public sealed class BibleService : IBibleService
     }
 
     public async Task<IReadOnlyList<BibleVerse>> SearchAsync(
-        int versionId, string term, int maxResults = 100, CancellationToken ct = default)
+        int versionId, string term, BibleSearchMode mode = BibleSearchMode.Keyword, int maxResults = 100, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(term);
 
         // Search term is intentionally not logged -- it may contain user-entered
         // scripture phrases that should not appear in support logs (L2).
-        _logger.LogDebug("Searching Bible version {VersionId} (max {MaxResults})", versionId, maxResults);
+        _logger.LogDebug("Searching Bible version {VersionId} in {Mode} mode (max {MaxResults})", versionId, mode, maxResults);
 
-        var results = await _repository.SearchAsync(versionId, term, maxResults, ct);
+        var results = await _repository.SearchAsync(versionId, term, mode, maxResults, ct);
 
         _logger.LogDebug("Bible search returned {Count} result(s) for version {VersionId}", results.Count, versionId);
 

@@ -184,6 +184,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Reference/keyword input with autocomplete -->
@@ -259,8 +260,17 @@
                                   Padding="10,6" Margin="0,0,6,0"
                                   ToolTip="Toggle keyword search mode" />
 
+                    <!-- Phrase vs keyword (only meaningful in keyword search mode) -->
+                    <ToggleButton Grid.Column="3"
+                                  Content="&quot; &quot; Phrase"
+                                  IsChecked="{Binding IsPhraseSearch}"
+                                  Style="{StaticResource AlignToggleButton}"
+                                  Padding="10,6" Margin="0,0,6,0"
+                                  Visibility="{Binding IsKeywordMode, Converter={StaticResource BoolToVis}}"
+                                  ToolTip="Match the exact phrase instead of all words" />
+
                     <!-- Clear input -->
-                    <Button Grid.Column="3" Content="✕"
+                    <Button Grid.Column="4" Content="✕"
                             Style="{StaticResource IconButton}"
                             Command="{Binding ClearReferenceCommand}"
                             ToolTip="Clear" />

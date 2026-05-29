@@ -17,6 +17,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _defaultAutoAdvanceSeconds;
     [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
     [ObservableProperty] private int _announcementDurationSeconds = 25;
+    [ObservableProperty] private int _slideTransitionMilliseconds = 300;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowSavedConfirmation))]
@@ -48,6 +49,7 @@ public partial class SettingsViewModel : BaseViewModel
             DefaultAutoAdvanceSeconds   = current.DefaultAutoAdvanceSeconds;
             DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
             AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
+            SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
         }
         finally
         {
@@ -70,7 +72,8 @@ public partial class SettingsViewModel : BaseViewModel
                 ChurchCcliNumber           = string.IsNullOrWhiteSpace(ChurchCcliNumber) ? null : ChurchCcliNumber.Trim(),
                 DefaultAutoAdvanceSeconds   = DefaultAutoAdvanceSeconds < 0 ? 0 : DefaultAutoAdvanceSeconds,
                 DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
-                AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds
+                AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
+                SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds
             };
 
             await _settings.SaveAsync(updated);
@@ -97,4 +100,5 @@ public partial class SettingsViewModel : BaseViewModel
     partial void OnDefaultAutoAdvanceSecondsChanged(int value) => IsSaved = false;
     partial void OnDefaultBibleVersesPerSlideChanged(int value) => IsSaved = false;
     partial void OnAnnouncementDurationSecondsChanged(int value) => IsSaved = false;
+    partial void OnSlideTransitionMillisecondsChanged(int value) => IsSaved = false;
 }

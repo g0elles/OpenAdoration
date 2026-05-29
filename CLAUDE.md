@@ -123,6 +123,7 @@ database:
     bible_import: Batch 1000 rows + ChangeTracker.Clear() per batch. Required — full Bible ≈ 31,000 verses.
     song_search: Two-step — title/author LIKE first; lyrics FTS5 (SongSectionsFts) as fallback when 0 results.
       FTS term escaping: each word gets trailing * for prefix matching ("cura" matches "curará").
+    bible_search: BibleSearchMode { Keyword, Phrase }. Keyword=per-word "w"* prefix joined by space (implicit AND); Phrase="exact phrase" quoted. BibleRepository.BuildFtsTerm builds the MATCH expr; IBibleService/Repository.SearchAsync take the mode (default Keyword). UI toggle in Bible browser.
 
 # ─────────────────────────────────────────────────────────────────────────────
 projection_engine:
@@ -164,6 +165,7 @@ projection_engine:
     CornerLabel: fallback (top-left ZIndex=100) used only when no HeaderTemplate set on active theme
     Media: BitmapImage → BackgroundImage (image) or MediaElement ContentVideo (video, with audio)
     Blank: BlankOverlay rectangle visible
+    transition: foreground layers wrapped in ContentLayers Grid; PlayTransition() fades opacity 0→1 per render (theme bg outside → no flicker). SlideTransitionMilliseconds=0 disables. Stage preview not faded.
     Theme resolution: per-slide via IServiceScopeFactory → IThemeService; ConcurrentDictionary cache per session
     cleanup: OnClosed() unsubscribes SlideChanged + ProjectionStateChanged + ThemeChanged (G9)
 
@@ -201,7 +203,7 @@ token_system:
 # ─────────────────────────────────────────────────────────────────────────────
 settings_system:
   storage: "%LOCALAPPDATA%\\OpenAdoration\\settings.json"  # JSON, NOT the DB — no migration
-  model: AppSettings (Application/Common) — ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds, DefaultBibleVersesPerSlide(min 1), AnnouncementDurationSeconds(min 1, default 25)
+  model: AppSettings (Application/Common) — ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds, DefaultBibleVersesPerSlide(min 1), AnnouncementDurationSeconds(min 1, default 25), SlideTransitionMilliseconds(0=off, default 300)
   service: IAppSettingsService → AppSettingsService (Infrastructure/Settings)
     lifetime: Singleton; loads JSON once at construction (defaults on missing/corrupt file); SaveAsync rewrites + updates Current
     registration: AddInfrastructure(services, dbPath, settingsPath) — settingsPath now a required 2nd arg; App.xaml.cs passes appDataDir\settings.json
@@ -458,7 +460,7 @@ feature_status:  # as of 2026-05-29
          Copyright; CcliNumber; OpenLyrics import. (Edit loads sections in definition order; VerseOrder edited separately.)
   Themes: DONE — full CRUD + live preview; BackgroundType(Color/Image/Video); xctk:ColorPicker;
           text alignment; HeaderTemplate/FooterTemplate with token chips; 3-zone projection
-  Bible: DONE — 3-column browser; single-click projection; FTS search; 8-format import (8/8 tests);
+  Bible: DONE — 3-column browser; single-click projection; FTS search (keyword + exact-phrase modes); 8-format import (10/10 tests incl. ZIP guards);
          localized book names; [BibleReference] token ("John 3:16"); cancel+summary;
          configurable verses-per-slide (BibleService.GenerateSlides chunks by DefaultBibleVersesPerSlide)
   ServiceSchedule: DONE — service list + builder (song/bible/media, reorder ▲▼, auto-advance [⏱],
@@ -467,7 +469,8 @@ feature_status:  # as of 2026-05-29
   Media: DONE — import, project, delete; ProjectionWindow handles SlideType.Media (image + video with audio)
   Projection: DONE — 3-zone layout (Header/Body/Footer); ITokenResolver; theme per slide via IServiceScopeFactory;
               CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination;
-              live announcement banner overlay (blue lower-third, white text; auto-dismiss after AnnouncementDurationSeconds; leaves slide intact)
+              live announcement banner overlay (blue lower-third, white text; auto-dismiss after AnnouncementDurationSeconds; leaves slide intact);
+              configurable slide-change Fade (SlideTransitionMilliseconds; ContentLayers opacity animation)
   StageView: DONE — embedded nav section; themed 1920×1080 Viewbox previews; cross-item UP NEXT;
              Prev/Next Item buttons (visible only when IsServiceScheduleActive); real video via MediaElement
   TokenSystem: DONE — 12 tokens (2 church + 5 song + 5 bible); auto-hide zones; clickable chip insertion in theme editor
@@ -527,11 +530,13 @@ roadmap:
     # Verses-per-slide: DefaultBibleVersesPerSlide setting; BibleService.GenerateSlides chunks (schedule + multi-verse selection).
     # Song play-order: editable VerseOrder field in AddEditSongView + color-coded token badges; fixed edit data-loss (B12).
 
+  vp_slide_transitions: Slide-change Fade (WPF opacity DoubleAnimation on ContentLayers; configurable ms) — DONE
+    # Single Fade only; VP's other 16 HLSL effects not implemented (not needed for now).
+  vp_bible_phrase_search: Keyword (all-words prefix) + exact-Phrase FTS modes; UI toggle — DONE
+
   # Remaining gaps (see VIDEOPSALM_REFERENCE.md §2 for full reconciled matrix)
-  next_p1_slide_transitions: ONLY remaining P1 gap. Start with WPF opacity Fade (DoubleAnimation on body/window); VP has 17 HLSL effects.
-  p2_bible_phrase_search: Exact phrase mode alongside FTS keyword search (FTS5 "..." syntax)
   p2_additional_song_imports: OpenSong, plain text
-  p2_clock_overlay: Clock/countdown/stopwatch overlay (VP Mensaje tab) — reuses the announcement overlay surface
+  p2_clock_overlay: DROPPED — reviewed with user, not needed.
   m6c_packaging: MSIX or Setup installer — DEFERRED TO LAST (after church testing of current build)
 
 # ─────────────────────────────────────────────────────────────────────────────

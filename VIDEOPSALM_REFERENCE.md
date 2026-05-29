@@ -39,19 +39,19 @@ Status reconciled 2026-05-29 against actual code (was last accurate before the V
 | Auto-advance (configurable interval per item) | ✅ | `ScheduleItem.AutoAdvanceSeconds`; DispatcherTimer (one-shot, resets on SlideChanged); cross-item advance at end. `DefaultAutoAdvanceSeconds` in settings applies to new items. |
 | Verse order customization (reorder song sections per service) | ✅ | `Song.VerseOrder` (default) **and** `SongScheduleItem.VerseOrderOverride` (per-agenda override). `GetOrderedSections(override)` resolves token string. |
 | CCLI license tracking (`[SiteLicense]` in footer) | ✅ | `Song.CcliNumber` + `[SongCCLI]` token; church-wide `ChurchCcliNumber` in settings + `[SiteLicense]` token; `[ChurchName]` too |
-| **Slide transitions (animated)** | ❌ | **Only remaining P1 gap.** VP has 17 HLSL shader transitions: `Fade`, `FadeAndBlur`, `FadeAndGrow`, `HorizontalBlinds`, `VerticalBlinds`, `Checkerboard`, `CheckerboardDouble`, `Diamonds`, `Dots`, `Melt`, `MeltDouble`, `Roll`, `RotateWipe`, `RotateWipeDouble`, `DoubleRotateWipe`, `DoubleRotateWipeDouble`, `Star`, `StarDouble`. OA path: start with a WPF opacity **Fade** (DoubleAnimation on the body/whole window) — covers the 90% case without HLSL; add more later. |
+| Slide transitions (animated) | 🔶 | **Fade DONE** (configurable opacity DoubleAnimation on ContentLayers; `SlideTransitionMilliseconds`). VP's other 16 HLSL shader effects (FadeAndBlur, Blinds, Checkerboard, Melt, RotateWipe, Star, …) not implemented — not needed for now. |
 
 ### P2 — Nice to have
 
 | VP Feature | OA Status | Notes |
 |---|---|---|
 | Live announcement / message slide | ✅ | `IProjectionService.ShowAnnouncement/ClearAnnouncement` + `CurrentAnnouncement`/`AnnouncementChanged`. Blue lower-third **banner overlay** (white text) over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds` (default 25). Rendered by ProjectionWindow + StageView. |
-| Bible search — phrase / word / Strong's modes | 🔶 | Word/keyword mode done (FTS5). **Phrase mode planned (P2-b)** via FTS5 `"..."`. Strong's not planned (needs Strong's markup in source). |
+| Bible search — phrase / word / Strong's modes | 🔶 | **Keyword (all-words, prefix) + exact-Phrase modes DONE** (FTS5; UI toggle in Bible browser). Strong's not planned (needs Strong's markup in source). |
 | Song import formats (20+ formats) | 🔶 | **OpenLyrics XML done.** Planned next: OpenSong, plain text (P2-c). VP also imports CCLI `.usr`, EasyWorship, ZionWorx, ChordPro, SoftProjector, WorshipCenterPro, etc. |
 | Configurable verses-per-slide (Bible) | ✅ | `DefaultBibleVersesPerSlide` setting; `BibleService.GenerateSlides` chunks verses. Applies to schedule Bible items + multi-verse selection. |
 | Chord display (ChordPro / bracket) | ❌ | VP shows chords above lyrics or inline; `ViewBracketContentAsChord` flag on songbook |
 | Audio-only agenda item | ❌ | VP: `AgendaAudio` item type — audio plays during service with no visual content (pre-service music). OA has no audio-only item. |
-| Clock overlay (analog/digital, countdown) | ❌ | VP: 3 analog styles (cyan/red/dark) × 3 modes (clock/countdown/stopwatch); Mensaje ribbon tab. Good fit for the same overlay surface as the announcement slide. |
+| Clock overlay (analog/digital, countdown) | — | DROPPED (decided with user — not needed). VP: 3 analog styles × 3 modes (clock/countdown/stopwatch). |
 | Aspect-ratio presets / background brightness | ❌ | VP Fondo tab: Actual/4:3/16:9/16:10/16:8 + brightness slider on bg media |
 | Bilingual / dual Bible mode | ❌ | VP shows two versions side-by-side on one slide |
 | Selectable zone-layout presets | ❌ | VP "Apariencia" 3×3 grid of Header/Body/Footer arrangements |
@@ -410,9 +410,9 @@ VP exposes a `BibleSearchMode` enum with at least three modes, accessible from t
 | **Word** | Finds verses containing all specified words (order-independent) |
 | **Strong's** | Searches by Strong's concordance number (H1234 / G5678) — Hebrew/Greek lexicon lookup |
 
-OA currently has a single FTS5 keyword search (`SearchAsync` in `IBibleService`) — equivalent to "word" mode only.
+**✅ Keyword + Phrase DONE.** `IBibleService.SearchAsync` takes a `BibleSearchMode { Keyword, Phrase }`. Keyword = all words, per-word prefix, implicit AND; Phrase = exact FTS5 quoted phrase. Bible browser has a `" " Phrase` toggle (keyword mode only).
 
-**For OA:** To add phrase search, use FTS5's `"..."` quoted phrase syntax. Strong's search requires the Bible version to include Strong's markup in the verse text — most common formats (Zefania, OSIS) support this optionally.
+**Strong's (not done):** requires the Bible version to include Strong's markup in the verse text — most common formats (Zefania, OSIS) support this optionally.
 
 ### 5.10 Key Differences from OA's Current Bible Browser
 
@@ -421,7 +421,7 @@ OA currently has a single FTS5 keyword search (`SearchAsync` in `IBibleService`)
 | Book display | **2 columns: OT left, NT right** (each scrollable) | Single list grouped by Testament (CollectionViewSource) — minor UX gap |
 | Chapter display | Plain number list beside selected book | 38×38 tile grid (WrapPanel) — equivalent |
 | Version selection | Tabs + dropdown (both always visible) | Tabs only (per installed version) — minor gap |
-| Verse per slide | **Configurable (default: 1)** | 🔶 being made configurable (`DefaultBibleVersesPerSlide`) |
+| Verse per slide | **Configurable (default: 1)** | ✅ configurable (`DefaultBibleVersesPerSlide`) |
 | Slide footer | Bible version name (`[BibleDescription]`) | ✅ via FooterTemplate + `[BibleDescription]` token |
 | Slide header | Right-aligned ref + decorative icon | ✅ via HeaderTemplate + `[BibleReference]` token (no decorative icon) |
 | Aspect ratio | Selectable (Actual/4:3/16:9/16:10/16:8) | ❌ Not implemented |

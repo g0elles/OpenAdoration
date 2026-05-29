@@ -10,8 +10,8 @@ _Last updated: 2026-05-29_
 Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
-Tests:    10/10 pass  (dotnet test OpenAdoration.Tests.Infrastructure — +2 ZIP guard tests)
-Last commit: 558ed29  feat(projection): announcement banner + verses-per-slide + song play-order (uncommitted: review fixes #1–4)
+Tests:    10/10 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
+Last commit: 3a15b4e  fix(review): … (uncommitted: slide transitions + Bible phrase search)
 Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration since)
 Branch: master
 ```
@@ -109,13 +109,14 @@ Branch: master
 
 | # | Feature | Notes |
 |---|---|---|
-| P1 | **Slide transitions** | Only remaining P1-tier gap. Start with a WPF opacity Fade (DoubleAnimation) before considering VP's 17 HLSL effects. Not yet started. |
-| P2 | Bible phrase search mode | FTS5 `"..."` quoted phrase alongside keyword mode |
 | P2 | Additional song import formats | OpenSong, plain text |
-| P2 | Clock / countdown overlay | VP Mensaje tab; same projection-overlay surface as the announcement slide |
 | M6c | Packaging | MSIX or Setup; users shouldn't run via `dotnet run` — **deferred to last, after church testing** |
 
-**All P0 done; P1 done except slide transitions.** Recommended next: slide transitions (Fade) or Bible phrase search. **M6c packaging is intentionally last.** See `VIDEOPSALM_REFERENCE.md` §2 for the full reconciled gap matrix.
+**All P0 + P1 done. P2 mostly done** (announcement, verses-per-slide, slide transitions, Bible phrase search). Clock/countdown overlay was reviewed and **dropped (not needed)**. Remaining: additional song importers (P2), then M6c packaging (last). See `VIDEOPSALM_REFERENCE.md` §2 for the full reconciled gap matrix.
+
+### P2 batch 2 (2026-05-29) — DONE this session
+- **Slide transitions** — configurable opacity Fade on projection output. `ProjectionWindow` wraps foreground layers in `ContentLayers`; `PlayTransition()` animates opacity 0→1 each render (theme bg stays static, no flicker). `SlideTransitionMilliseconds` setting (0=off, default 300). Stage preview is not faded.
+- **Bible phrase search** — `BibleSearchMode { Keyword, Phrase }`. Keyword = all words, per-word prefix, implicit AND (new default); Phrase = exact FTS5 quoted phrase (the prior behavior). Threaded through `IBibleService`/`IBibleRepository.SearchAsync`; `BuildFtsTerm` builds the MATCH expr. Bible browser has a `" " Phrase` toggle (keyword mode only); toggling re-runs the search.
 
 ### P1-2 (settings page + church tokens) — DONE this session
 - `AppSettings` (Application/Common): ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds.

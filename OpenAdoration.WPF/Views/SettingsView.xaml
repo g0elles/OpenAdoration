@@ -82,6 +82,16 @@
                          Margin="0,0,0,4" />
                 <TextBlock Text="How long the announcement banner stays on screen before it vanishes. Minimum 1."
                            Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                <TextBlock Text="Slide transition (milliseconds)" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="300"
+                         Text="{Binding SlideTransitionMilliseconds, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="Fade duration when the projected slide changes. 0 = no transition."
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <StackPanel Orientation="Horizontal">

@@ -27,4 +27,10 @@ public sealed class AppSettings
     /// Seconds an announcement banner stays on screen before it auto-dismisses. Minimum 1; default 25.
     /// </summary>
     public int AnnouncementDurationSeconds { get; set; } = 25;
+
+    /// <summary>
+    /// Fade duration (milliseconds) when the projected slide changes. 0 disables the transition.
+    /// Default 300.
+    /// </summary>
+    public int SlideTransitionMilliseconds { get; set; } = 300;
 }

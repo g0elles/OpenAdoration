@@ -82,8 +82,15 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [NotifyPropertyChangedFor(nameof(ReferenceBarPlaceholder))]
     private bool _isKeywordMode;
 
+    // False = keyword (all words, prefix); True = exact phrase. Only relevant in keyword search mode.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ReferenceBarPlaceholder))]
+    private bool _isPhraseSearch;
+
     public bool   IsSearchActive         => IsKeywordMode && _searchResults.Count > 0;
-    public string ReferenceBarPlaceholder => IsKeywordMode ? "Type keyword to search…" : "e.g. John 3:16-18";
+    public string ReferenceBarPlaceholder => IsKeywordMode
+        ? (IsPhraseSearch ? "Type exact phrase to search…" : "Type keyword(s) to search…")
+        : "e.g. John 3:16-18";
 
     // ── Import ────────────────────────────────────────────────────────────
     public bool   IsImporting           => _importService.IsImporting;
@@ -454,8 +461,11 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         ClearError();
         try
         {
+            var mode = IsPhraseSearch
+                ? OpenAdoration.Application.Common.BibleSearchMode.Phrase
+                : OpenAdoration.Application.Common.BibleSearchMode.Keyword;
             var results = (await _bibleService.SearchAsync(
-                SelectedVersion.Id, ReferenceInput, maxResults: 200, ct: ct)).ToList();
+                SelectedVersion.Id, ReferenceInput, mode, maxResults: 200, ct: ct)).ToList();
             if (ct.IsCancellationRequested) return;
 
             _searchResults = results;
@@ -535,6 +545,13 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
         if (!value)
             RebuildCheckableVersesFromChapter();
+    }
+
+    partial void OnIsPhraseSearchChanged(bool value)
+    {
+        // Re-run the active keyword search under the new interpretation.
+        if (IsKeywordMode && !string.IsNullOrWhiteSpace(ReferenceInput))
+            _ = RunSearchAsync();
     }
 
     // ── Checkbox subscription helpers ─────────────────────────────────────
