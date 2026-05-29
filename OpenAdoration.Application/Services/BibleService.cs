@@ -152,6 +152,7 @@ public sealed class BibleService : IBibleService
             BibleVerseId     = verses.Count == 1
                                    ? verses[0].Verse.ToString()
                                    : $"{verses[0].Verse}-{verses[^1].Verse}",
+            BibleReference   = label,
             BibleDescription = version?.Name
         };
 

@@ -10,6 +10,7 @@ namespace OpenAdoration.WPF;
 public partial class MainWindow : Window
 {
     private readonly ProjectionWindow    _projectionWindow;
+    private readonly PresenterWindow     _presenterWindow;
     private readonly IProjectionService  _projectionService;
     private readonly MainViewModel       _viewModel;
     private readonly ILogger<MainWindow> _logger;
@@ -17,12 +18,14 @@ public partial class MainWindow : Window
     public MainWindow(
         MainViewModel viewModel,
         ProjectionWindow projectionWindow,
+        PresenterWindow presenterWindow,
         IProjectionService projectionService,
         ILogger<MainWindow> logger)
     {
         InitializeComponent();
 
         _projectionWindow  = projectionWindow;
+        _presenterWindow   = presenterWindow;
         _projectionService = projectionService;
         _viewModel         = viewModel;
         _logger            = logger;
@@ -127,10 +130,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnTogglePresenterClick(object sender, RoutedEventArgs e)
+    {
+        if (_presenterWindow.IsVisible)
+            _presenterWindow.Hide();
+        else
+            _presenterWindow.Show();
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         _logger.LogInformation("MainWindow closing — shutting down projection window");
         _projectionWindow.CloseForReal();
+        _presenterWindow.CloseForReal();
         base.OnClosed(e);
     }
 }

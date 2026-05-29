@@ -155,5 +155,6 @@ public partial class App : WpfApp
     {
         services.AddSingleton<MainWindow>();
         services.AddSingleton<ProjectionWindow>();
+        services.AddSingleton<PresenterWindow>();
     }
 }

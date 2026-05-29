@@ -20,9 +20,10 @@ public sealed partial class TokenResolver : ITokenResolver
                 "SongTitle"       => context.SongTitle       ?? string.Empty,
                 "SongAuthor"      => context.SongAuthor      ?? string.Empty,
                 "SongVerseTag"    => context.SongVerseTag    ?? string.Empty,
-                "BibleBookName"   => context.BibleBookName   ?? string.Empty,
+                "BibleBookName"    => context.BibleBookName    ?? string.Empty,
                 "BibleChapterID"  => context.BibleChapterId  ?? string.Empty,
                 "BibleVerseID"    => context.BibleVerseId    ?? string.Empty,
+                "BibleReference"  => context.BibleReference  ?? string.Empty,
                 "BibleDescription"=> context.BibleDescription ?? string.Empty,
                 _                 => m.Value  // leave unknown tokens unchanged
             };

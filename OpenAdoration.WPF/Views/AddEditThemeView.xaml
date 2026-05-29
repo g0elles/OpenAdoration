@@ -298,6 +298,21 @@
                             Margin="0,0,0,16">
                         <StackPanel>
 
+                            <!-- Info note -->
+                            <Border Background="#1A7C6AF7"
+                                    BorderBrush="#337C6AF7"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="10,7"
+                                    Margin="0,0,0,12">
+                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="11"
+                                           TextWrapping="Wrap">
+                                    <Run Text="Token zones auto-hide when tokens have no value for the current slide type (e.g. a Bible header on a song slide). " />
+                                    <Run Text="Any static text you type will always appear on every slide." FontWeight="SemiBold" />
+                                </TextBlock>
+                            </Border>
+
                             <!-- Header template -->
                             <TextBlock Text="Header (top)"
                                        Foreground="{StaticResource TextSecondaryBrush}"
@@ -313,12 +328,13 @@
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
-                                <Button Content="Song Title"      Tag="[SongTitle]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
-                                <Button Content="Song Author"     Tag="[SongAuthor]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
-                                <Button Content="Section"         Tag="[SongVerseTag]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
-                                <Button Content="Bible Book"      Tag="[BibleBookName]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
-                                <Button Content="Chapter"         Tag="[BibleChapterID]"  Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
-                                <Button Content="Verse"           Tag="[BibleVerseID]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Song Title"      Tag="[SongTitle]"        Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Song Author"     Tag="[SongAuthor]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Section"         Tag="[SongVerseTag]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Verse Ref"       Tag="[BibleReference]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Bible Book"      Tag="[BibleBookName]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Chapter #"       Tag="[BibleChapterID]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Verse #"         Tag="[BibleVerseID]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
                                 <Button Content="Bible Version"   Tag="[BibleDescription]" Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
                             </WrapPanel>
 
@@ -337,12 +353,13 @@
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
-                                <Button Content="Song Title"      Tag="[SongTitle]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
-                                <Button Content="Song Author"     Tag="[SongAuthor]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
-                                <Button Content="Section"         Tag="[SongVerseTag]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
-                                <Button Content="Bible Book"      Tag="[BibleBookName]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
-                                <Button Content="Chapter"         Tag="[BibleChapterID]"  Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
-                                <Button Content="Verse"           Tag="[BibleVerseID]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Song Title"      Tag="[SongTitle]"        Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Song Author"     Tag="[SongAuthor]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Section"         Tag="[SongVerseTag]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Verse Ref"       Tag="[BibleReference]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Bible Book"      Tag="[BibleBookName]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Chapter #"       Tag="[BibleChapterID]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Verse #"         Tag="[BibleVerseID]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
                                 <Button Content="Bible Version"   Tag="[BibleDescription]" Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
                             </WrapPanel>
 

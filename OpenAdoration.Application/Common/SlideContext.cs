@@ -13,10 +13,11 @@ public sealed class SlideContext
     public string? SongVerseTag { get; init; }   // e.g. "Verse 1", "Chorus"
 
     // Bible tokens
-    public string? BibleBookName  { get; init; }
-    public string? BibleChapterId { get; init; }
-    public string? BibleVerseId   { get; init; }
-    public string? BibleDescription { get; init; } // full version name
+    public string? BibleBookName    { get; init; }
+    public string? BibleChapterId   { get; init; }
+    public string? BibleVerseId     { get; init; }
+    public string? BibleReference   { get; init; } // e.g. "John 3:16" or "John 3:16-18"
+    public string? BibleDescription { get; init; } // Bible version name (e.g. "King James Version")
 
     public static SlideContext Empty { get; } = new();
 }

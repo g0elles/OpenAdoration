@@ -390,20 +390,32 @@ public partial class ProjectionWindow : Window
         SlideTextBlock.Text = content;
 
         // Resolve and show header zone when the theme defines a template.
+        // Collapse when the resolved text contains no letters or digits — this handles
+        // pure-token templates (e.g. "[BibleBookName] [BibleChapterID]:[BibleVerseID]")
+        // that are irrelevant on the current slide type (song, blank, etc.).
+        // Zones with static text (e.g. "Community Church") always show.
         var headerTemplate = _activeTheme?.HeaderTemplate;
         if (!string.IsNullOrEmpty(headerTemplate))
         {
-            HeaderText.Text       = _tokenResolver.Resolve(headerTemplate, context);
-            HeaderText.Visibility = Visibility.Visible;
-            CornerLabel.Visibility = Visibility.Collapsed;
+            var resolved = _tokenResolver.Resolve(headerTemplate, context);
+            if (resolved.Any(char.IsLetterOrDigit))
+            {
+                HeaderText.Text        = resolved;
+                HeaderText.Visibility  = Visibility.Visible;
+                CornerLabel.Visibility = Visibility.Collapsed;
+            }
         }
 
         // Resolve and show footer zone when the theme defines a template.
         var footerTemplate = _activeTheme?.FooterTemplate;
         if (!string.IsNullOrEmpty(footerTemplate))
         {
-            FooterText.Text       = _tokenResolver.Resolve(footerTemplate, context);
-            FooterText.Visibility = Visibility.Visible;
+            var resolved = _tokenResolver.Resolve(footerTemplate, context);
+            if (resolved.Any(char.IsLetterOrDigit))
+            {
+                FooterText.Text       = resolved;
+                FooterText.Visibility = Visibility.Visible;
+            }
         }
 
         TextZoneGrid.Visibility = Visibility.Visible;
