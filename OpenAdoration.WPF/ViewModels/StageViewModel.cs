@@ -75,6 +75,13 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private bool         _hasNextSlide;
     [ObservableProperty] private SlidePreview _nextPreview = SlidePreview.Empty;
 
+    // Announcement banner (overlays the current-slide preview)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAnnouncement))]
+    private string _announcementText = string.Empty;
+
+    public bool HasAnnouncement => !string.IsNullOrEmpty(AnnouncementText);
+
     public StageViewModel(
         IProjectionService projectionService,
         IServiceScopeFactory scopeFactory,
@@ -109,7 +116,9 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             _projectionService.ThemeChanged                   += OnThemeChanged;
             _projectionService.ServiceScheduleActiveChanged   += OnServiceScheduleActiveChanged;
             _projectionService.NextScheduleItemPreviewChanged += OnNextScheduleItemPreviewChanged;
+            _projectionService.AnnouncementChanged            += OnAnnouncementChanged;
 
+            AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty;
             await RefreshAsync();
         }
         catch (Exception ex)
@@ -151,6 +160,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         try { await RefreshAsync(); }
         catch (Exception ex) { _logger.LogError(ex, "Stage view next-item preview refresh failed"); }
+    }
+
+    private void OnAnnouncementChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty);
     }
 
     // ── Core refresh ──────────────────────────────────────────────────────────
@@ -322,5 +337,6 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         _projectionService.ThemeChanged                   -= OnThemeChanged;
         _projectionService.ServiceScheduleActiveChanged   -= OnServiceScheduleActiveChanged;
         _projectionService.NextScheduleItemPreviewChanged -= OnNextScheduleItemPreviewChanged;
+        _projectionService.AnnouncementChanged            -= OnAnnouncementChanged;
     }
 }

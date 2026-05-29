@@ -15,6 +15,8 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _churchName = string.Empty;
     [ObservableProperty] private string _churchCcliNumber = string.Empty;
     [ObservableProperty] private int _defaultAutoAdvanceSeconds;
+    [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
+    [ObservableProperty] private int _announcementDurationSeconds = 25;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowSavedConfirmation))]
@@ -41,9 +43,11 @@ public partial class SettingsViewModel : BaseViewModel
         try
         {
             var current = _settings.Current;
-            ChurchName                = current.ChurchName ?? string.Empty;
-            ChurchCcliNumber          = current.ChurchCcliNumber ?? string.Empty;
-            DefaultAutoAdvanceSeconds = current.DefaultAutoAdvanceSeconds;
+            ChurchName                  = current.ChurchName ?? string.Empty;
+            ChurchCcliNumber            = current.ChurchCcliNumber ?? string.Empty;
+            DefaultAutoAdvanceSeconds   = current.DefaultAutoAdvanceSeconds;
+            DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
+            AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
         }
         finally
         {
@@ -62,9 +66,11 @@ public partial class SettingsViewModel : BaseViewModel
         {
             var updated = new AppSettings
             {
-                ChurchName                = string.IsNullOrWhiteSpace(ChurchName) ? null : ChurchName.Trim(),
-                ChurchCcliNumber          = string.IsNullOrWhiteSpace(ChurchCcliNumber) ? null : ChurchCcliNumber.Trim(),
-                DefaultAutoAdvanceSeconds = DefaultAutoAdvanceSeconds < 0 ? 0 : DefaultAutoAdvanceSeconds
+                ChurchName                 = string.IsNullOrWhiteSpace(ChurchName) ? null : ChurchName.Trim(),
+                ChurchCcliNumber           = string.IsNullOrWhiteSpace(ChurchCcliNumber) ? null : ChurchCcliNumber.Trim(),
+                DefaultAutoAdvanceSeconds   = DefaultAutoAdvanceSeconds < 0 ? 0 : DefaultAutoAdvanceSeconds,
+                DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
+                AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds
             };
 
             await _settings.SaveAsync(updated);
@@ -89,4 +95,6 @@ public partial class SettingsViewModel : BaseViewModel
     partial void OnChurchNameChanged(string value) => IsSaved = false;
     partial void OnChurchCcliNumberChanged(string value) => IsSaved = false;
     partial void OnDefaultAutoAdvanceSecondsChanged(int value) => IsSaved = false;
+    partial void OnDefaultBibleVersesPerSlideChanged(int value) => IsSaved = false;
+    partial void OnAnnouncementDurationSecondsChanged(int value) => IsSaved = false;
 }

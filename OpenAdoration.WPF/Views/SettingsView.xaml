@@ -62,6 +62,26 @@
                          Margin="0,0,0,4" />
                 <TextBlock Text="Applied to newly added schedule items. 0 keeps new items in manual mode."
                            Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                <TextBlock Text="Bible verses per slide" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="1"
+                         Text="{Binding DefaultBibleVersesPerSlide, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="How many verses to place on one projected Bible slide. Minimum 1."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                <TextBlock Text="Announcement duration (seconds)" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="25"
+                         Text="{Binding AnnouncementDurationSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="How long the announcement banner stays on screen before it vanishes. Minimum 1."
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <StackPanel Orientation="Horizontal">

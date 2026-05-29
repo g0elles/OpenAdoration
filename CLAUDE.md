@@ -131,7 +131,9 @@ projection_engine:
     LoadSlides(slides, contextLabel): starts projection; fires SlideChanged(slides[0]) + ProjectionStateChanged(true)
     Next/Previous/GoTo(index): advances/decrements/jumps; fires SlideChanged
     ShowBlank(): fires SlideChanged(Slide.Blank()) without stopping
-    Stop(): clears state + IsServiceScheduleActive + NextScheduleItemPreviewSlide; fires events
+    ShowAnnouncement(text): sets CurrentAnnouncement + fires AnnouncementChanged — a BANNER overlay, does NOT touch slides; no-op when not projecting
+    ClearAnnouncement(): clears CurrentAnnouncement + fires AnnouncementChanged; underlying slide untouched
+    Stop(): clears state + IsServiceScheduleActive + NextScheduleItemPreviewSlide + CurrentAnnouncement; fires events
     RequestNextScheduleItem() / RequestPreviousScheduleItem(): message-bus; ServiceScheduleViewModel handles
     SetServiceScheduleActive(bool): called by ServiceScheduleViewModel on StartLive/StopLive/Dispose
     SetNextScheduleItemPreview(Slide?): set after each LoadSlidesForCurrentItemAsync; used by StageViewModel
@@ -140,15 +142,17 @@ projection_engine:
     NextScheduleItemRequested, PreviousScheduleItemRequested  # fired by StageViewModel; handled by ServiceScheduleVM
     ServiceScheduleActiveChanged  # StageViewModel shows Prev/Next Item buttons only when true
     NextScheduleItemPreviewChanged  # StageViewModel subscribes to refresh UP NEXT panel
+    AnnouncementChanged  # banner shown/replaced/cleared. ProjectionWindow + StageView render the overlay; MainViewModel owns a DispatcherTimer that auto-clears after AnnouncementDurationSeconds. Independent of SlideChanged — navigating does NOT clear it.
   safety: Each subscriber wrapped in try/catch; crash never stops engine.
   properties: CurrentSlide, CurrentSlides, CurrentSlideIndex, IsProjecting, ContextLabel,
-              IsServiceScheduleActive, NextScheduleItemPreviewSlide
+              IsServiceScheduleActive, NextScheduleItemPreviewSlide, CurrentAnnouncement, IsAnnouncementActive
 
   slide_dto: Content(string), Type(SlideType), Label(string), MediaPath(string?), ThemeId(int?), Context(SlideContext)
     Slide.Blank(): factory; constructor exempts Blank+Media from content requirement.
     SlideContext: SongTitle, SongAuthor, SongVerseTag, SongCopyright, SongCcliNumber,
                   BibleBookName, BibleChapterId, BibleVerseId, BibleReference, BibleDescription
   slide_types: Song, Bible, Media, Blank
+    # Announcements are NOT a slide type — they are a separate banner overlay (CurrentAnnouncement string + AnnouncementChanged event), rendered as a blue lower-third banner (white text) by ProjectionWindow + StageView, over the untouched current slide.
 
   projection_window:
     shows_on: secondary monitor (fallback primary); hidden at startup; shown on first projection or "Open Screen" click
@@ -197,7 +201,7 @@ token_system:
 # ─────────────────────────────────────────────────────────────────────────────
 settings_system:
   storage: "%LOCALAPPDATA%\\OpenAdoration\\settings.json"  # JSON, NOT the DB — no migration
-  model: AppSettings (Application/Common) — ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds
+  model: AppSettings (Application/Common) — ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds, DefaultBibleVersesPerSlide(min 1), AnnouncementDurationSeconds(min 1, default 25)
   service: IAppSettingsService → AppSettingsService (Infrastructure/Settings)
     lifetime: Singleton; loads JSON once at construction (defaults on missing/corrupt file); SaveAsync rewrites + updates Current
     registration: AddInfrastructure(services, dbPath, settingsPath) — settingsPath now a required 2nd arg; App.xaml.cs passes appDataDir\settings.json
@@ -450,17 +454,20 @@ critical_gotchas:
 # ─────────────────────────────────────────────────────────────────────────────
 feature_status:  # as of 2026-05-29
   Songs: DONE — full CRUD + two-step search (title/author + lyrics FTS with prefix matching)
-         + projection; section validation; VerseOrder; Copyright; CcliNumber; OpenLyrics import
+         + projection; section validation; VerseOrder (editable "Play Order" field + color-coded V1/C/B token badges);
+         Copyright; CcliNumber; OpenLyrics import. (Edit loads sections in definition order; VerseOrder edited separately.)
   Themes: DONE — full CRUD + live preview; BackgroundType(Color/Image/Video); xctk:ColorPicker;
           text alignment; HeaderTemplate/FooterTemplate with token chips; 3-zone projection
   Bible: DONE — 3-column browser; single-click projection; FTS search; 8-format import (8/8 tests);
-         localized book names; [BibleReference] token ("John 3:16"); cancel+summary
+         localized book names; [BibleReference] token ("John 3:16"); cancel+summary;
+         configurable verses-per-slide (BibleService.GenerateSlides chunks by DefaultBibleVersesPerSlide)
   ServiceSchedule: DONE — service list + builder (song/bible/media, reorder ▲▼, auto-advance [⏱],
                    per-item verse order override TextBox for songs) + live mode (per-item projection,
                    Prev/Next item, click-to-jump, auto-advance timer)
   Media: DONE — import, project, delete; ProjectionWindow handles SlideType.Media (image + video with audio)
   Projection: DONE — 3-zone layout (Header/Body/Footer); ITokenResolver; theme per slide via IServiceScopeFactory;
-              CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination
+              CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination;
+              live announcement banner overlay (blue lower-third, white text; auto-dismiss after AnnouncementDurationSeconds; leaves slide intact)
   StageView: DONE — embedded nav section; themed 1920×1080 Viewbox previews; cross-item UP NEXT;
              Prev/Next Item buttons (visible only when IsServiceScheduleActive); real video via MediaElement
   TokenSystem: DONE — 12 tokens (2 church + 5 song + 5 bible); auto-hide zones; clickable chip insertion in theme editor
@@ -482,6 +489,8 @@ confirmed_bugs:  # all FIXED
   B9: HeaderTemplate/FooterTemplate silently discarded on theme save — ThemeRepository.UpdateAsync missing two field assignments
   B10: Lyrics FTS "cura" not matching "curará" — changed from quoted phrase to prefix* matching per word
   B11: TaskCanceledException noise in search debounce — replaced Task.Delay(ct) with Task.Delay + ct check
+  B12: Song edit wiped VerseOrder + could duplicate sections — AddEditSongVM now reads/writes Song.VerseOrder
+       and loads sections in definition order (was GetOrderedSections(), which resolves+repeats per VerseOrder)
 
 # ─────────────────────────────────────────────────────────────────────────────
 roadmap:
@@ -513,10 +522,17 @@ roadmap:
     # SettingsViewModel/View + "⚙ Settings" nav; SaveAsync → NotifyThemeChanged re-renders.
     # DefaultAutoAdvanceSeconds applied to new schedule items via Add*ItemAsync autoAdvanceSeconds param.
 
-  # P2 remaining
-  p2_live_announcement: Push free-text slide to screen mid-service without stopping projection
+  vp_p2_batch: Live announcement + verses-per-slide + song play-order editor — DONE
+    # Announcement: banner overlay (CurrentAnnouncement + AnnouncementChanged, NOT a slide type); blue lower-third over the untouched slide; auto-dismiss via MainViewModel DispatcherTimer (AnnouncementDurationSeconds, default 25); projection-bar input + manual Clear.
+    # Verses-per-slide: DefaultBibleVersesPerSlide setting; BibleService.GenerateSlides chunks (schedule + multi-verse selection).
+    # Song play-order: editable VerseOrder field in AddEditSongView + color-coded token badges; fixed edit data-loss (B12).
+
+  # Remaining gaps (see VIDEOPSALM_REFERENCE.md §2 for full reconciled matrix)
+  next_p1_slide_transitions: ONLY remaining P1 gap. Start with WPF opacity Fade (DoubleAnimation on body/window); VP has 17 HLSL effects.
   p2_bible_phrase_search: Exact phrase mode alongside FTS keyword search (FTS5 "..." syntax)
   p2_additional_song_imports: OpenSong, plain text
+  p2_clock_overlay: Clock/countdown/stopwatch overlay (VP Mensaje tab) — reuses the announcement overlay surface
+  m6c_packaging: MSIX or Setup installer — DEFERRED TO LAST (after church testing of current build)
 
 # ─────────────────────────────────────────────────────────────────────────────
 common_operations:

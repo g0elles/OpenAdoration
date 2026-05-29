@@ -8,10 +8,13 @@ public partial class SongSectionViewModel : ObservableObject
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Label))]
+    [NotifyPropertyChangedFor(nameof(Token))]
+    [NotifyPropertyChangedFor(nameof(TypeColorHex))]
     private SectionType _type;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Label))]
+    [NotifyPropertyChangedFor(nameof(Token))]
     private int _sectionNumber = 1;
 
     [ObservableProperty]
@@ -24,6 +27,32 @@ public partial class SongSectionViewModel : ObservableObject
         SectionType.Verse  => $"Verse {SectionNumber}",
         SectionType.Bridge => $"Bridge {SectionNumber}",
         _                  => Type.ToString()
+    };
+
+    /// <summary>Verse-order token for this section (e.g. "V1", "C", "B"). Matches the VerseOrder string syntax.</summary>
+    public string Token => Type switch
+    {
+        SectionType.Verse     => $"V{SectionNumber}",
+        SectionType.Chorus    => $"C{SectionNumber}",
+        SectionType.PreChorus => $"P{SectionNumber}",
+        SectionType.Bridge    => $"B{SectionNumber}",
+        SectionType.Intro     => "I",
+        SectionType.Outro     => "O",
+        SectionType.Tag       => "T",
+        _                     => "?"
+    };
+
+    /// <summary>Badge colour by section type — gives the editor a visual cue (VP-style).</summary>
+    public string TypeColorHex => Type switch
+    {
+        SectionType.Verse     => "#7C6AF7",
+        SectionType.Chorus    => "#E0A052",
+        SectionType.PreChorus => "#52B0E0",
+        SectionType.Bridge    => "#9B59B6",
+        SectionType.Intro     => "#4CAF50",
+        SectionType.Outro     => "#3E8E41",
+        SectionType.Tag       => "#E05252",
+        _                     => "#A0A0B8"
     };
 
     public event EventHandler? MoveUpRequested;

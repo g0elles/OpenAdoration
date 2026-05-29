@@ -19,4 +19,11 @@ public interface IBibleService
     /// When null, the default theme is used.
     /// </summary>
     Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null);
+
+    /// <summary>
+    /// Generates one or more slides, chunking <paramref name="verses"/> into groups of
+    /// <paramref name="versesPerSlide"/> consecutive verses (minimum 1). Each chunk becomes
+    /// its own slide via <see cref="GenerateSlide"/> with its own reference label/context.
+    /// </summary>
+    IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null);
 }

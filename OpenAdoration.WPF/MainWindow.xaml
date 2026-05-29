@@ -138,6 +138,25 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
 
+                    <!-- Live announcement -->
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="Announcement…"
+                             Width="170"
+                             VerticalAlignment="Center"
+                             Margin="0,0,6,0"
+                             Text="{Binding AnnouncementText, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="📢 Announce"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAnnouncementCommand}"
+                            Padding="10,8"
+                            Margin="0,0,6,0" />
+                    <Button Content="Clear"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ClearAnnouncementCommand}"
+                            Padding="10,8"
+                            Margin="0,0,10,0"
+                            Visibility="{Binding IsAnnouncementActive, Converter={StaticResource BoolToVis}}" />
+
                     <Button Content="Open Screen"
                             Style="{StaticResource SecondaryButton}"
                             Click="OnToggleScreenClick"

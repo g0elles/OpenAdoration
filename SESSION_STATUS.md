@@ -11,8 +11,8 @@ Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
 Tests:    8/8 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
-Last commit: 3ce1a3c  feat(schedule): verse order override per agenda item (uncommitted: P1-2 settings page)
-Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride
+Last commit: 9e35617  feat(settings): settings page + church tokens (uncommitted: P2 batch — announcement, verses-per-slide, song play-order editor + reference doc refresh)
+Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration this batch)
 Branch: master
 ```
 
@@ -42,6 +42,10 @@ Branch: master
 | Auto-advance per schedule item — DispatcherTimer, +/- UI in builder, DB persist, cross-item advance at end | DONE |
 | Verse order override per agenda item — `VerseOrderOverride` on `SongScheduleItem`; builder TextBox (LostFocus persist); passed to `GenerateSlides` | DONE |
 | Settings page + church tokens — `settings.json` (ChurchName/ChurchCcliNumber/DefaultAutoAdvanceSeconds); `[ChurchName]`/`[SiteLicense]` tokens; `IAppSettingsService`; ⚙ Settings nav | DONE |
+| **P2 batch (2026-05-29):** | |
+| Live announcement banner — `ShowAnnouncement`/`ClearAnnouncement` + `CurrentAnnouncement`/`AnnouncementChanged`; blue lower-third overlay (white text) over the untouched slide; auto-dismiss after `AnnouncementDurationSeconds` (default 25); projection-bar input + manual Clear | DONE |
+| Configurable verses-per-slide (Bible) — `DefaultBibleVersesPerSlide` setting; `BibleService.GenerateSlides` chunks; applies to schedule + multi-verse selection | DONE |
+| Song Play Order editor + token badges — VerseOrder field in song editor (fixed edit data-loss bug); color-coded V1/C/B token badges per section | DONE |
 
 ---
 
@@ -100,12 +104,13 @@ Branch: master
 
 | # | Feature | Notes |
 |---|---|---|
-| P2 | Live announcement slide | Push free-text slide to screen mid-service without stopping projection |
+| P1 | **Slide transitions** | Only remaining P1-tier gap. Start with a WPF opacity Fade (DoubleAnimation) before considering VP's 17 HLSL effects. Not yet started. |
 | P2 | Bible phrase search mode | FTS5 `"..."` quoted phrase alongside keyword mode |
 | P2 | Additional song import formats | OpenSong, plain text |
-| M6c | Packaging | MSIX or Setup; users shouldn't run via `dotnet run` |
+| P2 | Clock / countdown overlay | VP Mensaje tab; same projection-overlay surface as the announcement slide |
+| M6c | Packaging | MSIX or Setup; users shouldn't run via `dotnet run` — **deferred to last, after church testing** |
 
-**All P1 items are done.** Start next session with a P2 item (live announcement slide is the most user-visible) unless the user specifies otherwise.
+**All P0 done; P1 done except slide transitions.** Recommended next: slide transitions (Fade) or Bible phrase search. **M6c packaging is intentionally last.** See `VIDEOPSALM_REFERENCE.md` §2 for the full reconciled gap matrix.
 
 ### P1-2 (settings page + church tokens) — DONE this session
 - `AppSettings` (Application/Common): ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds.

@@ -35,6 +35,25 @@ public interface IProjectionService
     /// <summary>Shows a blank (black) slide without stopping projection.</summary>
     void ShowBlank();
 
+    /// <summary>
+    /// Shows a free-text announcement as a banner overlay on top of the current slide,
+    /// leaving the underlying slide untouched. No-op when not projecting.
+    /// Replaces any banner already showing. Auto-dismiss timing is owned by the caller.
+    /// </summary>
+    void ShowAnnouncement(string text);
+
+    /// <summary>Removes the announcement banner. The underlying slide is unaffected.</summary>
+    void ClearAnnouncement();
+
+    /// <summary>The current announcement banner text, or null when none is showing.</summary>
+    string? CurrentAnnouncement { get; }
+
+    /// <summary>True while an announcement banner is showing.</summary>
+    bool IsAnnouncementActive { get; }
+
+    /// <summary>Fires when <see cref="CurrentAnnouncement"/> changes (shown, replaced, or cleared).</summary>
+    event EventHandler? AnnouncementChanged;
+
     /// <summary>Stops projection and clears state.</summary>
     void Stop();
 

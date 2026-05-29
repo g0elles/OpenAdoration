@@ -158,4 +158,23 @@ public sealed class BibleService : IBibleService
 
         return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId, context: context);
     }
+
+    public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null)
+    {
+        ArgumentNullException.ThrowIfNull(verses);
+
+        if (verses.Count == 0)
+            throw new ArgumentException("At least one verse is required to generate slides.", nameof(verses));
+
+        var chunkSize = Math.Max(1, versesPerSlide);
+
+        var slides = new List<Slide>();
+        for (var i = 0; i < verses.Count; i += chunkSize)
+        {
+            var chunk = verses.Skip(i).Take(chunkSize).ToList();
+            slides.Add(GenerateSlide(chunk, themeId, version));
+        }
+
+        return slides;
+    }
 }

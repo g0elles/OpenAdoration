@@ -17,4 +17,14 @@ public sealed class AppSettings
     /// 0 = new items start in manual mode.
     /// </summary>
     public int DefaultAutoAdvanceSeconds { get; set; }
+
+    /// <summary>
+    /// How many Bible verses to place on a single projected slide. Minimum 1 (the default).
+    /// </summary>
+    public int DefaultBibleVersesPerSlide { get; set; } = 1;
+
+    /// <summary>
+    /// Seconds an announcement banner stays on screen before it auto-dismisses. Minimum 1; default 25.
+    /// </summary>
+    public int AnnouncementDurationSeconds { get; set; } = 25;
 }

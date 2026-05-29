@@ -168,6 +168,16 @@
                         <Rectangle Fill="Black"
                                    Visibility="{Binding CurrentPreview.IsBlank, Converter={StaticResource BoolToVis}}" />
 
+                        <!-- Announcement banner overlay -->
+                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                Margin="80,0,80,90" Padding="40,22" CornerRadius="10"
+                                Background="#2563EB"
+                                Visibility="{Binding HasAnnouncement, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding AnnouncementText}"
+                                       Foreground="White" FontSize="44" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" TextAlignment="Center" />
+                        </Border>
+
                         <!-- Layer 8: not-projecting dim -->
                         <Border Background="#CC12121E"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">

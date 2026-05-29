@@ -138,6 +138,9 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private int? DefaultAutoAdvanceSeconds =>
         _appSettings.Current.DefaultAutoAdvanceSeconds > 0 ? _appSettings.Current.DefaultAutoAdvanceSeconds : null;
 
+    // App-wide verses-per-slide for Bible items; minimum 1.
+    private int BibleVersesPerSlide => Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
+
     partial void OnServicesChanged(ObservableCollection<WorshipService> value)
     {
         OnPropertyChanged(nameof(HasNoServices));
@@ -814,8 +817,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                         .Where(v => v.Verse >= bibleItem.VerseStart && v.Verse <= bibleItem.VerseEnd)
                         .ToList();
                     if (verses.Count == 0) { SetError($"No verses found for {bibleItem.Reference}."); return; }
-                    var slide = _bibleService.GenerateSlide(verses, bibleItem.ThemeId);
-                    _projectionService.LoadSlides([slide], bibleItem.Reference);
+                    var slides = _bibleService.GenerateSlides(verses, BibleVersesPerSlide, bibleItem.ThemeId);
+                    _projectionService.LoadSlides(slides, bibleItem.Reference);
                     break;
                 }
 
@@ -875,7 +878,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             .Where(v => v.Verse >= item.VerseStart && v.Verse <= item.VerseEnd)
             .ToList();
         return verses.Count > 0
-            ? _bibleService.GenerateSlide(verses, item.ThemeId)
+            ? _bibleService.GenerateSlides(verses, BibleVersesPerSlide, item.ThemeId).FirstOrDefault()
             : null;
     }
 

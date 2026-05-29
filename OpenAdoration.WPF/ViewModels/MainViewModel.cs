@@ -1,3 +1,4 @@
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,10 @@ public partial class MainViewModel : BaseViewModel, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IProjectionService _projectionService;
+    private readonly IAppSettingsService _appSettings;
     private readonly ILogger<MainViewModel> _logger;
+
+    private DispatcherTimer? _announcementTimer;
 
     // One scope per page — disposes scoped services when the user navigates away
     private IServiceScope? _currentScope;
@@ -32,17 +36,24 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private string _currentSongTitle  = string.Empty;
     [ObservableProperty] private string _currentSlideLabel = string.Empty;
 
+    // Live announcement overlay
+    [ObservableProperty] private string _announcementText = string.Empty;
+    [ObservableProperty] private bool   _isAnnouncementActive;
+
     public MainViewModel(
         IServiceProvider services,
         IProjectionService projectionService,
+        IAppSettingsService appSettings,
         ILogger<MainViewModel> logger)
     {
         _services          = services;
         _projectionService = projectionService;
+        _appSettings       = appSettings;
         _logger            = logger;
 
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.SlideChanged           += OnSlideChanged;
+        _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────
@@ -149,6 +160,50 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _logger.LogInformation("Projection stopped by operator");
     }
 
+    // ── Live announcement ─────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void ShowAnnouncement()
+    {
+        if (string.IsNullOrWhiteSpace(AnnouncementText)) return;
+        _projectionService.ShowAnnouncement(AnnouncementText);
+        if (_projectionService.IsAnnouncementActive)
+        {
+            StartAnnouncementTimer();
+            _logger.LogInformation("Announcement shown by operator");
+        }
+    }
+
+    [RelayCommand]
+    private void ClearAnnouncement()
+    {
+        StopAnnouncementTimer();
+        _projectionService.ClearAnnouncement();
+    }
+
+    private void StartAnnouncementTimer()
+    {
+        StopAnnouncementTimer();
+        var seconds = Math.Max(1, _appSettings.Current.AnnouncementDurationSeconds);
+        _announcementTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+        _announcementTimer.Tick += OnAnnouncementTick;
+        _announcementTimer.Start();
+    }
+
+    private void StopAnnouncementTimer()
+    {
+        if (_announcementTimer is null) return;
+        _announcementTimer.Stop();
+        _announcementTimer.Tick -= OnAnnouncementTick;
+        _announcementTimer = null;
+    }
+
+    private void OnAnnouncementTick(object? sender, EventArgs e)
+    {
+        StopAnnouncementTimer();
+        _projectionService.ClearAnnouncement();
+    }
+
     // ── Projection state sync ─────────────────────────────────────────────────
 
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
@@ -179,10 +234,22 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         });
     }
 
+    private void OnAnnouncementChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            IsAnnouncementActive = _projectionService.IsAnnouncementActive;
+            // Cleared by any path (manual, auto-dismiss, projection stop) → ensure the timer is gone.
+            if (!IsAnnouncementActive) StopAnnouncementTimer();
+        });
+    }
+
     public void Dispose()
     {
+        StopAnnouncementTimer();
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.SlideChanged           -= OnSlideChanged;
+        _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
         _currentScope?.Dispose();
         _liveServiceScope?.Dispose();
         _currentScope     = null;

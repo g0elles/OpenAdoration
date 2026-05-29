@@ -56,6 +56,7 @@ public partial class ProjectionWindow : Window
         _projectionService.SlideChanged           += OnSlideChanged;
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.ThemeChanged           += OnThemeChanged;
+        _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
     }
 
     // -- Public API ------------------------------------------------------------
@@ -157,6 +158,25 @@ public partial class ProjectionWindow : Window
             _defaultTheme = null;
             _themeCache.Clear();
             _projectionService.RefreshCurrentSlide();
+        });
+    }
+
+    // Banner overlay — independent of the slide layers, so the current slide stays intact.
+    private void OnAnnouncementChanged(object? sender, EventArgs e)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            var text = _projectionService.CurrentAnnouncement;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                AnnouncementBanner.Visibility = Visibility.Collapsed;
+                AnnouncementText.Text = string.Empty;
+            }
+            else
+            {
+                AnnouncementText.Text = text;
+                AnnouncementBanner.Visibility = Visibility.Visible;
+            }
         });
     }
 
@@ -567,6 +587,7 @@ public partial class ProjectionWindow : Window
         _projectionService.SlideChanged           -= OnSlideChanged;
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.ThemeChanged           -= OnThemeChanged;
+        _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
         base.OnClosed(e);
     }
 }

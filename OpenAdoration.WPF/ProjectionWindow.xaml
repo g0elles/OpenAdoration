@@ -118,5 +118,24 @@
                        Foreground="#99FFFFFF" />
         </StackPanel>
 
+        <!-- Announcement banner: blue highlight overlaying the lower third; auto-dismissed -->
+        <Border x:Name="AnnouncementBanner"
+                VerticalAlignment="Bottom"
+                HorizontalAlignment="Stretch"
+                Margin="80,0,80,90"
+                Padding="40,22"
+                CornerRadius="10"
+                Background="#2563EB"
+                Panel.ZIndex="200"
+                Visibility="Collapsed">
+            <TextBlock x:Name="AnnouncementText"
+                       Foreground="White"
+                       FontFamily="Arial"
+                       FontSize="44"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center" />
+        </Border>
+
     </Grid>
 </Window>

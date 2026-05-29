@@ -2,7 +2,7 @@
 # Purpose: Feature gap analysis + implementation guidance based on reverse-engineering of VP 1.29.
 # Read this when: designing or implementing new OA features; answering "how does VP do X?"; planning the roadmap.
 # Companion files: CLAUDE.md (code standards), ARCHITECTURE.md (design), SESSION_STATUS.md (current build state).
-# Last updated: 2026-05-28 (v2 — Song browser UI, songbook flags, Añadir UX, Bible search modes, audio/announcement items, full transition list, numbering fixed)
+# Last updated: 2026-05-29 (v3 — gap matrix reconciled after VP-parity batch + P1-1 verse-order-override + P1-2 settings/church-tokens; P0 now 100%, P1 only gap is slide transitions)
 
 ---
 
@@ -18,41 +18,47 @@ VP is set to Spanish (es-MX) on the analysis machine.
 ## 2. Feature Gap Matrix
 
 Legend: ✅ Done in OA | 🔶 Partial | ❌ Missing | — Not planned
+Status reconciled 2026-05-29 against actual code (was last accurate before the VP-parity batch).
 
-### P0 — Core (must-have)
+### P0 — Core (must-have) — ✅ 100% complete
 
 | VP Feature | OA Status | Notes |
 |---|---|---|
-| Agenda / service planner | ✅ | `ServiceSchedule` — list + builder + live mode |
-| Song library (CRUD, sections, search) | ✅ | Songs M0 + section types |
+| Agenda / service planner | ✅ | `ServiceSchedule` — list + builder + live mode + auto-advance |
+| Song library (CRUD, sections, search) | ✅ | Songs M0 + section types + two-step search (title + lyrics FTS) |
 | Bible display (multi-version, book/ch/verse) | ✅ | Bible M2 + 8-format import |
-| Multi-screen output (projection + presenter) | 🔶 | `ProjectionWindow` done; presenter view (M6e) is planned but not built |
-| Text style system (theme per content type) | 🔶 | OA Themes cover font+color+bg; VP has 3-zone layout (Header/Body/Footer) + template tokens — OA has none |
-| Template tokens (`[SongTitle]`, `[BibleBookName]`, etc.) | ❌ | VP inserts token strings in header/footer; OA only has CornerLabel (hardcoded) |
+| Multi-screen output (projection + presenter) | ✅ | `ProjectionWindow` + **Stage View** (embedded nav: themed 1920×1080 preview, UP NEXT cross-item, Prev/Next Item). Remote (browser) stage view still missing — see P2. |
+| Text style system (theme per content type) | ✅ | OA Themes (font/color/bg) + **3-zone layout (Header/Body/Footer)** with auto-hide zones |
+| Template tokens (`[SongTitle]`, `[BibleBookName]`, etc.) | ✅ | **12 tokens** (2 church + 5 song + 5 bible) via `ITokenResolver`; clickable chip insertion in theme editor |
 
-### P1 — High value
+### P1 — High value — only gap is slide transitions
 
 | VP Feature | OA Status | Notes |
 |---|---|---|
 | Background system (image / video / solid color) | ✅ | OA Themes: BackgroundType = Color / Image / Video |
-| Slide transitions (animated) | ❌ | VP has 17 HLSL shader-based transitions — full list: `Fade`, `FadeAndBlur`, `FadeAndGrow`, `HorizontalBlinds`, `VerticalBlinds`, `Checkerboard`, `CheckerboardDouble`, `Diamonds`, `Dots`, `Melt`, `MeltDouble`, `Roll`, `RotateWipe`, `RotateWipeDouble`, `DoubleRotateWipe`, `DoubleRotateWipeDouble`, `Star`, `StarDouble` |
-| Auto-advance (configurable interval per item) | ❌ | VP: `FlowType`, `AutoAdvance`, `Interval` per agenda item |
-| Verse order customization (reorder song sections per service) | ❌ | VP: `VerseOrderIndex` per agenda item; e.g. "V1 C V2 C B C" |
-| CCLI license tracking (`[SiteLicense]` in footer) | ❌ | VP: `CCLINumber` on songs + `[SiteLicense]` token auto-inserts church's CCLI number |
+| Auto-advance (configurable interval per item) | ✅ | `ScheduleItem.AutoAdvanceSeconds`; DispatcherTimer (one-shot, resets on SlideChanged); cross-item advance at end. `DefaultAutoAdvanceSeconds` in settings applies to new items. |
+| Verse order customization (reorder song sections per service) | ✅ | `Song.VerseOrder` (default) **and** `SongScheduleItem.VerseOrderOverride` (per-agenda override). `GetOrderedSections(override)` resolves token string. |
+| CCLI license tracking (`[SiteLicense]` in footer) | ✅ | `Song.CcliNumber` + `[SongCCLI]` token; church-wide `ChurchCcliNumber` in settings + `[SiteLicense]` token; `[ChurchName]` too |
+| **Slide transitions (animated)** | ❌ | **Only remaining P1 gap.** VP has 17 HLSL shader transitions: `Fade`, `FadeAndBlur`, `FadeAndGrow`, `HorizontalBlinds`, `VerticalBlinds`, `Checkerboard`, `CheckerboardDouble`, `Diamonds`, `Dots`, `Melt`, `MeltDouble`, `Roll`, `RotateWipe`, `RotateWipeDouble`, `DoubleRotateWipe`, `DoubleRotateWipeDouble`, `Star`, `StarDouble`. OA path: start with a WPF opacity **Fade** (DoubleAnimation on the body/whole window) — covers the 90% case without HLSL; add more later. |
 
 ### P2 — Nice to have
 
 | VP Feature | OA Status | Notes |
 |---|---|---|
+| Live announcement / message slide | ✅ | `IProjectionService.ShowAnnouncement/ClearAnnouncement` + `CurrentAnnouncement`/`AnnouncementChanged`. Blue lower-third **banner overlay** (white text) over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds` (default 25). Rendered by ProjectionWindow + StageView. |
+| Bible search — phrase / word / Strong's modes | 🔶 | Word/keyword mode done (FTS5). **Phrase mode planned (P2-b)** via FTS5 `"..."`. Strong's not planned (needs Strong's markup in source). |
+| Song import formats (20+ formats) | 🔶 | **OpenLyrics XML done.** Planned next: OpenSong, plain text (P2-c). VP also imports CCLI `.usr`, EasyWorship, ZionWorx, ChordPro, SoftProjector, WorshipCenterPro, etc. |
+| Configurable verses-per-slide (Bible) | ✅ | `DefaultBibleVersesPerSlide` setting; `BibleService.GenerateSlides` chunks verses. Applies to schedule Bible items + multi-verse selection. |
 | Chord display (ChordPro / bracket) | ❌ | VP shows chords above lyrics or inline; `ViewBracketContentAsChord` flag on songbook |
-| Song import formats (20+ formats) | ❌ | OA has 8 Bible parsers but zero song importers. VP imports: OpenLyrics, CCLI SongSelect (.usr), OpenSong, EasyWorship, ZionWorx, ChordPro, SoftProjector, WorshipCenterPro, etc. |
-| Audio-only agenda item | ❌ | VP: `AgendaAudio` item type — audio file plays during service with no visual content (background music, pre-service music). OA has no audio-only item. |
-| Live announcement / message slide | ❌ | VP: `FormMessageOptions` — free-text slide pushed to screen on the fly during a service (via Mensaje tab). OA has no equivalent live text overlay. |
-| Clock overlay (analog/digital, countdown) | ❌ | VP: 3 analog styles (cyan/red/dark) × 3 modes (clock/countdown/stopwatch); accessed from Mensaje ribbon tab |
-| Camera input (OBS Virtual Camera supported) | ❌ | VP: live camera feed as content layer; OBS Virtual Camera explicitly named |
-| Stage view — remote (browser, password-protected) | ❌ | VP has a built-in HTTP server streaming the stage view to tablets/phones on LAN |
-| Online catalog (downloadable Bibles + songbooks) | ❌ | VP: `Meta.json` (583 KB) catalogs all available content; downloads to local store |
-| Bible search — phrase / word / Strong's modes | ❌ | VP `BibleSearchMode` enum supports phrase search, word search, and possibly Strong's concordance number search. OA has FTS5 keyword search only. |
+| Audio-only agenda item | ❌ | VP: `AgendaAudio` item type — audio plays during service with no visual content (pre-service music). OA has no audio-only item. |
+| Clock overlay (analog/digital, countdown) | ❌ | VP: 3 analog styles (cyan/red/dark) × 3 modes (clock/countdown/stopwatch); Mensaje ribbon tab. Good fit for the same overlay surface as the announcement slide. |
+| Aspect-ratio presets / background brightness | ❌ | VP Fondo tab: Actual/4:3/16:9/16:10/16:8 + brightness slider on bg media |
+| Bilingual / dual Bible mode | ❌ | VP shows two versions side-by-side on one slide |
+| Selectable zone-layout presets | ❌ | VP "Apariencia" 3×3 grid of Header/Body/Footer arrangements |
+| Camera input (OBS Virtual Camera supported) | ❌ | VP: live camera feed as content layer |
+| Stage view — remote (browser, password-protected) | ❌ | VP HTTP server streams stage view to tablets/phones on LAN |
+| Online catalog (downloadable Bibles + songbooks) | ❌ | VP: `Meta.json` catalogs available content; downloads to local store |
+| Songbook grouping layer + style inheritance | ❌ | VP: songbooks → songs tree; 4-level style cascade (§4.1, §12). OA songs are a flat list. |
 
 ### P3 — Optional / low priority
 
@@ -70,20 +76,20 @@ Legend: ✅ Done in OA | 🔶 Partial | ❌ Missing | — Not planned
 
 ### 3.1 Song Fields OA Is Missing
 
-VP song has 25+ fields; OA currently stores: Title, Author, Classification, Sections.
+VP song has 25+ fields; OA currently stores: Title, Author, Classification, Copyright, CcliNumber, VerseOrder, Sections.
 
-Missing VP fields worth adding to OA when relevant:
+Still-missing VP fields worth adding to OA when relevant:
 
 ```
-CCLINumber          — for CCLI compliance footer token
-Key                 — musical key (e.g. "G", "Am")
-Capo                — capo fret number
-Tempo               — BPM
-TimeSignature       — e.g. "4/4"
-Copyright           — copyright string
-VerseOrder          — sequence string, e.g. "V1 C V2 C B C"
-Reference           — scripture reference for the song
-Theme               — category/theme tag
+CCLINumber          — ✅ DONE (Song.CcliNumber + [SongCCLI] token)
+Copyright           — ✅ DONE (Song.Copyright + [SongCopyright] token)
+VerseOrder          — ✅ DONE (Song.VerseOrder + per-agenda override)
+Key                 — musical key (e.g. "G", "Am")        ← would enable [SongKey] token
+Capo                — capo fret number                     ← [SongCapo]
+Tempo               — BPM                                  ← [SongTempo]
+TimeSignature       — e.g. "4/4"                           ← [SongTimeSignature]
+Reference           — scripture reference for the song     ← [SongReference]
+Theme               — category/theme tag                   ← [SongTheme]
 Memo1/Memo2/Memo3   — free custom fields
 ```
 
@@ -110,13 +116,11 @@ VP per-agenda-item verse order:
 - Each `AgendaItem` can override this with a custom `VerseOrderIndex` pointing to a saved order preset.
 - At projection time, VP resolves which section to show using the order string instead of the definition order in the file.
 
-OA currently projects sections in the order they are stored (definition order).
-
-**Implementation guidance for OA:**
-1. Add `VerseOrder` (nullable string) to `Song` entity.
-2. Parse it as space-separated section tag references when generating slides.
-3. Map references to actual `SongSection` objects by their `Type + SectionNumber`.
-4. Add migration: `dotnet ef migrations add AddSongVerseOrder --project OpenAdoration.Infrastructure --startup-project OpenAdoration.WPF`
+**✅ DONE.** OA implemented this exactly:
+1. `Song.VerseOrder` (nullable string) — default order. ✅
+2. `SongScheduleItem.VerseOrderOverride` — per-agenda override (VP's `VerseOrderIndex` equivalent). ✅
+3. `Song.GetOrderedSections(string? verseOrderOverride = null)` parses the token string and maps to `SongSection` by `Type + SectionNumber`; falls back to definition order. ✅
+4. Migrations `AddSongVerseOrder` + `20260529210146_AddSongScheduleItemVerseOrderOverride`. ✅
 
 ### 3.4 Header / Footer / Body Zone Layout (VP's projection layout system)
 
@@ -128,13 +132,10 @@ Body:   x,y,width,height  (e.g. "200,1200,9600,7900" → main area ~79% height)
 Footer: x,y,width,height  (e.g. "200,9100,9600,700"  → bottom strip ~7% height)
 ```
 
-OA currently uses a single `TextViewbox` (full-screen) + `CornerLabel` (top-left overlay).
-OA has no explicit header/footer zones — all text renders in one block.
-
-**To replicate VP's layout in OA:**
-- Extend `Theme` with `HeaderText` (template string), `FooterText` (template string), and optional zone rects.
-- Render `ProjectionWindow` as a 3-row Grid: header row, body row (expands), footer row.
-- Parse template tokens at slide-render time (see Section 4 below).
+**✅ DONE.** `ProjectionWindow` is now a 3-row Grid (Header `Auto` / Body `*` Viewbox / Footer `Auto`).
+`Theme.HeaderTemplate` + `Theme.FooterTemplate` hold token strings, resolved at render time via `ITokenResolver`.
+Zones auto-hide when the resolved text has no letter/digit (G20). `CornerLabel` remains only as a fallback when no HeaderTemplate is set.
+(VP's explicit zone *rects* / selectable layout presets are not replicated — WPF Grid layout is used instead. Zone-preset picker remains a P2 gap.)
 
 ### 3.5 VP Template Token System
 
@@ -149,10 +150,10 @@ VP renders tokens in header/footer text at display time. Full token list:
 
 **Songbook tokens:** `[SongBookTitle]`, `[SongBookAbbreviation]`, `[SongBookCopyright]`
 
-**Implementation guidance for OA:**
-- Create a `TokenResolver` service in `OpenAdoration.Application` that takes a template string + `Slide` context and replaces tokens with live values.
-- `Slide` DTO already has `Content`, `Label`, `Type`. Add `Metadata` dictionary or typed fields for token resolution.
-- Token resolution lives in Application layer; `ProjectionWindow` calls it before rendering.
+**✅ DONE.** `ITokenResolver` → `TokenResolver` (Application) resolves `[Token]` against a `SlideContext` bag on the `Slide` DTO.
+12 tokens implemented: church `[ChurchName]`/`[SiteLicense]` (from `IAppSettingsService`, app-wide), song `[SongTitle]`/`[SongAuthor]`/`[SongVerseTag]`/`[SongCopyright]`/`[SongCCLI]`, bible `[BibleBookName]`/`[BibleChapterID]`/`[BibleVerseID]`/`[BibleReference]`/`[BibleDescription]`.
+`ProjectionWindow` and `StageViewModel` both call `Resolve()` before rendering.
+Still missing vs VP's full list: `[SongID]`, `[SongKey]`, `[SongCapo]`, `[SongTempo]`, `[SongTimeSignature]`, `[SongTheme]`, `[SongReference]`, `[SongSequence]`, songbook tokens (those source fields don't exist on OA's `Song` yet).
 
 ---
 
@@ -188,9 +189,7 @@ VP searches:
 1. Title/alias match first (fast index scan).
 2. Lyrics full-text search only when title search returns zero results.
 
-OA currently: title search only (`SearchByTitleAsync` in `ISongService`).
-
-**To add lyrics search:** OA's `SongSections.Lyrics` column could get an FTS5 virtual table (same pattern as `BibleVersesFts`). See `20260520041713_AddBibleVersesFts` migration for the exact pattern.
+**✅ DONE.** OA implements the two-step pattern: `SearchByTitleAsync` (title/author LIKE) first, `SearchByLyricsAsync` (FTS5 over `SongSectionsFts`) as fallback when title returns zero results. Lyrics FTS uses per-word prefix matching (`cura*` matches `curará`).
 
 ### 4.4 Stage View / Presenter Monitor
 
@@ -200,9 +199,8 @@ VP `FormStageView` shows:
 - Notes
 - Clock / countdown timer
 
-OA roadmap: M6e "Presenter view" is planned. VP's implementation confirms the high value of this feature for live operators.
-
-**OA implementation path:** Second `Window` (like `ProjectionWindow`) listening to `IProjectionService.SlideChanged` event; renders `CurrentSlide` + `NextSlide` side by side with no fullscreen mode needed.
+**✅ DONE (as embedded Stage View).** OA's `StageView` is an embedded nav page (not a separate window): left panel = current slide (themed 1920×1080 Viewbox), right panel = UP NEXT (incl. cross-item preview of the next schedule item's first slide), status bar with LIVE/STOPPED + Prev/Next Item buttons (shown only when a service schedule is live). Listens to `SlideChanged`/`ProjectionStateChanged`/`ThemeChanged`/`ServiceScheduleActiveChanged`/`NextScheduleItemPreviewChanged`.
+Not done: notes panel, clock/countdown in the stage view, and the **remote (browser) stage view** below (§4.5).
 
 ### 4.5 Remote Stage View (VP's network feature)
 
@@ -420,17 +418,17 @@ OA currently has a single FTS5 keyword search (`SearchAsync` in `IBibleService`)
 
 | Aspect | VP | OA (current) |
 |---|---|---|
-| Book display | **2 columns: OT left, NT right** (each scrollable) | Single list grouped by Testament (CollectionViewSource) |
-| Chapter display | Plain number list beside selected book | 38×38 tile grid (WrapPanel) |
-| Version selection | Tabs + dropdown (both always visible) | Tabs only (per installed version) |
-| Verse per slide | **Configurable (default: 1)** | Always 1 verse per slide |
-| Slide footer | Bible version name (`[BibleDescription]`) | None implemented |
-| Slide header | Right-aligned ref + decorative icon | CornerLabel top-left (contextLabel string) |
-| Aspect ratio | Selectable (Actual/4:3/16:9/16:10/16:8) | Not implemented |
-| Clock overlay | Built-in (Mensaje tab, 3 styles, 3 modes) | Not implemented |
-| Bilingual mode | Dual side-by-side display | Not implemented |
-| Slide zone presets | 9 layout presets (Apariencia group) | Not implemented |
-| Brightness control | Slider on background media | Not implemented |
+| Book display | **2 columns: OT left, NT right** (each scrollable) | Single list grouped by Testament (CollectionViewSource) — minor UX gap |
+| Chapter display | Plain number list beside selected book | 38×38 tile grid (WrapPanel) — equivalent |
+| Version selection | Tabs + dropdown (both always visible) | Tabs only (per installed version) — minor gap |
+| Verse per slide | **Configurable (default: 1)** | 🔶 being made configurable (`DefaultBibleVersesPerSlide`) |
+| Slide footer | Bible version name (`[BibleDescription]`) | ✅ via FooterTemplate + `[BibleDescription]` token |
+| Slide header | Right-aligned ref + decorative icon | ✅ via HeaderTemplate + `[BibleReference]` token (no decorative icon) |
+| Aspect ratio | Selectable (Actual/4:3/16:9/16:10/16:8) | ❌ Not implemented |
+| Clock overlay | Built-in (Mensaje tab, 3 styles, 3 modes) | ❌ Not implemented |
+| Bilingual mode | Dual side-by-side display | ❌ Not implemented |
+| Slide zone presets | 9 layout presets (Apariencia group) | ❌ Not implemented (fixed 3-zone Grid) |
+| Brightness control | Slider on background media | ❌ Not implemented |
 
 ---
 
@@ -566,15 +564,16 @@ Header and footer content is fully configurable via template tokens (see Section
 
 | Aspect | VP | OA (current) |
 |---|---|---|
-| Song list | Tree (songbooks → songs, expandable) | Flat list, searchable by title |
-| Search scope | Title + lyrics simultaneously (two-step) | Title only |
-| Section tag display | Red (definition) / gray (repeat) color coding | No visual distinction |
-| Verse order | Configurable per song and per agenda item | Fixed (definition order) |
-| Chord display | Dedicated tab + inline in lyrics editor | Not implemented |
-| Attached media | Per-song audio/video/PDF/PPT files | Not implemented |
-| Song notes (Apuntes) | Per-song notes field | Not implemented |
-| Songbook organization | Hierarchical (songbooks → songs) | Flat (all songs in one list) |
-| Add to service | Right-click → context menu from any view | Navigate to Schedule → add from picker |
+| Song list | Tree (songbooks → songs, expandable) | Flat list, searchable — songbook layer not built |
+| Search scope | Title + lyrics simultaneously (two-step) | ✅ two-step (title/author then lyrics FTS) |
+| Section tag display | Red (definition) / gray (repeat) color coding | ✅ color-coded token badges (V1/C/B…) per section + editable Play Order field |
+| Verse order | Configurable per song and per agenda item | ✅ both `Song.VerseOrder` + `SongScheduleItem.VerseOrderOverride` |
+| Chord display | Dedicated tab + inline in lyrics editor | ❌ Not implemented |
+| Attached media | Per-song audio/video/PDF/PPT files | ❌ Not implemented |
+| Song notes (Apuntes) | Per-song notes field | ❌ Not implemented |
+| Songbook organization | Hierarchical (songbooks → songs) | ❌ Flat (all songs in one list) |
+| Add to service | Right-click → context menu from any view | Navigate to Schedule → add from picker (functional, less discoverable) |
+| Import | OpenLyrics ✅ + 20 more | 🔶 OpenLyrics only; OpenSong/plain-text planned |
 
 ---
 
@@ -598,12 +597,12 @@ ThemeBackgroundImage (BitmapImage)
 ThemeBackgroundVideo (MediaElement, muted, looping)
 BackgroundImage (media slide image — BitmapImage)
 ContentVideo (media slide video — MediaElement, with audio)
-TextViewbox (Viewbox → TextBlock — song/Bible text, full screen)
+3-zone Grid: Header (Auto) / Body Viewbox (*) / Footer (Auto)  ← token-resolved, auto-hiding
 BlankOverlay (opaque black Rectangle)
-CornerLabel (title + section, top-left, ZIndex=100)
+CornerLabel (fallback only — used when no HeaderTemplate set, ZIndex=100)
 ```
 
-**Gap:** OA has no separate Header/Footer zones. All text is in a single `TextViewbox`.
+**✅ Header/Body/Footer zones DONE.** Remaining layer gaps vs VP: clock overlay and camera feed (both top-of-stack overlays, not yet built). A live-announcement overlay is being added (P2-a).
 
 ---
 
@@ -637,11 +636,11 @@ Parser: `OpenADorationJsonParser.cs`
 
 ## 9. VP Song Import Formats OA Should Consider
 
-OA has no song importers. VP imports from 20+ formats. Priority order for OA:
+OA imports **OpenLyrics XML** (`OpenLyricsParser.cs` — title/author/copyright/ccliNo/verseOrder/sections). VP imports from 20+ formats. Remaining priority order for OA:
 
 | Priority | Format | Why |
 |---|---|---|
-| High | OpenLyrics XML | Open standard, widely supported by OpenLP, OpenSong, WorshipAssistant |
+| ✅ Done | OpenLyrics XML | Open standard, widely supported by OpenLP, OpenSong, WorshipAssistant |
 | High | CCLI SongSelect `.usr` | Most churches already have CCLI accounts |
 | Medium | OpenSong | Popular free alternative |
 | Medium | EasyWorship | Common in US churches |

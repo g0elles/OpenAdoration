@@ -32,9 +32,12 @@ public sealed class ProjectionService : IProjectionService
 
     private bool  _isServiceScheduleActive;
     private Slide? _nextScheduleItemPreviewSlide;
+    private string? _currentAnnouncement;
 
     public bool   IsServiceScheduleActive      => _isServiceScheduleActive;
     public Slide? NextScheduleItemPreviewSlide => _nextScheduleItemPreviewSlide;
+    public string? CurrentAnnouncement         => _currentAnnouncement;
+    public bool   IsAnnouncementActive         => _currentAnnouncement is not null;
 
     public event EventHandler<Slide?>? SlideChanged;
     public event EventHandler<bool>?   ProjectionStateChanged;
@@ -43,6 +46,7 @@ public sealed class ProjectionService : IProjectionService
     public event EventHandler?         PreviousScheduleItemRequested;
     public event EventHandler?         ServiceScheduleActiveChanged;
     public event EventHandler?         NextScheduleItemPreviewChanged;
+    public event EventHandler?         AnnouncementChanged;
 
     public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel)
     {
@@ -143,6 +147,34 @@ public sealed class ProjectionService : IProjectionService
         RaiseSlideChanged(blank);
     }
 
+    public void ShowAnnouncement(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _logger.LogWarning("ShowAnnouncement called with empty text — ignored");
+            return;
+        }
+
+        if (!_isProjecting)
+        {
+            _logger.LogWarning("ShowAnnouncement called while not projecting — ignored");
+            return;
+        }
+
+        _logger.LogInformation("Showing announcement banner");
+        _currentAnnouncement = text;
+        RaiseSafe(AnnouncementChanged);
+    }
+
+    public void ClearAnnouncement()
+    {
+        if (_currentAnnouncement is null) return;
+
+        _logger.LogInformation("Clearing announcement banner");
+        _currentAnnouncement = null;
+        RaiseSafe(AnnouncementChanged);
+    }
+
     public void Stop()
     {
         _logger.LogInformation("Stopping projection (was on slide {Index}/{Total})", _currentIndex + 1, _slides.Count);
@@ -153,12 +185,15 @@ public sealed class ProjectionService : IProjectionService
         _contextLabel = string.Empty;
 
         var wasScheduleActive           = _isServiceScheduleActive;
+        var wasAnnouncementActive       = _currentAnnouncement is not null;
         _isServiceScheduleActive        = false;
         _nextScheduleItemPreviewSlide   = null;
+        _currentAnnouncement            = null;
 
         RaiseSlideChanged(null);
         RaiseProjectionStateChanged(false);
         if (wasScheduleActive) RaiseSafe(ServiceScheduleActiveChanged);
+        if (wasAnnouncementActive) RaiseSafe(AnnouncementChanged);
         RaiseSafe(NextScheduleItemPreviewChanged);
 
         _logger.LogInformation("Projection stopped");

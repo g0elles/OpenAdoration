@@ -16,6 +16,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private readonly IBibleService           _bibleService;
     private readonly IProjectionService      _projectionService;
     private readonly IBibleImportService     _importService;
+    private readonly IAppSettingsService     _appSettings;
     private readonly ILogger<BibleViewModel> _logger;
 
     private CancellationTokenSource  _booksCts  = new();
@@ -103,11 +104,13 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         IBibleService           bibleService,
         IProjectionService      projectionService,
         IBibleImportService     importService,
+        IAppSettingsService     appSettings,
         ILogger<BibleViewModel> logger)
     {
         _bibleService      = bibleService;
         _projectionService = projectionService;
         _importService     = importService;
+        _appSettings       = appSettings;
         _logger            = logger;
 
         _importService.StateChanged    += OnImportStateChanged;
@@ -585,12 +588,13 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             }
             else
             {
-                // Multi-verse selection or keyword search: project as a single combined slide.
+                // Multi-verse selection or keyword search: chunk by the configured verses-per-slide.
                 _isChapterProjection = false;
-                var slide = _bibleService.GenerateSlide(selected, version: SelectedVersion);
-                _projectionService.LoadSlides(new[] { slide }, slide.Label);
-                SlidePreviewText  = slide.Content;
-                SlidePreviewLabel = slide.Label;
+                var versesPerSlide = Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
+                var slides = _bibleService.GenerateSlides(selected, versesPerSlide, version: SelectedVersion);
+                _projectionService.LoadSlides(slides, slides[0].Label);
+                SlidePreviewText  = slides[0].Content;
+                SlidePreviewLabel = slides[0].Label;
             }
         }
         catch (Exception ex) { _logger.LogError(ex, "Failed to project Bible selection"); }

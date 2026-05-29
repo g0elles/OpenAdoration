@@ -20,6 +20,7 @@ public partial class AddEditSongViewModel : BaseViewModel
     [ObservableProperty] private string _classification = string.Empty;
     [ObservableProperty] private string _copyright      = string.Empty;
     [ObservableProperty] private string _ccliNumber     = string.Empty;
+    [ObservableProperty] private string _verseOrder     = string.Empty;
 
     public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
 
@@ -43,6 +44,7 @@ public partial class AddEditSongViewModel : BaseViewModel
         Classification = string.Empty;
         Copyright      = string.Empty;
         CcliNumber     = string.Empty;
+        VerseOrder     = string.Empty;
         ClearError();
         ClearSections();
         OnPropertyChanged(nameof(IsNew));
@@ -57,11 +59,13 @@ public partial class AddEditSongViewModel : BaseViewModel
         Classification = song.Classification ?? string.Empty;
         Copyright      = song.Copyright      ?? string.Empty;
         CcliNumber     = song.CcliNumber     ?? string.Empty;
+        VerseOrder     = song.VerseOrder     ?? string.Empty;
         ClearError();
         ClearSections();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
-        foreach (var s in song.GetOrderedSections())
+        // Edit in definition order — VerseOrder is edited separately and may repeat sections.
+        foreach (var s in song.Sections.OrderBy(s => s.Order))
             Sections.Add(CreateSectionVm(s.Type, s.SectionNumber, s.Lyrics, s.Order));
     }
 
@@ -148,6 +152,7 @@ public partial class AddEditSongViewModel : BaseViewModel
         Classification = string.IsNullOrWhiteSpace(Classification) ? null : Classification.Trim(),
         Copyright      = string.IsNullOrWhiteSpace(Copyright)      ? null : Copyright.Trim(),
         CcliNumber     = string.IsNullOrWhiteSpace(CcliNumber)     ? null : CcliNumber.Trim(),
+        VerseOrder     = string.IsNullOrWhiteSpace(VerseOrder)     ? null : VerseOrder.Trim(),
         Sections       = [.. Sections.Select(vm => new SongSection
         {
             Type          = vm.Type,
