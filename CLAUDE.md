@@ -1,5 +1,5 @@
 # OpenAdoration — Claude Context File
-# Last updated: 2026-05-20
+# Last updated: 2026-05-29
 # Purpose: Full project context in one read. Read before touching any code.
 
 ---
@@ -58,7 +58,7 @@ architecture:
 
   layers:
     Domain: OpenAdoration.Domain — Entities, Enums, BaseEntity(Id/CreatedAt/UpdatedAt)
-    Application: OpenAdoration.Application — Service+Repo interfaces, Slide DTO, SlideType
+    Application: OpenAdoration.Application — Service+Repo interfaces, Slide DTO, SlideContext, SlideType
     Infrastructure: OpenAdoration.Infrastructure — EF Core DbContext, repos, migrations, logging
     WPF: OpenAdoration.WPF — App/Windows, ViewModels, Views, Converters, Helpers, Styles
 
@@ -68,8 +68,9 @@ architecture:
     Views fire LoadCommand from Loaded event in code-behind.
 
   di_lifetime_rules:
-    singletons: MainViewModel, MainWindow, ProjectionWindow, IProjectionService
-    transients: SongsViewModel, BibleViewModel, ServiceScheduleViewModel, MediaViewModel, ThemeViewModel
+    singletons: MainViewModel, MainWindow, ProjectionWindow, IProjectionService, ITokenResolver
+    transients: SongsViewModel, BibleViewModel, ServiceScheduleViewModel, MediaViewModel, ThemeViewModel,
+                AddEditSongViewModel, AddEditThemeViewModel, StageViewModel
     scoped: all services (ISongService, IBibleService, IThemeService, IMediaService, IWorshipServiceService)
             + all repos (ISongRepository, IBibleRepository, IThemeRepository, IMediaRepository, IWorshipServiceRepository)
     factory: IDbContextFactory<AppDbContext> — AddDbContextFactory (singleton factory, scoped context)
@@ -83,18 +84,27 @@ database:
   engine: SQLite
   migration_command: "dotnet ef migrations add <Name> --project OpenAdoration.Infrastructure --startup-project OpenAdoration.WPF"
   migrations_applied: automatically at startup via MigrateAsync()
-  current_migration: 20260520041713_AddBibleVersesFts
+  current_migration: 20260529012740_AddScheduleItemAutoAdvance
   migrations_history:
     - 20260505012006_InitialCreate
     - 20260511000000_AddSongClassification
     - 20260518_AddThemeVideoBackground
     - 20260519005541_AddThemeTextAlignment
     - 20260520041713_AddBibleVersesFts
+    - AddSongVerseOrder
+    - AddSongSectionsFts
+    - AddThemeHeaderFooter
+    - 20260529011841_AddSongCopyrightAndCcli
+    - 20260529012740_AddScheduleItemAutoAdvance
 
   tables:
-    Songs: Id, Title(NOT NULL), Author(NULL), Classification(NULL), CreatedAt, UpdatedAt
+    Songs: Id, Title(NOT NULL), Author(NULL), Classification(NULL), VerseOrder(NULL),
+           Copyright(NULL), CcliNumber(NULL), CreatedAt, UpdatedAt
     SongSections: Id, SongId(FK→Songs CASCADE), Type(INT), SectionNumber, Lyrics(NOT NULL), Order(NOT NULL), CreatedAt, UpdatedAt
-    Themes: Id, Name, FontFamily, FontSize, FontColor, BackgroundColor, BackgroundImagePath(NULL), BackgroundVideoPath(NULL), TextAlignment(TEXT default "Center"), IsDefault, CreatedAt, UpdatedAt
+    SongSectionsFts: FTS5 virtual table — Lyrics indexed; rowid=SongSections.Id; 3 sync triggers (Insert/Update/Delete)
+    Themes: Id, Name, FontFamily, FontSize, FontColor, BackgroundColor, BackgroundImagePath(NULL),
+            BackgroundVideoPath(NULL), TextAlignment(TEXT default "Center"),
+            HeaderTemplate(NULL), FooterTemplate(NULL), IsDefault, CreatedAt, UpdatedAt
       seed: Id=1 Arial 48pt white/black IsDefault=true — STATIC date new DateTime(2025,1,1,0,0,0,Utc) never DateTime.UtcNow (G3)
     BibleVersions: Id, Name, Abbreviation, Language, CreatedAt, UpdatedAt
     BibleBooks: Id, BibleVersionId(FK), Name, Abbreviation, Testament(INT), BookNumber, ChapterCount, CreatedAt, UpdatedAt
@@ -102,6 +112,7 @@ database:
     BibleVersesFts: FTS5 virtual table — Text indexed, BibleVersionId UNINDEXED; rowid=BibleVerses.Id; tokenize=unicode61
     WorshipServices: Id, Name, Date, CreatedAt, UpdatedAt
     ScheduleItems: TPH discriminator ItemType("Song"|"Bible"|"Media"); (ServiceId,Order) composite index
+      base_extra: AutoAdvanceSeconds(NULL INT) — null/0=manual; positive=seconds between slide advances
       song_extra: SongId(FK); bible_extra: Book,Chapter,VerseStart,VerseEnd,BibleVersionId(NULL FK); media_extra: MediaFileId(FK)
     MediaFiles: Id, FileName, FilePath, Type(INT: Image=0 Video=1), CreatedAt, UpdatedAt
 
@@ -109,6 +120,8 @@ database:
     timestamp: StampTimestamps() — Added sets CreatedAt+UpdatedAt; Modified sets only UpdatedAt.
     update_song: Load existing tracked → RemoveRange(sections) → add incoming Id=0 (forces INSERT). Never reuse Ids.
     bible_import: Batch 1000 rows + ChangeTracker.Clear() per batch. Required — full Bible ≈ 31,000 verses.
+    song_search: Two-step — title/author LIKE first; lyrics FTS5 (SongSectionsFts) as fallback when 0 results.
+      FTS term escaping: each word gets trailing * for prefix matching ("cura" matches "curará").
 
 # ─────────────────────────────────────────────────────────────────────────────
 projection_engine:
@@ -117,19 +130,125 @@ projection_engine:
     LoadSlides(slides, contextLabel): starts projection; fires SlideChanged(slides[0]) + ProjectionStateChanged(true)
     Next/Previous/GoTo(index): advances/decrements/jumps; fires SlideChanged
     ShowBlank(): fires SlideChanged(Slide.Blank()) without stopping
-    Stop(): clears; fires SlideChanged(null) + ProjectionStateChanged(false)
-  events: SlideChanged(Slide?), ProjectionStateChanged(bool)
+    Stop(): clears state + IsServiceScheduleActive + NextScheduleItemPreviewSlide; fires events
+    RequestNextScheduleItem() / RequestPreviousScheduleItem(): message-bus; ServiceScheduleViewModel handles
+    SetServiceScheduleActive(bool): called by ServiceScheduleViewModel on StartLive/StopLive/Dispose
+    SetNextScheduleItemPreview(Slide?): set after each LoadSlidesForCurrentItemAsync; used by StageViewModel
+  events:
+    SlideChanged(Slide?), ProjectionStateChanged(bool), ThemeChanged
+    NextScheduleItemRequested, PreviousScheduleItemRequested  # fired by StageViewModel; handled by ServiceScheduleVM
+    ServiceScheduleActiveChanged  # StageViewModel shows Prev/Next Item buttons only when true
+    NextScheduleItemPreviewChanged  # StageViewModel subscribes to refresh UP NEXT panel
   safety: Each subscriber wrapped in try/catch; crash never stops engine.
+  properties: CurrentSlide, CurrentSlides, CurrentSlideIndex, IsProjecting, ContextLabel,
+              IsServiceScheduleActive, NextScheduleItemPreviewSlide
 
-  slide_dto: Content(string), Type(SlideType), Label(string), MediaPath(string?), ThemeId(int?)
+  slide_dto: Content(string), Type(SlideType), Label(string), MediaPath(string?), ThemeId(int?), Context(SlideContext)
     Slide.Blank(): factory; constructor exempts Blank+Media from content requirement.
+    SlideContext: SongTitle, SongAuthor, SongVerseTag, SongCopyright, SongCcliNumber,
+                  BibleBookName, BibleChapterId, BibleVerseId, BibleReference, BibleDescription
   slide_types: Song, Bible, Media, Blank
 
   projection_window:
     shows_on: secondary monitor (fallback primary); hidden at startup; shown on first projection or "Open Screen" click
-    Song/Bible: TextViewbox + SlideTextBlock; theme applied via IServiceScopeFactory → IThemeService per slide
-    Media: BitmapImage → BackgroundImage. Blank: BlankOverlay visible.
-    cleanup: OnClosed() unsubscribes both events (G9).
+    layout: 3-zone Grid — Header(Auto) / Body(*Viewbox) / Footer(Auto)
+      Header: TextBlock x:Name=HeaderText; resolved from Theme.HeaderTemplate + ITokenResolver
+      Body: Viewbox → TextBlock x:Name=SlideTextBlock; theme font/size/color/alignment applied
+      Footer: TextBlock x:Name=FooterText; resolved from Theme.FooterTemplate + ITokenResolver
+    zone_visibility: zone shown only if resolved text contains at least one letter or digit (auto-hide for empty tokens)
+    CornerLabel: fallback (top-left ZIndex=100) used only when no HeaderTemplate set on active theme
+    Media: BitmapImage → BackgroundImage (image) or MediaElement ContentVideo (video, with audio)
+    Blank: BlankOverlay rectangle visible
+    Theme resolution: per-slide via IServiceScopeFactory → IThemeService; ConcurrentDictionary cache per session
+    cleanup: OnClosed() unsubscribes SlideChanged + ProjectionStateChanged + ThemeChanged (G9)
+
+# ─────────────────────────────────────────────────────────────────────────────
+token_system:
+  resolver: ITokenResolver → TokenResolver (sealed partial; [GeneratedRegex] for \[(\w+)\] pattern)
+  registration: AddSingleton<ITokenResolver, TokenResolver>() in InfrastructureServiceExtensions
+  context_source: SlideContext built in SongService.GenerateSlides() and BibleService.GenerateSlide()
+  resolve_call: ProjectionWindow.ShowText() and StageViewModel.BuildPreview() both call _tokenResolver.Resolve()
+
+  tokens:
+    "[SongTitle]"      → SlideContext.SongTitle
+    "[SongAuthor]"     → SlideContext.SongAuthor
+    "[SongVerseTag]"   → SlideContext.SongVerseTag  # e.g. "Verse 1", "Chorus"
+    "[SongCopyright]"  → SlideContext.SongCopyright
+    "[SongCCLI]"       → SlideContext.SongCcliNumber
+    "[BibleBookName]"  → SlideContext.BibleBookName
+    "[BibleChapterID]" → SlideContext.BibleChapterId  # raw number e.g. "3"
+    "[BibleVerseID]"   → SlideContext.BibleVerseId    # raw number/range e.g. "16" or "16-18"
+    "[BibleReference]" → SlideContext.BibleReference  # formatted "John 3:16" or "John 3:16-18"
+    "[BibleDescription]" → SlideContext.BibleDescription  # Bible version name e.g. "King James Version"
+    unknown tokens: left unchanged in output
+
+  zone_auto_hide: >
+    After resolving, ProjectionWindow and StageViewModel check resolved.Any(char.IsLetterOrDigit).
+    If false → zone hidden. Handles pure-token templates on wrong slide type (e.g. Bible header on song slide).
+    Static text like "Community Church" always shows. Mixed templates with static text + empty tokens stay visible.
+
+  template_storage: Theme.HeaderTemplate (NULL TEXT), Theme.FooterTemplate (NULL TEXT)
+  ui_chips: AddEditThemeView.xaml — clickable chip buttons insert token at cursor via code-behind InsertToken()
+
+# ─────────────────────────────────────────────────────────────────────────────
+stage_view:
+  class: StageView (UserControl) + StageViewModel (Transient, IDisposable)
+  nav_button: "📺  Stage View" in MainWindow sidebar → NavigateToStageCommand
+  datatemplate: registered in App.xaml like all other page VMs
+
+  layout:
+    status_bar: LIVE/STOPPED badge + ContextLabel + SlidePosition + Prev/Next Item buttons
+    left_panel (2/3): current slide — Viewbox(1920×1080) with same 7-layer stack as ProjectionWindow
+    right_panel (1/3): UP NEXT — smaller Viewbox; "End of item" placeholder when nothing follows
+
+  preview_rendering (both panels):
+    Layer 1: Rectangle Fill=BgColor
+    Layer 2: Image BgImagePath (FilePathToImage converter)
+    Layer 3: Border "🎬 Video background active" when HasBgVideo
+    Layer 4: 3-zone Grid (Header/Body Viewbox/Footer) when IsText
+    Layer 5: Image MediaPath when IsImageMedia
+    Layer 6: MediaElement (LoadedBehavior=Manual, IsMuted=True) when IsVideoMedia — code-behind SyncVideo()
+    Layer 7: Rectangle Fill=Black when IsBlank
+    Layer 8: "Not projecting" dim overlay when !IsProjecting (current panel only)
+
+  cross_item_up_next: >
+    When nextIdx >= slides.Count AND IsProjecting AND NextScheduleItemPreviewSlide is set,
+    StageViewModel shows the first slide of the next schedule item as UP NEXT.
+    ServiceScheduleViewModel calls GetNextItemFirstSlideAsync() after each LoadSlidesForCurrentItemAsync()
+    and pushes result via IProjectionService.SetNextScheduleItemPreview().
+
+  schedule_buttons: >
+    "◀ Prev Item" / "Next Item ▶" visible only when IProjectionService.IsServiceScheduleActive.
+    Commands call RequestPreviousScheduleItem() / RequestNextScheduleItem() on IProjectionService;
+    ServiceScheduleViewModel handles the events and calls PrevItem() / NextItem() if live.
+
+  SlidePreview_record: immutable record; VM swaps whole object → WPF re-evaluates all {Binding CurrentPreview.X}
+  video_sync: StageView code-behind subscribes to VM.PropertyChanged; on CurrentPreview/NextPreview change → SyncVideo()
+
+  events_subscribed: SlideChanged, ProjectionStateChanged, ThemeChanged, ServiceScheduleActiveChanged, NextScheduleItemPreviewChanged
+  disposal: Dispose() unsubscribes all 5 events; called by scope disposal on navigation away
+
+# ─────────────────────────────────────────────────────────────────────────────
+auto_advance:
+  field: ScheduleItem.AutoAdvanceSeconds (int?, NULL=manual, 0=manual, positive=seconds)
+  ui: builder item rows show [−] [⏱ Manual/Ns] [+]; +5s increments, max 300s
+  persistence: ScheduleItemViewModel fires AutoAdvanceChangeRequested → ServiceScheduleViewModel calls SetItemAutoAdvanceAsync
+
+  timer_behavior: >
+    DispatcherTimer (UI thread). Always one-shot — stopped before advancing so SlideChanged restarts it.
+    SlideChanged subscription in ServiceScheduleViewModel resets timer on every slide change
+    (manual advance via Space key also resets countdown, preventing unexpectedly short intervals).
+    OnAutoAdvanceTick: if not last slide → Next(); elif CanNextItem → NextItem(); else stop.
+  stop_conditions: StopLive(), OnProjectionStateChanged(false), Dispose() — G19
+
+# ─────────────────────────────────────────────────────────────────────────────
+song_import:
+  formats:
+    OpenLyrics XML: OA Helper — OpenLyricsParser.cs; parses title, author, copyright, ccliNo, verseOrder, verses
+      section name mapping: v{n}→Verse, c→Chorus, p→PreChorus, b→Bridge, i→Intro, e→Outro, t→Tag
+      verseOrder normalized to OA uppercase token format (V1 C V2 → V1 C V2)
+  ui: SongsView.xaml has "Import" button → ImportSongCommand in SongsViewModel
+  note: Only OpenLyrics supported so far. VP reference lists 20+ VP formats for future consideration.
 
 # ─────────────────────────────────────────────────────────────────────────────
 bible_import:
@@ -161,40 +280,48 @@ bible_import:
 key_files:  # ★ = read first when debugging
 
   WPF:
-    - OpenAdoration.WPF/App.xaml.cs — DI root, host startup, DB init
-    - OpenAdoration.WPF/App.xaml — DataTemplate nav map + global converters (ColorToBrush, TestamentToLabel, InverseBoolToVisibility); every navigated VM needs a DataTemplate here (G8)
-    - OpenAdoration.WPF/MainWindow.xaml — shell: 200px sidebar + ContentControl + bottom projection bar
-    - OpenAdoration.WPF/ProjectionWindow.xaml.cs  ★ — RenderSlide dispatch, theme via IServiceScopeFactory, Dispatcher.Invoke
-    - OpenAdoration.WPF/ViewModels/BaseViewModel.cs — IsBusy, ErrorMessage, SetError(), ClearError()
-    - OpenAdoration.WPF/ViewModels/MainViewModel.cs  ★ — scope-per-nav, projection controls
-    - OpenAdoration.WPF/ViewModels/SongsViewModel.cs  ★ — full songs CRUD + search + projection
+    - OpenAdoration.WPF/App.xaml.cs — DI root, host startup, DB init; registers ITokenResolver singleton
+    - OpenAdoration.WPF/App.xaml — DataTemplate nav map + global converters; every navigated VM needs entry (G8)
+    - OpenAdoration.WPF/MainWindow.xaml — shell: 200px sidebar (Songs/Bible/Schedule/Media/Themes/Stage) + ContentControl + bottom projection bar (no thumbnail)
+    - OpenAdoration.WPF/ProjectionWindow.xaml.cs  ★ — 3-zone rendering, ITokenResolver, theme cache, Dispatcher.Invoke
+    - OpenAdoration.WPF/ViewModels/MainViewModel.cs  ★ — scope-per-nav, projection controls, NavigateToStageCommand
+    - OpenAdoration.WPF/ViewModels/StageViewModel.cs  ★ — SlidePreview record; themed previews; cross-item UP NEXT
+    - OpenAdoration.WPF/Views/StageView.xaml + .cs  ★ — 2-panel layout; MediaElement video sync in code-behind
+    - OpenAdoration.WPF/ViewModels/SongsViewModel.cs  ★ — CRUD + two-step search + projection + import
     - OpenAdoration.WPF/ViewModels/BibleViewModel.cs  ★ — cascade; import; SelectedChapter=0 sentinel (G16)
-    - OpenAdoration.WPF/ViewModels/AddEditThemeViewModel.cs  ★ — BackgroundType enum; TextAlignment as WPF enum; font/color pickers
-    - OpenAdoration.WPF/ViewModels/ServiceScheduleViewModel.cs  ★ — service list + builder + live mode; ScheduleItemViewModel
+    - OpenAdoration.WPF/ViewModels/AddEditThemeViewModel.cs  ★ — BackgroundType; TextAlignment; HeaderTemplate/FooterTemplate
+    - OpenAdoration.WPF/ViewModels/ServiceScheduleViewModel.cs  ★ — service list + builder + live mode + auto-advance timer
+    - OpenAdoration.WPF/ViewModels/ScheduleItemViewModel.cs — AutoAdvanceSeconds; IncreaseAutoAdvance/DecreaseAutoAdvance commands
     - OpenAdoration.WPF/Views/BibleView.xaml  ★ — 3-column browser; CollectionViewSource grouped by Testament; chapter WrapPanel
-    - OpenAdoration.WPF/Views/ServiceScheduleView.xaml  ★ — 3-panel (list/builder/live); Run.Text bindings need Mode=OneWay (G18)
+    - OpenAdoration.WPF/Views/ServiceScheduleView.xaml  ★ — 3-panel (list/builder/live); [−][⏱][+] auto-advance controls in builder
+    - OpenAdoration.WPF/Views/AddEditThemeView.xaml  ★ — header/footer template boxes + full token chip row
     - OpenAdoration.WPF/Helpers/BibleImport/BibleFormatDispatcher.cs  ★ — format auto-detection + dispatch
-    - OpenAdoration.WPF/Helpers/BibleImport/OsisBookCatalog.cs — 66 canonical books; GetOrFallback; GetByNumber
-    - OpenAdoration.WPF/Styles/Base.xaml  ★ — all control styles; FieldComboBox has full ControlTemplate (G10); DatePicker needs full ControlTemplate too
+    - OpenAdoration.WPF/Helpers/SongImport/OpenLyricsParser.cs — OpenLyrics XML → Song (title/author/copyright/ccliNo/verseOrder/sections)
+    - OpenAdoration.WPF/Styles/Base.xaml  ★ — all control styles; FieldComboBox full ControlTemplate (G10)
     - OpenAdoration.Tests.Infrastructure/BibleImport/BibleParserTests.cs — 8/8 format tests
 
   Application:
-    - OpenAdoration.Application/Common/Slide.cs  ★ — projection DTO; Blank() factory; content validation
-    - OpenAdoration.Application/Services/IProjectionService.cs + ProjectionService.cs  ★
-    - OpenAdoration.Application/Services/IBibleService.cs — GetVersionsAsync/GetBooksAsync/GetVersesAsync/SearchAsync/ImportVersionAsync/GenerateSlide/DeleteVersionAsync
+    - OpenAdoration.Application/Common/Slide.cs  ★ — projection DTO; Blank() factory; SlideContext attached
+    - OpenAdoration.Application/Common/SlideContext.cs — token resolution bag; all song+bible token fields
+    - OpenAdoration.Application/Services/IProjectionService.cs + ProjectionService.cs  ★ — full event bus
+    - OpenAdoration.Application/Services/ITokenResolver.cs + TokenResolver.cs — [GeneratedRegex] token resolver
+    - OpenAdoration.Application/Services/ISongService.cs — includes SearchByLyricsAsync
+    - OpenAdoration.Application/Services/IBibleService.cs — GenerateSlide now accepts BibleVersion? for [BibleDescription]
 
   Infrastructure:
     - OpenAdoration.Infrastructure/Persistence/AppDbContext.cs  ★ — StampTimestamps(), ApplyConfigurationsFromAssembly
-    - OpenAdoration.Infrastructure/Repositories/SongRepository.cs  ★ — replace-all-sections pattern
+    - OpenAdoration.Infrastructure/Repositories/SongRepository.cs  ★ — FTS lyrics search; replace-all-sections pattern
     - OpenAdoration.Infrastructure/Repositories/BibleRepository.cs  ★ — batched 1000-row import + FTS sync
+    - OpenAdoration.Infrastructure/Repositories/WorshipServiceRepository.cs  ★ — SetItemAutoAdvanceAsync; GetWithItemsAsync
     - OpenAdoration.Infrastructure/Configurations/ScheduleItemConfiguration.cs  ★ — TPH discriminator
-    - OpenAdoration.Infrastructure/Extensions/InfrastructureServiceExtensions.cs  ★ — AddInfrastructure(), InitialiseDatabaseAsync()
+    - OpenAdoration.Infrastructure/Extensions/InfrastructureServiceExtensions.cs  ★ — AddInfrastructure(); ITokenResolver
 
   Domain:
-    - OpenAdoration.Domain/Entities/Theme.cs — FontFamily, FontSize, FontColor, BackgroundColor, BackgroundImagePath, BackgroundVideoPath, TextAlignment
-    - OpenAdoration.Domain/Entities/BibleBook.cs — Testament enum (Old/New — G14)
+    - OpenAdoration.Domain/Entities/Song.cs — Title, Author, Classification, VerseOrder, Copyright, CcliNumber, Sections; GetOrderedSections()
+    - OpenAdoration.Domain/Entities/ScheduleItem.cs — base: Order, AutoAdvanceSeconds(NULL), ThemeId(NULL)
+    - OpenAdoration.Domain/Entities/Theme.cs — all theme fields including HeaderTemplate, FooterTemplate
     - OpenAdoration.Domain/Enums/SectionType.cs — [Verse, Chorus, PreChorus, Bridge, Intro, Outro, Tag]
-    - OpenAdoration.Domain/Enums/Testament.cs — [Old, New]  # CRITICAL: NOT OldTestament/NewTestament
+    - OpenAdoration.Domain/Enums/Testament.cs — [Old, New]  # CRITICAL: NOT OldTestament/NewTestament (G14)
 
 # ─────────────────────────────────────────────────────────────────────────────
 styles:
@@ -218,7 +345,9 @@ critical_gotchas:
       UseWindowsForms=true pulls System.Windows.Forms into scope. Always fully-qualify:
       System.Windows.Controls.UserControl, System.Windows.MessageBox.Show(),
       System.Windows.Media.Color (not System.Drawing.Color),
-      Microsoft.Win32.OpenFileDialog (not System.Windows.Forms.OpenFileDialog)
+      Microsoft.Win32.OpenFileDialog (not System.Windows.Forms.OpenFileDialog),
+      System.Windows.Input.KeyEventArgs (not System.Windows.Forms.KeyEventArgs),
+      System.Windows.Controls.MediaElement (not any Forms equivalent)
 
   - id: G2
     title: EF Core Design on startup project
@@ -249,8 +378,8 @@ critical_gotchas:
     rule: ContentControl resolves views via DataTemplate in App.xaml. Missing DataTemplate → blank content, no error, very confusing.
 
   - id: G9
-    title: ProjectionWindow event cleanup
-    rule: OnClosed() must unsubscribe both IProjectionService events. Without this → GC blocked + dead Dispatcher.
+    title: IProjectionService event cleanup in every subscriber
+    rule: Every class subscribing to IProjectionService events must unsubscribe in OnClosed() or Dispose(). Without this → GC blocked + dead Dispatcher. Applies to ProjectionWindow, StageViewModel, ServiceScheduleViewModel.
 
   - id: G10
     title: WPF dark-theme ComboBoxItem visibility
@@ -288,14 +417,38 @@ critical_gotchas:
     title: Run.Text bindings on read-only properties must be Mode=OneWay
     rule: "<Run Text=\"{Binding SomeProp, Mode=OneWay}\"/> — Run.Text defaults to TwoWay; source-generated int/count properties are read-only → runtime BindingExpression error."
 
+  - id: G19
+    title: DispatcherTimer must be stopped on every exit path
+    rule: >
+      DispatcherTimer holds a strong reference and fires even after the owning VM is navigated away from.
+      Stop it in StopLive(), OnProjectionStateChanged(false=stopped), AND Dispose().
+      Pattern: always one-shot (stop before advancing; SlideChanged restarts it for the next slide).
+
+  - id: G20
+    title: Token zone auto-hide uses letter/digit check, not whitespace trim
+    rule: >
+      After resolving a header/footer template, show the zone only if resolved.Any(char.IsLetterOrDigit).
+      Whitespace trim alone misses "  :" produced by "[BibleChapterID]:[BibleVerseID]" on a song slide.
+      Static text always passes; pure-token templates on wrong slide type collapse cleanly.
+
 # ─────────────────────────────────────────────────────────────────────────────
-feature_status:  # as of 2026-05-20
-  Songs: DONE — full CRUD + search + projection; section validation on save (non-empty, all have lyrics)
-  Themes: DONE — full CRUD + live preview; BackgroundType(Color/Image/Video); xctk:ColorPicker; text alignment; projection applies theme per slide via IServiceScopeFactory
-  Bible: DONE — 3-column browser; single-click projection; FTS search; 8-format import (8/8 tests); localized book names; cancel+summary
-  ServiceSchedule: DONE — service list + builder (song/bible/media items, reorder ▲▼) + live mode (per-item projection, Prev/Next item, click-to-jump)
-  Media: STUB — domain/service/repo done; no import UI yet; ProjectionWindow already handles SlideType.Media
-  Projection: DONE — engine + ProjectionWindow; theme per slide; corner label (title+section); preview thumbnail; Open/Close screen toggle
+feature_status:  # as of 2026-05-29
+  Songs: DONE — full CRUD + two-step search (title/author + lyrics FTS with prefix matching)
+         + projection; section validation; VerseOrder; Copyright; CcliNumber; OpenLyrics import
+  Themes: DONE — full CRUD + live preview; BackgroundType(Color/Image/Video); xctk:ColorPicker;
+          text alignment; HeaderTemplate/FooterTemplate with token chips; 3-zone projection
+  Bible: DONE — 3-column browser; single-click projection; FTS search; 8-format import (8/8 tests);
+         localized book names; [BibleReference] token ("John 3:16"); cancel+summary
+  ServiceSchedule: DONE — service list + builder (song/bible/media, reorder ▲▼, auto-advance [⏱])
+                   + live mode (per-item projection, Prev/Next item, click-to-jump, auto-advance timer)
+  Media: DONE — import, project, delete; ProjectionWindow handles SlideType.Media (image + video with audio)
+  Projection: DONE — 3-zone layout (Header/Body/Footer); ITokenResolver; theme per slide via IServiceScopeFactory;
+              CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination
+  StageView: DONE — embedded nav section; themed 1920×1080 Viewbox previews; cross-item UP NEXT;
+             Prev/Next Item buttons (visible only when IsServiceScheduleActive); real video via MediaElement
+  TokenSystem: DONE — 10 tokens across song+bible; auto-hide zones; clickable chip insertion in theme editor
+  AutoAdvance: DONE — per-item seconds (0=manual); DispatcherTimer resets on every SlideChanged;
+               persists to DB immediately; cross-item advance at last slide
 
 # ─────────────────────────────────────────────────────────────────────────────
 confirmed_bugs:  # all FIXED
@@ -307,34 +460,51 @@ confirmed_bugs:  # all FIXED
   B6: ProjectionWindow auto-opened on launch — hidden at startup; EnsureShown() on first projection
   B7: Song title/section label missing on projection — CornerLabel overlay (top-left ZIndex=100)
   B8: Classification dropped on song edit — added existing.Classification = song.Classification
+  B9: HeaderTemplate/FooterTemplate silently discarded on theme save — ThemeRepository.UpdateAsync missing two field assignments
+  B10: Lyrics FTS "cura" not matching "curará" — changed from quoted phrase to prefix* matching per word
+  B11: TaskCanceledException noise in search debounce — replaced Task.Delay(ct) with Task.Delay + ct check
 
 # ─────────────────────────────────────────────────────────────────────────────
 roadmap:
+  # Original milestones (all DONE)
   milestone_0: Songs CRUD + projection — DONE
-  milestone_0b: Projection UX (B6 hidden window, B7 corner label, preview thumbnail, Open/Close toggle) — DONE
-  milestone_1: Themes (CRUD + BackgroundType + ColorPicker + text alignment + projection applies theme) — DONE
-  milestone_2: Bible Browser (3-column, click-to-project, FTS search, 5-format import) — DONE
-  milestone_2b: Bible importer hardening (cancel, success summary, exception catches, 5 tests) — DONE
-  milestone_2c: BibleSuperSearch JSON/ZIP/SQLite parsers; GetByNumber; 8/8 tests — DONE
-  milestone_3: Service Schedule (service list + builder + live mode) — DONE
+  milestone_0b: Projection UX (hidden window, corner label, Open/Close toggle) — DONE
+  milestone_1: Themes (CRUD + BackgroundType + ColorPicker + text alignment) — DONE
+  milestone_2: Bible Browser (3-column, FTS search, 8-format import, 8/8 tests) — DONE
+  milestone_3: Service Schedule (list + builder + live mode) — DONE
+  milestone_4: Media (import, project, delete) — DONE
+  milestone_5: Keyboard Shortcuts (Space/arrows/B/Esc/1-9/Ctrl+1-5) — DONE
+  milestone_6: Polish & Release — IN PROGRESS
 
-  milestone_4:
-    title: Media
-    status: NEXT
-    key_work:
-      - MediaViewModel — LoadCommand, ImportFileCommand (copy-on-import to %LocalAppData%\OpenAdoration\Media\), DeleteFileCommand, ProjectFileCommand
-      - MediaView.xaml — WrapPanel of image cards (thumbnail 160×90, filename, Project/Delete), Import toolbar button
-      - No new migrations needed — MediaFiles table already exists
+  # VP-parity work (all DONE)
+  vp_tier1: VerseOrder on Song; SongSectionsFts; ITokenResolver; OpenLyrics import — DONE
+  vp_tier2: 3-zone projection layout (Header/Body/Footer) with token rendering — DONE
+  vp_stage: Stage View embedded nav; themed previews; cross-item UP NEXT; video; Prev/Next Item — DONE
+  vp_tokens_extra: [BibleReference]; Copyright+CcliNumber fields; [SongCopyright][SongCCLI] tokens — DONE
+  vp_autoadvance: Auto-advance per schedule item (DispatcherTimer, +/- UI, DB persist) — DONE
 
-  milestone_5:
-    title: Keyboard Shortcuts
-    status: PLANNED
-    key_work: KeyDown handler in MainWindow.xaml.cs (not XAML bindings)
-    shortcuts: "Space/→/PageDown=Next, ←/PageUp=Previous, B=Blank, Esc=Stop, 1-9=GoTo(N), Ctrl+1/2/3=navigate tabs"
+  # Remaining P1 (VP parity gap matrix)
+  next_p1_verse_order_override:
+    title: Verse order override per agenda item
+    description: >
+      Let a SongScheduleItem specify its own section order for one service,
+      overriding Song.VerseOrder. Add VerseOrderOverride (NULL TEXT) to SongScheduleItem.
+      UI: editable token string in the builder row or live mode panel.
+      Logic: ServiceScheduleViewModel passes override to SongService.GenerateSlides() if set.
+    migration: AddSongScheduleItemVerseOrderOverride
 
-  milestone_6:
-    title: Polish & Release
-    status: PLANNED
+  next_p1_settings:
+    title: Settings page + church CCLI [SiteLicense] token
+    description: >
+      Persistent app settings: ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds.
+      Stored in %LOCALAPPDATA%\OpenAdoration\settings.json (not DB — no migration needed).
+      [SiteLicense] token → resolves to ChurchCcliNumber; [ChurchName] → church name.
+      New SettingsViewModel + SettingsView nav section; IAppSettingsService (singleton).
+
+  # P2 remaining
+  p2_live_announcement: Push free-text slide to screen mid-service without stopping projection
+  p2_bible_phrase_search: Exact phrase mode alongside FTS keyword search (FTS5 "..." syntax)
+  p2_additional_song_imports: OpenSong, plain text
 
 # ─────────────────────────────────────────────────────────────────────────────
 common_operations:
@@ -348,8 +518,9 @@ common_operations:
     - "Application: interface + service"
     - "Infrastructure: repo + entity configuration"
     - "WPF: ViewModel (replace stub) + View (replace stub)"
-    - "App.xaml: DataTemplate already registered — verify class name matches"
+    - "App.xaml: DataTemplate entry — verify class name matches (G8)"
     - "Migration: only if schema changes"
+    - "If IProjectionService changes: add to interface, implement in ProjectionService, update Stop() clearing logic"
 
 # ─────────────────────────────────────────────────────────────────────────────
 patterns:
@@ -374,7 +545,7 @@ patterns:
     {
         vm.MoveUpRequested += OnMoveUp; vm.MoveDownRequested += OnMoveDown; vm.DeleteRequested += OnDelete;
     }
-    // Always unsubscribe in OnDelete and OnEditCancelled to prevent leaks.
+    // Always unsubscribe in OnDelete and in Dispose(). Prevents memory leaks.
 
   relaycommand_commandparameter_string: |
     // XAML: <Button Command="{Binding AddSectionCommand}" CommandParameter="Verse" />
@@ -402,5 +573,38 @@ patterns:
     { OnPropertyChanged(nameof(IsAlignLeft)); OnPropertyChanged(nameof(IsAlignCenter)); OnPropertyChanged(nameof(IsAlignRight)); }
     [RelayCommand]
     private void SetAlignment(string alignment) =>
-        TextAlignment = alignment switch { "Left" => System.Windows.TextAlignment.Left, "Right" => System.Windows.TextAlignment.Right, _ => System.Windows.TextAlignment.Center };
+        TextAlignment = alignment switch { "Left" => ..., "Right" => ..., _ => System.Windows.TextAlignment.Center };
     // XAML: IsChecked="{Binding IsAlignCenter, Mode=OneWay}" (Mode=OneWay mandatory — G17)
+
+  auto_advance_timer_pattern: |
+    // DispatcherTimer — always one-shot (stopped before advancing; SlideChanged restarts).
+    private DispatcherTimer? _autoAdvanceTimer;
+    private void StartAutoAdvanceTimer(int seconds) {
+        StopAutoAdvanceTimer();
+        _autoAdvanceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+        _autoAdvanceTimer.Tick += OnAutoAdvanceTick;
+        _autoAdvanceTimer.Start();
+    }
+    private void StopAutoAdvanceTimer() {
+        if (_autoAdvanceTimer is null) return;
+        _autoAdvanceTimer.Stop();
+        _autoAdvanceTimer.Tick -= OnAutoAdvanceTick;
+        _autoAdvanceTimer = null;
+    }
+    // Stop in StopLive(), OnProjectionStateChanged(false), and Dispose() — G19.
+
+  slide_preview_record_pattern: |
+    // Immutable record for StageViewModel → swapping whole object triggers re-eval of all bindings.
+    public sealed record SlidePreview { ... init-only properties ... }
+    [ObservableProperty] private SlidePreview _currentPreview = SlidePreview.Empty;
+    // View binds: {Binding CurrentPreview.FontFamily}, {Binding CurrentPreview.BgColor, Converter=ColorToBrush}
+    // WPF uses TypeConverter for string→FontFamily; Color→Brush needs ColorToBrush converter.
+
+  token_zone_visibility_pattern: |
+    // After resolving a header/footer template, only show zone if result has alphanumeric content.
+    var resolved = _tokenResolver.Resolve(template, context);
+    if (resolved.Any(char.IsLetterOrDigit)) {
+        HeaderText.Text = resolved;
+        HeaderText.Visibility = Visibility.Visible;
+    }
+    // G20: whitespace trim alone is not enough — "  :" passes trim but has no useful content.
