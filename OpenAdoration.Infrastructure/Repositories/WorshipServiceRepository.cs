@@ -248,4 +248,15 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
 
         await context.SaveChangesAsync(ct);
     }
+
+    public async Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var item = await context.ScheduleItems.FindAsync([itemId], ct)
+            ?? throw new InvalidOperationException($"ScheduleItem with ID {itemId} was not found.");
+
+        item.AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null;
+        await context.SaveChangesAsync(ct);
+    }
 }

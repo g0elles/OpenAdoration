@@ -15,4 +15,5 @@ public interface IWorshipServiceRepository
     Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default);
     Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default);
     Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default);
+    Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
 }

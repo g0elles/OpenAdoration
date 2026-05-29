@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -124,7 +125,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _logger            = logger;
 
-        _projectionService.ProjectionStateChanged      += OnProjectionStateChanged;
+        _projectionService.ProjectionStateChanged        += OnProjectionStateChanged;
+        _projectionService.SlideChanged                  += OnSlideChangedForAutoAdvance;
         _projectionService.NextScheduleItemRequested     += OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested += OnPrevItemRequested;
     }
@@ -615,18 +617,20 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
     private void SubscribeItemEvents(ScheduleItemViewModel vm)
     {
-        vm.MoveUpRequested   += OnItemMoveUp;
-        vm.MoveDownRequested += OnItemMoveDown;
-        vm.DeleteRequested   += OnItemDelete;
-        vm.Selected          += OnItemSelected;
+        vm.MoveUpRequested            += OnItemMoveUp;
+        vm.MoveDownRequested          += OnItemMoveDown;
+        vm.DeleteRequested            += OnItemDelete;
+        vm.Selected                   += OnItemSelected;
+        vm.AutoAdvanceChangeRequested += OnAutoAdvanceChangeRequested;
     }
 
     private void UnsubscribeItemEvents(ScheduleItemViewModel vm)
     {
-        vm.MoveUpRequested   -= OnItemMoveUp;
-        vm.MoveDownRequested -= OnItemMoveDown;
-        vm.DeleteRequested   -= OnItemDelete;
-        vm.Selected          -= OnItemSelected;
+        vm.MoveUpRequested            -= OnItemMoveUp;
+        vm.MoveDownRequested          -= OnItemMoveDown;
+        vm.DeleteRequested            -= OnItemDelete;
+        vm.Selected                   -= OnItemSelected;
+        vm.AutoAdvanceChangeRequested -= OnAutoAdvanceChangeRequested;
     }
 
     private async void OnItemMoveUp(object? sender, EventArgs e)
@@ -733,6 +737,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void StopLive()
     {
+        StopAutoAdvanceTimer();
         IsLiveMode = false;
         _projectionService.SetNextScheduleItemPreview(null);
         _projectionService.Stop();
@@ -876,6 +881,73 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         System.Windows.Application.Current?.Dispatcher.Invoke(PrevItem);
     }
 
+    // ── Auto-advance timer ────────────────────────────────────────────────────
+
+    private DispatcherTimer? _autoAdvanceTimer;
+
+    private void OnSlideChangedForAutoAdvance(object? sender, Slide? slide)
+    {
+        // Called on any thread; timer operations must be on the UI thread.
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            if (!IsLiveMode || CurrentLiveIndex < 0 || CurrentLiveIndex >= ScheduleItems.Count)
+            {
+                StopAutoAdvanceTimer();
+                return;
+            }
+            var seconds = ScheduleItems[CurrentLiveIndex].Item.AutoAdvanceSeconds;
+            if (seconds is > 0)
+                StartAutoAdvanceTimer(seconds.Value);
+            else
+                StopAutoAdvanceTimer();
+        });
+    }
+
+    private void StartAutoAdvanceTimer(int seconds)
+    {
+        StopAutoAdvanceTimer();
+        _autoAdvanceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+        _autoAdvanceTimer.Tick += OnAutoAdvanceTick;
+        _autoAdvanceTimer.Start();
+    }
+
+    private void StopAutoAdvanceTimer()
+    {
+        if (_autoAdvanceTimer is null) return;
+        _autoAdvanceTimer.Stop();
+        _autoAdvanceTimer.Tick -= OnAutoAdvanceTick;
+        _autoAdvanceTimer = null;
+    }
+
+    private void OnAutoAdvanceTick(object? sender, EventArgs e)
+    {
+        StopAutoAdvanceTimer(); // Always one-shot; SlideChanged restarts it if needed.
+
+        if (_projectionService.CurrentSlideIndex < _projectionService.CurrentSlides.Count - 1)
+        {
+            _projectionService.Next(); // SlideChanged will restart the timer.
+        }
+        else if (CanNextItem())
+        {
+            NextItem(); // LoadSlidesForCurrentItemAsync restarts the timer via SlideChanged.
+        }
+        // else: end of service — timer stays stopped.
+    }
+
+    private async void OnAutoAdvanceChangeRequested(object? sender, int? seconds)
+    {
+        if (sender is not ScheduleItemViewModel vm) return;
+        try
+        {
+            await _serviceService.SetItemAutoAdvanceAsync(vm.Item.Id, seconds);
+            vm.Item.AutoAdvanceSeconds = seconds; // keep entity in sync without a full reload
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist auto-advance for item {ItemId}", vm.Item.Id);
+        }
+    }
+
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
     {
         // If the operator stops projection from the main bar while in live mode, exit live mode.
@@ -883,6 +955,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         {
             System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             {
+                StopAutoAdvanceTimer();
                 IsLiveMode = false;
                 RefreshLiveHighlight();
             });
@@ -891,9 +964,11 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
+        StopAutoAdvanceTimer();
         _projectionService.SetServiceScheduleActive(false);
         _projectionService.SetNextScheduleItemPreview(null);
         _projectionService.ProjectionStateChanged        -= OnProjectionStateChanged;
+        _projectionService.SlideChanged                  -= OnSlideChangedForAutoAdvance;
         _projectionService.NextScheduleItemRequested     -= OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested -= OnPrevItemRequested;
         foreach (var vm in ScheduleItems)

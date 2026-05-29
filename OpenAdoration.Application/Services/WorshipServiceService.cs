@@ -160,4 +160,18 @@ public sealed class WorshipServiceService : IWorshipServiceService
             throw;
         }
     }
+
+    public async Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Setting auto-advance for item {ItemId} to {Seconds}s", itemId, autoAdvanceSeconds);
+        try
+        {
+            await _repository.SetItemAutoAdvanceAsync(itemId, autoAdvanceSeconds, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set auto-advance for item {ItemId}", itemId);
+            throw;
+        }
+    }
 }
