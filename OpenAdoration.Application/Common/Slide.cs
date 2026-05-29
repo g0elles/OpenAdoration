@@ -25,7 +25,13 @@ public sealed class Slide
     /// </summary>
     public int? ThemeId { get; }
 
-    public Slide(string content, SlideType type, string label, string? mediaPath = null, int? themeId = null)
+    /// <summary>
+    /// Metadata for header/footer token resolution (e.g. [SongTitle], [BibleBookName]).
+    /// Never null — defaults to <see cref="SlideContext.Empty"/> when not supplied.
+    /// </summary>
+    public SlideContext Context { get; }
+
+    public Slide(string content, SlideType type, string label, string? mediaPath = null, int? themeId = null, SlideContext? context = null)
     {
         if (type is not SlideType.Media and not SlideType.Blank && string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content is required for non-media slides.", nameof(content));
@@ -38,6 +44,7 @@ public sealed class Slide
         Label = label;
         MediaPath = mediaPath;
         ThemeId = themeId;
+        Context = context ?? SlideContext.Empty;
     }
 
     public static Slide Blank() => new(string.Empty, SlideType.Blank, "Blank");

@@ -51,7 +51,9 @@ public partial class AddEditThemeViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(IsBackgroundVideo))]
     private BackgroundType _selectedBackgroundType = BackgroundType.Color;
 
-    [ObservableProperty] private bool _isDefault;
+    [ObservableProperty] private bool    _isDefault;
+    [ObservableProperty] private string? _headerTemplate;
+    [ObservableProperty] private string? _footerTemplate;
 
     public bool IsNew      => _themeId == 0;
     public string FormTitle => IsNew ? "New Theme" : "Edit Theme";
@@ -102,6 +104,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         BackgroundVideoPath    = null;
         SelectedBackgroundType = BackgroundType.Color;
         IsDefault              = false;
+        HeaderTemplate         = null;
+        FooterTemplate         = null;
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -119,6 +123,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         BackgroundImagePath = theme.BackgroundImagePath;
         BackgroundVideoPath = theme.BackgroundVideoPath;
         IsDefault           = theme.IsDefault;
+        HeaderTemplate      = theme.HeaderTemplate;
+        FooterTemplate      = theme.FooterTemplate;
 
         SelectedBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
             : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                   ? BackgroundType.Image
@@ -224,7 +230,9 @@ public partial class AddEditThemeViewModel : BaseViewModel
         BackgroundColor     = ColorToHex(BackgroundColor, "#000000"),
         BackgroundImagePath = IsBackgroundImage ? NullIfEmpty(BackgroundImagePath) : null,
         BackgroundVideoPath = IsBackgroundVideo ? NullIfEmpty(BackgroundVideoPath) : null,
-        IsDefault           = IsDefault
+        IsDefault           = IsDefault,
+        HeaderTemplate      = NullIfEmpty(HeaderTemplate),
+        FooterTemplate      = NullIfEmpty(FooterTemplate)
     };
 
     private static System.Windows.Media.Color ParseColor(string? hex, System.Windows.Media.Color fallback)

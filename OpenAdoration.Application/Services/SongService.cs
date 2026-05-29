@@ -123,7 +123,13 @@ public sealed class SongService : ISongService
                 content: s.Lyrics,
                 type: SlideType.Song,
                 label: s.Label,
-                themeId: themeId))
+                themeId: themeId,
+                context: new SlideContext
+                {
+                    SongTitle    = song.Title,
+                    SongAuthor   = song.Author,
+                    SongVerseTag = s.Label
+                }))
             .ToList();
 
         var skipped = ordered.Count - slides.Count;

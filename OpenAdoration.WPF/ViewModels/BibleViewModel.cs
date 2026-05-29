@@ -567,7 +567,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             {
                 // Single verse in chapter mode: load the full chapter as individual slides so the
                 // main-window ◀/▶ can navigate verse-by-verse — same as songs navigate section-by-section.
-                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(new[] { v })).ToArray();
+                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(new[] { v }, version: SelectedVersion)).ToArray();
                 var label    = $"{selected[0].Book} {selected[0].Chapter}";
                 var startIdx = _chapterVerses.FindIndex(v => v.Verse == selected[0].Verse);
                 if (startIdx < 0) startIdx = 0;
@@ -587,7 +587,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             {
                 // Multi-verse selection or keyword search: project as a single combined slide.
                 _isChapterProjection = false;
-                var slide = _bibleService.GenerateSlide(selected);
+                var slide = _bibleService.GenerateSlide(selected, version: SelectedVersion);
                 _projectionService.LoadSlides(new[] { slide }, slide.Label);
                 SlidePreviewText  = slide.Content;
                 SlidePreviewLabel = slide.Label;

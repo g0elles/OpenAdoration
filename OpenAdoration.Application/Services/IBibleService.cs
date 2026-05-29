@@ -18,5 +18,5 @@ public interface IBibleService
     /// Pass <paramref name="themeId"/> to override the default theme on the generated slide.
     /// When null, the default theme is used.
     /// </summary>
-    Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null);
+    Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null);
 }
