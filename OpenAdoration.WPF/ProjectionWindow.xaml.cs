@@ -16,6 +16,7 @@ public partial class ProjectionWindow : Window
 {
     private readonly IProjectionService   _projectionService;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ITokenResolver       _tokenResolver;
     private readonly ILogger<ProjectionWindow> _logger;
 
     // True only when MainWindow explicitly calls CloseForReal() on shutdown.
@@ -42,12 +43,14 @@ public partial class ProjectionWindow : Window
     public ProjectionWindow(
         IProjectionService   projectionService,
         IServiceScopeFactory scopeFactory,
+        ITokenResolver       tokenResolver,
         ILogger<ProjectionWindow> logger)
     {
         InitializeComponent();
 
         _projectionService = projectionService;
         _scopeFactory      = scopeFactory;
+        _tokenResolver     = tokenResolver;
         _logger            = logger;
 
         _projectionService.SlideChanged           += OnSlideChanged;
@@ -216,12 +219,21 @@ public partial class ProjectionWindow : Window
     {
         if (_activeTheme is null) return;
 
-        // Text style
-        SlideTextBlock.FontFamily  = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
-        SlideTextBlock.FontSize    = _activeTheme.FontSize;
-        SlideTextBlock.LineHeight  = _activeTheme.FontSize * 1.33;
-        SlideTextBlock.Foreground  = HexToBrush(_activeTheme.FontColor);
+        var fontFamily = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
+        var fontColor  = HexToBrush(_activeTheme.FontColor);
+
+        // Body text style
+        SlideTextBlock.FontFamily    = fontFamily;
+        SlideTextBlock.FontSize      = _activeTheme.FontSize;
+        SlideTextBlock.LineHeight    = _activeTheme.FontSize * 1.33;
+        SlideTextBlock.Foreground    = fontColor;
         SlideTextBlock.TextAlignment = ParseTextAlignment(_activeTheme.TextAlignment);
+
+        // Header / footer zone font (same family + color, smaller fixed size)
+        HeaderText.FontFamily = fontFamily;
+        HeaderText.Foreground = fontColor;
+        FooterText.FontFamily = fontFamily;
+        FooterText.Foreground = fontColor;
 
         // Background color
         ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
@@ -354,7 +366,7 @@ public partial class ProjectionWindow : Window
         {
             case SlideType.Song:
             case SlideType.Bible:
-                ShowText(slide.Content);
+                ShowText(slide.Content, slide.Context);
                 break;
 
             case SlideType.Media:
@@ -372,11 +384,29 @@ public partial class ProjectionWindow : Window
         }
     }
 
-    private void ShowText(string content)
+    private void ShowText(string content, SlideContext context)
     {
         HideAllLayers();
-        SlideTextBlock.Text    = content;
-        TextViewbox.Visibility = Visibility.Visible;
+        SlideTextBlock.Text = content;
+
+        // Resolve and show header zone when the theme defines a template.
+        var headerTemplate = _activeTheme?.HeaderTemplate;
+        if (!string.IsNullOrEmpty(headerTemplate))
+        {
+            HeaderText.Text       = _tokenResolver.Resolve(headerTemplate, context);
+            HeaderText.Visibility = Visibility.Visible;
+            CornerLabel.Visibility = Visibility.Collapsed;
+        }
+
+        // Resolve and show footer zone when the theme defines a template.
+        var footerTemplate = _activeTheme?.FooterTemplate;
+        if (!string.IsNullOrEmpty(footerTemplate))
+        {
+            FooterText.Text       = _tokenResolver.Resolve(footerTemplate, context);
+            FooterText.Visibility = Visibility.Visible;
+        }
+
+        TextZoneGrid.Visibility = Visibility.Visible;
     }
 
     private void ShowMedia(string? path)
@@ -464,16 +494,27 @@ public partial class ProjectionWindow : Window
 
     private void HideAllLayers()
     {
-        TextViewbox.Visibility     = Visibility.Collapsed;
+        TextZoneGrid.Visibility    = Visibility.Collapsed;
+        HeaderText.Visibility      = Visibility.Collapsed;
+        FooterText.Visibility      = Visibility.Collapsed;
         BackgroundImage.Visibility = Visibility.Collapsed;
         BlankOverlay.Visibility    = Visibility.Collapsed;
         SlideTextBlock.Text        = string.Empty;
+        HeaderText.Text            = string.Empty;
+        FooterText.Text            = string.Empty;
         BackgroundImage.Source     = null;
         StopContentVideo();
     }
 
     private void UpdateCornerLabel(Slide slide)
     {
+        // Corner label is the fallback: suppress it when the header zone is active.
+        if (!string.IsNullOrEmpty(_activeTheme?.HeaderTemplate))
+        {
+            CornerLabel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         var label = _projectionService.ContextLabel;
 
         if (string.IsNullOrWhiteSpace(label))

@@ -41,29 +41,61 @@
                       HorizontalAlignment="Center"
                       Visibility="Collapsed" />
 
-        <!-- Text layer — Song lyrics and Bible verses -->
-        <Viewbox x:Name="TextViewbox"
-                 Margin="60,40"
-                 Stretch="Uniform"
-                 Visibility="Collapsed">
-            <TextBlock x:Name="SlideTextBlock"
-                       Width="1760"
-                       TextWrapping="Wrap"
-                       TextAlignment="Center"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"
+        <!-- 3-zone text layer: Header / Body / Footer -->
+        <Grid x:Name="TextZoneGrid" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header zone — token-resolved text, right-aligned by default -->
+            <TextBlock x:Name="HeaderText"
+                       Grid.Row="0"
+                       Padding="30,10"
+                       TextAlignment="Right"
+                       TextWrapping="NoWrap"
                        Foreground="White"
                        FontFamily="Arial"
-                       FontSize="72"
-                       LineHeight="96" />
-        </Viewbox>
+                       FontSize="28"
+                       Visibility="Collapsed" />
+
+            <!-- Body zone — main lyrics / verse content -->
+            <Viewbox x:Name="TextViewbox"
+                     Grid.Row="1"
+                     Margin="60,20"
+                     Stretch="Uniform">
+                <TextBlock x:Name="SlideTextBlock"
+                           Width="1760"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Foreground="White"
+                           FontFamily="Arial"
+                           FontSize="72"
+                           LineHeight="96" />
+            </Viewbox>
+
+            <!-- Footer zone — token-resolved text, center-aligned by default -->
+            <TextBlock x:Name="FooterText"
+                       Grid.Row="2"
+                       Padding="30,10"
+                       TextAlignment="Center"
+                       TextWrapping="NoWrap"
+                       Foreground="White"
+                       FontFamily="Arial"
+                       FontSize="24"
+                       Opacity="0.85"
+                       Visibility="Collapsed" />
+        </Grid>
 
         <!-- Blank overlay — covers everything when ShowBlank is active -->
         <Rectangle x:Name="BlankOverlay"
                    Fill="Black"
                    Visibility="Collapsed" />
 
-        <!-- Corner label: song title · section (top-left, subtle) -->
+        <!-- Corner label: fallback when theme has no HeaderTemplate (top-left, subtle) -->
         <StackPanel x:Name="CornerLabel"
                     Orientation="Horizontal"
                     VerticalAlignment="Top"

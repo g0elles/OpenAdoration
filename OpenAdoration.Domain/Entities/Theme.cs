@@ -18,4 +18,18 @@ public class Theme : BaseEntity
     public string? BackgroundVideoPath { get; set; }
 
     public bool IsDefault { get; set; }
+
+    /// <summary>
+    /// Token template rendered at the top of the projection slide.
+    /// Null/empty = header zone hidden. Supports: [SongTitle], [SongVerseTag],
+    /// [BibleBookName], [BibleChapterID], [BibleVerseID].
+    /// </summary>
+    public string? HeaderTemplate { get; set; }
+
+    /// <summary>
+    /// Token template rendered at the bottom of the projection slide.
+    /// Null/empty = footer zone hidden. Supports same tokens as HeaderTemplate
+    /// plus [BibleDescription] (Bible version full name).
+    /// </summary>
+    public string? FooterTemplate { get; set; }
 }

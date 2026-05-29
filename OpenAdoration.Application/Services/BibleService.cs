@@ -130,7 +130,7 @@ public sealed class BibleService : IBibleService
         }
     }
 
-    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null)
+    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null)
     {
         ArgumentNullException.ThrowIfNull(verses);
 
@@ -145,6 +145,16 @@ public sealed class BibleService : IBibleService
             ? verses[0].Reference
             : $"{verses[0].Book} {verses[0].Chapter}:{verses[0].Verse}-{verses[^1].Verse}";
 
-        return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId);
+        var context = new SlideContext
+        {
+            BibleBookName    = verses[0].Book,
+            BibleChapterId   = verses[0].Chapter.ToString(),
+            BibleVerseId     = verses.Count == 1
+                                   ? verses[0].Verse.ToString()
+                                   : $"{verses[0].Verse}-{verses[^1].Verse}",
+            BibleDescription = version?.Name
+        };
+
+        return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId, context: context);
     }
 }
