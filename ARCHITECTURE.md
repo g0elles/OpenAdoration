@@ -183,8 +183,9 @@ IProjectionService.LoadSlides(slides, contextLabel)   ← Singleton
              ├─ SlideType.Song/Bible → ShowText()   → TextViewbox visible
              ├─ SlideType.Media (image) → ShowImageMedia() → BackgroundImage visible
              ├─ SlideType.Media (video) → ShowVideoMedia() → ContentVideo.Play()
-             └─ SlideType.Blank → ShowBlankOverlay() → HideAllLayers() only
-                                                        (theme bg stays visible)
+             └─ SlideType.Blank → ShowBlankOverlay() → HideAllLayers() + BlankOverlay visible
+                                                        (opaque black fill covers all layers,
+                                                         incl. theme bg → fully black screen)
 ```
 
 ### 3.4 Theme Resolution (per slide)

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
+using OpenAdoration.WPF.Helpers;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -100,6 +101,7 @@ public partial class MediaViewModel : BaseViewModel
         {
             Directory.CreateDirectory(MediaStore);
 
+            var skipped = 0;
             foreach (var sourcePath in dlg.FileNames)
             {
                 var ext = Path.GetExtension(sourcePath);
@@ -107,6 +109,7 @@ public partial class MediaViewModel : BaseViewModel
                 {
                     _logger.LogWarning("Skipping '{FileName}' — unsupported extension '{Ext}'",
                         Path.GetFileName(sourcePath), ext);
+                    skipped++;
                     continue;
                 }
 
@@ -115,23 +118,34 @@ public partial class MediaViewModel : BaseViewModel
                 {
                     _logger.LogWarning("Skipping '{FileName}' — size {SizeMb} MB exceeds limit",
                         Path.GetFileName(sourcePath), fileSize / 1_048_576);
+                    skipped++;
+                    continue;
+                }
+
+                var isVideo = VideoExtensions.Contains(ext);
+                if (!MediaSignatureValidator.IsValid(sourcePath, isVideo))
+                {
+                    _logger.LogWarning("Skipping '{FileName}' — contents do not match a supported {Kind} format",
+                        Path.GetFileName(sourcePath), isVideo ? "video" : "image");
+                    skipped++;
                     continue;
                 }
 
                 var destPath  = GetUniqueDestinationPath(sourcePath);
                 File.Copy(sourcePath, destPath);
 
-                var mediaType = VideoExtensions.Contains(ext) ? MediaType.Video : MediaType.Image;
-
                 await _mediaService.AddAsync(new MediaFile
                 {
                     FileName = Path.GetFileName(destPath),
                     FilePath = destPath,
-                    Type     = mediaType
+                    Type     = isVideo ? MediaType.Video : MediaType.Image
                 });
             }
 
             await LoadCoreAsync();
+
+            if (skipped > 0)
+                SetError($"{skipped} file(s) were skipped — unsupported type, too large, or not a valid image/video.");
         }
         catch (Exception ex)
         {

@@ -10,9 +10,9 @@ _Last updated: 2026-05-29_
 Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
-Tests:    8/8 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
-Last commit: 9e35617  feat(settings): settings page + church tokens (uncommitted: P2 batch — announcement, verses-per-slide, song play-order editor + reference doc refresh)
-Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration this batch)
+Tests:    10/10 pass  (dotnet test OpenAdoration.Tests.Infrastructure — +2 ZIP guard tests)
+Last commit: 558ed29  feat(projection): announcement banner + verses-per-slide + song play-order (uncommitted: review fixes #1–4)
+Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration since)
 Branch: master
 ```
 
@@ -46,6 +46,11 @@ Branch: master
 | Live announcement banner — `ShowAnnouncement`/`ClearAnnouncement` + `CurrentAnnouncement`/`AnnouncementChanged`; blue lower-third overlay (white text) over the untouched slide; auto-dismiss after `AnnouncementDurationSeconds` (default 25); projection-bar input + manual Clear | DONE |
 | Configurable verses-per-slide (Bible) — `DefaultBibleVersesPerSlide` setting; `BibleService.GenerateSlides` chunks; applies to schedule + multi-verse selection | DONE |
 | Song Play Order editor + token badges — VerseOrder field in song editor (fixed edit data-loss bug); color-coded V1/C/B token badges per section | DONE |
+| **Review fixes (2026-05-29):** | |
+| #1 ARCHITECTURE.md stale Blank diagram corrected (black-screen behavior) | DONE |
+| #2 DispatcherUnhandledException — explicit recoverable allowlist (IO/UnauthorizedAccess/OperationCanceled); unknown → terminate | DONE |
+| #3 Media import — magic-byte signature validation before copy (MediaSignatureValidator) + skipped-count message | DONE |
+| #4 ZIP ratio guard — overflow-safe IsCompressionRatioSuspicious (division, MaxCompressionRatio=50) + 2 guard tests | DONE |
 
 ---
 

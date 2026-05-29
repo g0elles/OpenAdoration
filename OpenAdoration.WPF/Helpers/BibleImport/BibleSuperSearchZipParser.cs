@@ -25,6 +25,14 @@ internal static class BibleSuperSearchZipParser
     private const int  MaxVerseLines           = 200_000;
     private const int  MaxLineLength           = 5_000;               // characters per verse row
     private const int  MaxVerseTextLength      = 2_000;               // characters for verse text column
+    private const long MaxCompressionRatio     = 50;                  // uncompressed:compressed zip-bomb guard
+
+    /// <summary>
+    /// True when an entry's uncompressed:compressed ratio exceeds <see cref="MaxCompressionRatio"/>.
+    /// Uses division (not <c>compressed * ratio</c>) to avoid overflow on adversarial entries.
+    /// </summary>
+    private static bool IsCompressionRatioSuspicious(long uncompressed, long compressed) =>
+        compressed > 0 && uncompressed / compressed > MaxCompressionRatio;
 
     public static BibleImportResult Parse(string filePath)
     {
@@ -41,7 +49,7 @@ internal static class BibleSuperSearchZipParser
                     $"ZIP entry '{entry.Name}' uncompressed size ({entry.Length / 1_048_576} MB) " +
                     $"exceeds limit ({MaxVersesTxtBytes / 1_048_576} MB).");
 
-            if (entry.CompressedLength > 0 && entry.Length > entry.CompressedLength * 50)
+            if (IsCompressionRatioSuspicious(entry.Length, entry.CompressedLength))
                 throw new InvalidDataException(
                     $"ZIP entry '{entry.Name}' has a suspiciously high compression ratio " +
                     $"({entry.Length / Math.Max(1, entry.CompressedLength)}:1); aborting.");
