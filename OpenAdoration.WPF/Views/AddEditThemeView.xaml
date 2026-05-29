@@ -297,29 +297,55 @@
                             Padding="16,14"
                             Margin="0,0,0,16">
                         <StackPanel>
+
+                            <!-- Header template -->
                             <TextBlock Text="Header (top)"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="e.g. [SongTitle]  [SongVerseTag]"
+                            <TextBox x:Name="HeaderTemplateBox"
+                                     Style="{StaticResource FieldTextBox}"
                                      Text="{Binding HeaderTemplate, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,12" />
+                                     Margin="0,0,0,6" />
+                            <WrapPanel Margin="0,0,0,14">
+                                <TextBlock Text="Insert: "
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="11"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,4" />
+                                <Button Content="Song Title"      Tag="[SongTitle]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Song Author"     Tag="[SongAuthor]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Section"         Tag="[SongVerseTag]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Bible Book"      Tag="[BibleBookName]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Chapter"         Tag="[BibleChapterID]"  Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Verse"           Tag="[BibleVerseID]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Bible Version"   Tag="[BibleDescription]" Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                            </WrapPanel>
 
+                            <!-- Footer template -->
                             <TextBlock Text="Footer (bottom)"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="e.g. [BibleDescription]"
+                            <TextBox x:Name="FooterTemplateBox"
+                                     Style="{StaticResource FieldTextBox}"
                                      Text="{Binding FooterTemplate, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,4" />
+                                     Margin="0,0,0,6" />
+                            <WrapPanel>
+                                <TextBlock Text="Insert: "
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="11"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,4" />
+                                <Button Content="Song Title"      Tag="[SongTitle]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Song Author"     Tag="[SongAuthor]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Section"         Tag="[SongVerseTag]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Bible Book"      Tag="[BibleBookName]"   Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Chapter"         Tag="[BibleChapterID]"  Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Verse"           Tag="[BibleVerseID]"    Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Bible Version"   Tag="[BibleDescription]" Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                            </WrapPanel>
 
-                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
-                                       FontSize="10"
-                                       TextWrapping="Wrap"
-                                       Opacity="0.7"
-                                       Text="Tokens: [SongTitle] [SongAuthor] [SongVerseTag] [BibleBookName] [BibleChapterID] [BibleVerseID] [BibleDescription]" />
                         </StackPanel>
                     </Border>
 

@@ -7,6 +7,26 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
 {
     public AddEditThemeView() => InitializeComponent();
 
+    private void OnInsertHeaderToken(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn)
+            InsertToken(HeaderTemplateBox, btn.Tag as string ?? string.Empty);
+    }
+
+    private void OnInsertFooterToken(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn)
+            InsertToken(FooterTemplateBox, btn.Tag as string ?? string.Empty);
+    }
+
+    private static void InsertToken(System.Windows.Controls.TextBox box, string token)
+    {
+        var idx  = box.CaretIndex;
+        box.Text = box.Text.Insert(idx, token);
+        box.CaretIndex = idx + token.Length;
+        box.Focus();
+    }
+
     private void OnBrowseImageClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
