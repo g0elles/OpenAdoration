@@ -66,6 +66,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     // Status
     [ObservableProperty] private bool   _isProjecting;
+    [ObservableProperty] private bool   _isServiceScheduleActive;
     [ObservableProperty] private string _contextLabel  = string.Empty;
     [ObservableProperty] private string _slidePosition = string.Empty;
 
@@ -103,9 +104,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         IsBusy = true; ClearError();
         try
         {
-            _projectionService.SlideChanged           += OnSlideChanged;
-            _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
-            _projectionService.ThemeChanged           += OnThemeChanged;
+            _projectionService.SlideChanged                   += OnSlideChanged;
+            _projectionService.ProjectionStateChanged         += OnProjectionStateChanged;
+            _projectionService.ThemeChanged                   += OnThemeChanged;
+            _projectionService.ServiceScheduleActiveChanged   += OnServiceScheduleActiveChanged;
+            _projectionService.NextScheduleItemPreviewChanged += OnNextScheduleItemPreviewChanged;
 
             await RefreshAsync();
         }
@@ -138,6 +141,18 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         _ = RefreshAsync();
     }
 
+    private async void OnServiceScheduleActiveChanged(object? sender, EventArgs e)
+    {
+        try { await RefreshAsync(); }
+        catch (Exception ex) { _logger.LogError(ex, "Stage view schedule-active refresh failed"); }
+    }
+
+    private async void OnNextScheduleItemPreviewChanged(object? sender, EventArgs e)
+    {
+        try { await RefreshAsync(); }
+        catch (Exception ex) { _logger.LogError(ex, "Stage view next-item preview refresh failed"); }
+    }
+
     // ── Core refresh ──────────────────────────────────────────────────────────
 
     private async Task RefreshAsync()
@@ -153,17 +168,29 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         SlidePreview nextPreview = SlidePreview.Empty;
         bool hasNext = false;
         var nextIdx  = idx + 1;
+
         if (isProjecting && nextIdx < slides.Count)
         {
+            // Next slide within the current schedule item
             var next      = slides[nextIdx];
             var nextTheme = await ResolveThemeAsync(next.ThemeId);
             nextPreview = BuildPreview(next, nextTheme);
             hasNext     = true;
         }
+        else if (isProjecting && _projectionService.NextScheduleItemPreviewSlide is { } nextItemSlide)
+        {
+            // On the last slide of this item — preview the first slide of the next schedule item
+            var nextTheme = await ResolveThemeAsync(nextItemSlide.ThemeId);
+            nextPreview = BuildPreview(nextItemSlide, nextTheme);
+            hasNext     = true;
+        }
+
+        var isScheduleActive = _projectionService.IsServiceScheduleActive;
 
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            IsProjecting  = isProjecting;
+            IsProjecting             = isProjecting;
+            IsServiceScheduleActive  = isScheduleActive;
             ContextLabel  = _projectionService.ContextLabel;
             SlidePosition = isProjecting && slides.Count > 0
                 ? $"{idx + 1} / {slides.Count}"
@@ -290,8 +317,10 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _projectionService.SlideChanged           -= OnSlideChanged;
-        _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
-        _projectionService.ThemeChanged           -= OnThemeChanged;
+        _projectionService.SlideChanged                   -= OnSlideChanged;
+        _projectionService.ProjectionStateChanged         -= OnProjectionStateChanged;
+        _projectionService.ThemeChanged                   -= OnThemeChanged;
+        _projectionService.ServiceScheduleActiveChanged   -= OnServiceScheduleActiveChanged;
+        _projectionService.NextScheduleItemPreviewChanged -= OnNextScheduleItemPreviewChanged;
     }
 }

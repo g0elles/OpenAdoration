@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Services;
@@ -724,6 +725,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IsAddingMedia = false;
         IsLiveMode       = true;
         CurrentLiveIndex = 0;
+        _projectionService.SetServiceScheduleActive(true);
         RefreshLiveHighlight();
         _ = LoadSlidesForCurrentItemAsync();
     }
@@ -732,6 +734,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private void StopLive()
     {
         IsLiveMode = false;
+        _projectionService.SetNextScheduleItemPreview(null);
         _projectionService.Stop();
         RefreshLiveHighlight();
     }
@@ -814,6 +817,51 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             _logger.LogError(ex, "Failed to load slides for schedule item {ItemId}", itemVm.Item.Id);
             SetError("Could not project this item.");
         }
+
+        // Push the first slide of the next schedule item so the stage view
+        // can show it in "UP NEXT" when the operator reaches the last slide.
+        var nextPreview = await GetNextItemFirstSlideAsync();
+        _projectionService.SetNextScheduleItemPreview(nextPreview);
+    }
+
+    private async Task<Slide?> GetNextItemFirstSlideAsync()
+    {
+        var nextIdx = CurrentLiveIndex + 1;
+        if (nextIdx >= ScheduleItems.Count) return null;
+
+        try
+        {
+            return ScheduleItems[nextIdx].Item switch
+            {
+                SongScheduleItem songItem =>
+                    _songService.GenerateSlides(songItem.Song, songItem.ThemeId).FirstOrDefault(),
+
+                BibleScheduleItem bibleItem when bibleItem.BibleVersionId.HasValue =>
+                    await GetBibleItemFirstSlideAsync(bibleItem),
+
+                MediaScheduleItem mediaItem =>
+                    _mediaService.GenerateSlide(mediaItem.MediaFile, mediaItem.ThemeId),
+
+                _ => null
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not generate next item preview slide (non-fatal)");
+            return null;
+        }
+    }
+
+    private async Task<Slide?> GetBibleItemFirstSlideAsync(BibleScheduleItem item)
+    {
+        var allVerses = await _bibleService.GetVersesAsync(
+            item.BibleVersionId!.Value, item.Book, item.Chapter);
+        var verses = allVerses
+            .Where(v => v.Verse >= item.VerseStart && v.Verse <= item.VerseEnd)
+            .ToList();
+        return verses.Count > 0
+            ? _bibleService.GenerateSlide(verses, item.ThemeId)
+            : null;
     }
 
     private void OnNextItemRequested(object? sender, EventArgs e)
@@ -843,7 +891,9 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _projectionService.ProjectionStateChanged      -= OnProjectionStateChanged;
+        _projectionService.SetServiceScheduleActive(false);
+        _projectionService.SetNextScheduleItemPreview(null);
+        _projectionService.ProjectionStateChanged        -= OnProjectionStateChanged;
         _projectionService.NextScheduleItemRequested     -= OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested -= OnPrevItemRequested;
         foreach (var vm in ScheduleItems)

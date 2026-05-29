@@ -59,7 +59,7 @@
                                Margin="0,0,16,0" />
 
                     <StackPanel Orientation="Horizontal"
-                                Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                                Visibility="{Binding IsServiceScheduleActive, Converter={StaticResource BoolToVis}}">
                         <Button Content="◀ Prev Item"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding PrevItemCommand}"

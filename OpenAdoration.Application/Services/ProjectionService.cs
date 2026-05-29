@@ -30,11 +30,19 @@ public sealed class ProjectionService : IProjectionService
     public bool IsProjecting => _isProjecting;
     public string ContextLabel => _contextLabel;
 
+    private bool  _isServiceScheduleActive;
+    private Slide? _nextScheduleItemPreviewSlide;
+
+    public bool   IsServiceScheduleActive      => _isServiceScheduleActive;
+    public Slide? NextScheduleItemPreviewSlide => _nextScheduleItemPreviewSlide;
+
     public event EventHandler<Slide?>? SlideChanged;
-    public event EventHandler<bool>? ProjectionStateChanged;
-    public event EventHandler? ThemeChanged;
-    public event EventHandler? NextScheduleItemRequested;
-    public event EventHandler? PreviousScheduleItemRequested;
+    public event EventHandler<bool>?   ProjectionStateChanged;
+    public event EventHandler?         ThemeChanged;
+    public event EventHandler?         NextScheduleItemRequested;
+    public event EventHandler?         PreviousScheduleItemRequested;
+    public event EventHandler?         ServiceScheduleActiveChanged;
+    public event EventHandler?         NextScheduleItemPreviewChanged;
 
     public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel)
     {
@@ -144,8 +152,14 @@ public sealed class ProjectionService : IProjectionService
         _isProjecting = false;
         _contextLabel = string.Empty;
 
+        var wasScheduleActive           = _isServiceScheduleActive;
+        _isServiceScheduleActive        = false;
+        _nextScheduleItemPreviewSlide   = null;
+
         RaiseSlideChanged(null);
         RaiseProjectionStateChanged(false);
+        if (wasScheduleActive) RaiseSafe(ServiceScheduleActiveChanged);
+        RaiseSafe(NextScheduleItemPreviewChanged);
 
         _logger.LogInformation("Projection stopped");
     }
@@ -184,6 +198,19 @@ public sealed class ProjectionService : IProjectionService
     {
         if (!_isProjecting) return;
         RaiseSafe(PreviousScheduleItemRequested);
+    }
+
+    public void SetServiceScheduleActive(bool active)
+    {
+        if (_isServiceScheduleActive == active) return;
+        _isServiceScheduleActive = active;
+        RaiseSafe(ServiceScheduleActiveChanged);
+    }
+
+    public void SetNextScheduleItemPreview(Slide? slide)
+    {
+        _nextScheduleItemPreviewSlide = slide;
+        RaiseSafe(NextScheduleItemPreviewChanged);
     }
 
     private void RaiseSafe(EventHandler? @event)
