@@ -85,6 +85,8 @@ public sealed class ThemeRepository : IThemeRepository
         existing.BackgroundImagePath = theme.BackgroundImagePath;
         existing.BackgroundVideoPath = theme.BackgroundVideoPath;
         existing.IsDefault           = theme.IsDefault;
+        existing.HeaderTemplate      = theme.HeaderTemplate;
+        existing.FooterTemplate      = theme.FooterTemplate;
 
         await context.SaveChangesAsync(ct);
     }
