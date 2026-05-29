@@ -140,6 +140,8 @@ public sealed class SongRepository : ISongRepository
         existing.Author         = song.Author;
         existing.Classification = song.Classification;
         existing.VerseOrder     = song.VerseOrder;
+        existing.Copyright      = song.Copyright;
+        existing.CcliNumber     = song.CcliNumber;
 
         // Replace sections entirely to avoid stale or orphaned section rows
         context.SongSections.RemoveRange(existing.Sections);

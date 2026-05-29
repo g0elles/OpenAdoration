@@ -8,6 +8,8 @@ public class Song : BaseEntity
     public string Title { get; set; } = string.Empty;
     public string? Author { get; set; }
     public string? Classification { get; set; }
+    public string? Copyright { get; set; }
+    public string? CcliNumber { get; set; }
 
     /// <summary>
     /// Space-separated section token sequence, e.g. "V1 C V2 C B C".

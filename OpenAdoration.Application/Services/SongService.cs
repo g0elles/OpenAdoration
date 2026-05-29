@@ -126,9 +126,11 @@ public sealed class SongService : ISongService
                 themeId: themeId,
                 context: new SlideContext
                 {
-                    SongTitle    = song.Title,
-                    SongAuthor   = song.Author,
-                    SongVerseTag = s.Label
+                    SongTitle      = song.Title,
+                    SongAuthor     = song.Author,
+                    SongVerseTag   = s.Label,
+                    SongCopyright  = song.Copyright,
+                    SongCcliNumber = song.CcliNumber
                 }))
             .ToList();
 

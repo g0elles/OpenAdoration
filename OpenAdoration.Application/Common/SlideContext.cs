@@ -8,9 +8,11 @@ namespace OpenAdoration.Application.Common;
 public sealed class SlideContext
 {
     // Song tokens
-    public string? SongTitle  { get; init; }
-    public string? SongAuthor { get; init; }
-    public string? SongVerseTag { get; init; }   // e.g. "Verse 1", "Chorus"
+    public string? SongTitle     { get; init; }
+    public string? SongAuthor    { get; init; }
+    public string? SongVerseTag  { get; init; }   // e.g. "Verse 1", "Chorus"
+    public string? SongCopyright { get; init; }
+    public string? SongCcliNumber { get; init; }
 
     // Bible tokens
     public string? BibleBookName    { get; init; }

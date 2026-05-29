@@ -18,6 +18,8 @@ public partial class AddEditSongViewModel : BaseViewModel
     [ObservableProperty] private string _title          = string.Empty;
     [ObservableProperty] private string _author         = string.Empty;
     [ObservableProperty] private string _classification = string.Empty;
+    [ObservableProperty] private string _copyright      = string.Empty;
+    [ObservableProperty] private string _ccliNumber     = string.Empty;
 
     public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
 
@@ -39,6 +41,8 @@ public partial class AddEditSongViewModel : BaseViewModel
         Title          = string.Empty;
         Author         = string.Empty;
         Classification = string.Empty;
+        Copyright      = string.Empty;
+        CcliNumber     = string.Empty;
         ClearError();
         ClearSections();
         OnPropertyChanged(nameof(IsNew));
@@ -51,6 +55,8 @@ public partial class AddEditSongViewModel : BaseViewModel
         Title          = song.Title;
         Author         = song.Author         ?? string.Empty;
         Classification = song.Classification ?? string.Empty;
+        Copyright      = song.Copyright      ?? string.Empty;
+        CcliNumber     = song.CcliNumber     ?? string.Empty;
         ClearError();
         ClearSections();
         OnPropertyChanged(nameof(IsNew));
@@ -140,6 +146,8 @@ public partial class AddEditSongViewModel : BaseViewModel
         Title          = Title.Trim(),
         Author         = string.IsNullOrWhiteSpace(Author)         ? null : Author.Trim(),
         Classification = string.IsNullOrWhiteSpace(Classification) ? null : Classification.Trim(),
+        Copyright      = string.IsNullOrWhiteSpace(Copyright)      ? null : Copyright.Trim(),
+        CcliNumber     = string.IsNullOrWhiteSpace(CcliNumber)     ? null : CcliNumber.Trim(),
         Sections       = [.. Sections.Select(vm => new SongSection
         {
             Type          = vm.Type,

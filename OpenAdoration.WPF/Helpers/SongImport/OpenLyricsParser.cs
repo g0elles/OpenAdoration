@@ -24,7 +24,9 @@ public static class OpenLyricsParser
         var title = props.Descendants(Ns + "title").FirstOrDefault()?.Value.Trim()
             ?? Path.GetFileNameWithoutExtension(filePath);
 
-        var author = props.Descendants(Ns + "author").FirstOrDefault()?.Value.Trim();
+        var author        = props.Descendants(Ns + "author").FirstOrDefault()?.Value.Trim();
+        var copyright     = props.Element(Ns + "copyright")?.Value.Trim();
+        var ccliNo        = props.Element(Ns + "ccliNo")?.Value.Trim();
         var verseOrderRaw = props.Element(Ns + "verseOrder")?.Value.Trim();
 
         var lyrics = root.Element(Ns + "lyrics")
@@ -40,7 +42,9 @@ public static class OpenLyricsParser
         return new Song
         {
             Title      = title,
-            Author     = string.IsNullOrWhiteSpace(author) ? null : author,
+            Author     = string.IsNullOrWhiteSpace(author)    ? null : author,
+            Copyright  = string.IsNullOrWhiteSpace(copyright) ? null : copyright,
+            CcliNumber = string.IsNullOrWhiteSpace(ccliNo)    ? null : ccliNo,
             VerseOrder = NormalizeVerseOrder(verseOrderRaw),
             Sections   = sections
         };

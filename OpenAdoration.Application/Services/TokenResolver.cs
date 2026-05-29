@@ -17,9 +17,11 @@ public sealed partial class TokenResolver : ITokenResolver
         {
             return m.Groups[1].Value switch
             {
-                "SongTitle"       => context.SongTitle       ?? string.Empty,
-                "SongAuthor"      => context.SongAuthor      ?? string.Empty,
-                "SongVerseTag"    => context.SongVerseTag    ?? string.Empty,
+                "SongTitle"       => context.SongTitle        ?? string.Empty,
+                "SongAuthor"      => context.SongAuthor       ?? string.Empty,
+                "SongVerseTag"    => context.SongVerseTag     ?? string.Empty,
+                "SongCopyright"   => context.SongCopyright    ?? string.Empty,
+                "SongCCLI"        => context.SongCcliNumber   ?? string.Empty,
                 "BibleBookName"    => context.BibleBookName    ?? string.Empty,
                 "BibleChapterID"  => context.BibleChapterId  ?? string.Empty,
                 "BibleVerseID"    => context.BibleVerseId    ?? string.Empty,

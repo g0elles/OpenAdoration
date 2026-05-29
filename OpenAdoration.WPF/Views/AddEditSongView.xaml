@@ -86,7 +86,30 @@
                     <TextBox Style="{StaticResource FieldTextBox}"
                              Tag="e.g. Worship, Hymn, Contemporary…"
                              Text="{Binding Classification, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,0,24" />
+                             Margin="0,0,0,14" />
+
+                    <!-- Copyright + CCLI (side by side) -->
+                    <Grid Margin="0,0,0,24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="160" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="COPYRIGHT" Style="{StaticResource FieldLabel}" />
+                            <TextBox Style="{StaticResource FieldTextBox}"
+                                     Tag="Optional — e.g. © 2001 Hillsong Music"
+                                     Text="{Binding Copyright, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="CCLI NO." Style="{StaticResource FieldLabel}" />
+                            <TextBox Style="{StaticResource FieldTextBox}"
+                                     Tag="Optional"
+                                     Text="{Binding CcliNumber, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Section list -->
                     <ItemsControl ItemsSource="{Binding Sections}">
