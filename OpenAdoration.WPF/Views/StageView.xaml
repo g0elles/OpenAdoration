@@ -1,0 +1,287 @@
+<UserControl x:Class="OpenAdoration.WPF.Views.StageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:StageViewModel}"
+             Background="{StaticResource PrimaryBrush}"
+             Loaded="OnLoaded">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Status bar -->
+            <RowDefinition Height="*" />     <!-- Slide panels -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Status bar ── -->
+        <Border Grid.Row="0"
+                Background="#12121E"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- LIVE / STOPPED badge -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Background="{StaticResource AccentBrush}"
+                            CornerRadius="3" Padding="8,3"
+                            Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="● LIVE" Foreground="White" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="{StaticResource BorderBrush}"
+                            CornerRadius="3" Padding="8,3"
+                            Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
+                        <TextBlock Text="STOPPED" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11" FontWeight="Bold" />
+                    </Border>
+                </StackPanel>
+
+                <!-- Context label -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ContextLabel}"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="14" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+
+                <!-- Slide position -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding SlidePosition}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="13" VerticalAlignment="Center"
+                           Margin="16,0,0,0" />
+            </Grid>
+        </Border>
+
+        <!-- ── Two-panel content area ── -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ─────────── CURRENT SLIDE ─────────── -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Projection preview -->
+                <Viewbox Grid.Row="0" Stretch="Uniform" Margin="16,12,16,8">
+                    <Grid Width="1920" Height="1080" ClipToBounds="True">
+
+                        <!-- Layer 1: background colour -->
+                        <Rectangle Fill="{Binding CurrentPreview.BgColor, Converter={StaticResource ColorToBrush}}" />
+
+                        <!-- Layer 2: background image -->
+                        <Image Source="{Binding CurrentPreview.BgImagePath, Converter={StaticResource FilePathToImage}}"
+                               Stretch="UniformToFill"
+                               Visibility="{Binding CurrentPreview.HasBgImage, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- Layer 3: video background placeholder -->
+                        <Border Background="#CC000000"
+                                Visibility="{Binding CurrentPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="🎬  Video background active"
+                                       Foreground="#AAFFFFFF" FontSize="60"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+
+                        <!-- Layer 4: Song / Bible 3-zone text layout -->
+                        <Grid Visibility="{Binding CurrentPreview.IsText, Converter={StaticResource BoolToVis}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Header zone -->
+                            <TextBlock Grid.Row="0"
+                                       Text="{Binding CurrentPreview.HeaderText}"
+                                       Visibility="{Binding CurrentPreview.HasHeader, Converter={StaticResource BoolToVis}}"
+                                       Foreground="{Binding CurrentPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                       FontFamily="{Binding CurrentPreview.FontFamily}"
+                                       FontSize="56"
+                                       Padding="80,30,80,10"
+                                       TextAlignment="Right"
+                                       TextWrapping="NoWrap" />
+
+                            <!-- Body zone -->
+                            <Viewbox Grid.Row="1" Margin="120,30,120,30">
+                                <TextBlock Text="{Binding CurrentPreview.Content}"
+                                           Width="1680"
+                                           FontFamily="{Binding CurrentPreview.FontFamily}"
+                                           FontSize="{Binding CurrentPreview.FontSize}"
+                                           Foreground="{Binding CurrentPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                           TextAlignment="{Binding CurrentPreview.TextAlignment}"
+                                           TextWrapping="Wrap" />
+                            </Viewbox>
+
+                            <!-- Footer zone -->
+                            <TextBlock Grid.Row="2"
+                                       Text="{Binding CurrentPreview.FooterText}"
+                                       Visibility="{Binding CurrentPreview.HasFooter, Converter={StaticResource BoolToVis}}"
+                                       Foreground="{Binding CurrentPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                       FontFamily="{Binding CurrentPreview.FontFamily}"
+                                       FontSize="44"
+                                       Padding="80,10,80,24"
+                                       TextAlignment="Center"
+                                       TextWrapping="NoWrap"
+                                       Opacity="0.85" />
+                        </Grid>
+
+                        <!-- Layer 5: media image -->
+                        <Image Source="{Binding CurrentPreview.MediaPath, Converter={StaticResource FilePathToImage}}"
+                               Stretch="Uniform"
+                               Visibility="{Binding CurrentPreview.IsImageMedia, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- Layer 6: media video placeholder -->
+                        <Border Background="#111111"
+                                Visibility="{Binding CurrentPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="▶  Video"
+                                       Foreground="#AAFFFFFF" FontSize="100"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+
+                        <!-- Layer 7: blank overlay -->
+                        <Rectangle Fill="Black"
+                                   Visibility="{Binding CurrentPreview.IsBlank, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- Layer 8: not-projecting dim -->
+                        <Border Background="#CC12121E"
+                                Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
+                            <TextBlock Text="Not projecting"
+                                       Foreground="#44667799" FontSize="80" FontStyle="Italic"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </Viewbox>
+
+                <!-- Section label + slide position below the preview -->
+                <Border Grid.Row="1" Background="#12121E" Padding="16,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding CurrentPreview.SectionLabel}"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding SlidePosition}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Column separator -->
+            <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
+
+            <!-- ─────────── NEXT SLIDE ─────────── -->
+            <Grid Grid.Column="2" Background="#141422">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- "UP NEXT" header -->
+                <Border Grid.Row="0" Background="#0F0F1A" Padding="14,8">
+                    <TextBlock Text="UP NEXT"
+                               Foreground="#666688" FontSize="10" FontWeight="Bold" />
+                </Border>
+
+                <!-- Next slide preview OR placeholder -->
+                <Grid Grid.Row="1">
+
+                    <!-- No-next placeholder -->
+                    <TextBlock Text="End of item"
+                               Foreground="#444466" FontSize="12" FontStyle="Italic"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding HasNextSlide, Converter={StaticResource InverseBoolToVis}}" />
+
+                    <!-- Projection preview (same layer stack, smaller Viewbox) -->
+                    <Viewbox Stretch="Uniform" Margin="10,8,10,8"
+                             Visibility="{Binding HasNextSlide, Converter={StaticResource BoolToVis}}">
+                        <Grid Width="1920" Height="1080" ClipToBounds="True">
+
+                            <Rectangle Fill="{Binding NextPreview.BgColor, Converter={StaticResource ColorToBrush}}" />
+
+                            <Image Source="{Binding NextPreview.BgImagePath, Converter={StaticResource FilePathToImage}}"
+                                   Stretch="UniformToFill"
+                                   Visibility="{Binding NextPreview.HasBgImage, Converter={StaticResource BoolToVis}}" />
+
+                            <Border Background="#CC000000"
+                                    Visibility="{Binding NextPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="🎬  Video background active"
+                                           Foreground="#AAFFFFFF" FontSize="60"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+
+                            <Grid Visibility="{Binding NextPreview.IsText, Converter={StaticResource BoolToVis}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Text="{Binding NextPreview.HeaderText}"
+                                           Visibility="{Binding NextPreview.HasHeader, Converter={StaticResource BoolToVis}}"
+                                           Foreground="{Binding NextPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                           FontFamily="{Binding NextPreview.FontFamily}"
+                                           FontSize="56" Padding="80,30,80,10"
+                                           TextAlignment="Right" TextWrapping="NoWrap" />
+                                <Viewbox Grid.Row="1" Margin="120,30,120,30">
+                                    <TextBlock Text="{Binding NextPreview.Content}"
+                                               Width="1680"
+                                               FontFamily="{Binding NextPreview.FontFamily}"
+                                               FontSize="{Binding NextPreview.FontSize}"
+                                               Foreground="{Binding NextPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                               TextAlignment="{Binding NextPreview.TextAlignment}"
+                                               TextWrapping="Wrap" />
+                                </Viewbox>
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding NextPreview.FooterText}"
+                                           Visibility="{Binding NextPreview.HasFooter, Converter={StaticResource BoolToVis}}"
+                                           Foreground="{Binding NextPreview.FontColor, Converter={StaticResource ColorToBrush}}"
+                                           FontFamily="{Binding NextPreview.FontFamily}"
+                                           FontSize="44" Padding="80,10,80,24"
+                                           TextAlignment="Center" TextWrapping="NoWrap" Opacity="0.85" />
+                            </Grid>
+
+                            <Image Source="{Binding NextPreview.MediaPath, Converter={StaticResource FilePathToImage}}"
+                                   Stretch="Uniform"
+                                   Visibility="{Binding NextPreview.IsImageMedia, Converter={StaticResource BoolToVis}}" />
+
+                            <Border Background="#111111"
+                                    Visibility="{Binding NextPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="▶  Video"
+                                           Foreground="#AAFFFFFF" FontSize="100"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+
+                            <Rectangle Fill="Black"
+                                       Visibility="{Binding NextPreview.IsBlank, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Viewbox>
+                </Grid>
+
+                <!-- Next section label -->
+                <Border Grid.Row="2" Background="#0F0F1A" Padding="14,6">
+                    <TextBlock Text="{Binding NextPreview.SectionLabel}"
+                               Foreground="#555577" FontSize="10" />
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

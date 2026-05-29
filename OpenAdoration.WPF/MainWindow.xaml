@@ -75,6 +75,9 @@
                         <Button Style="{StaticResource NavButton}"
                                 Content="🎨  Themes"
                                 Command="{Binding NavigateToThemesCommand}" />
+                        <Button Style="{StaticResource NavButton}"
+                                Content="📺  Stage View"
+                                Command="{Binding NavigateToStageCommand}" />
                     </StackPanel>
 
                 </DockPanel>
@@ -173,12 +176,6 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
-
-                    <Button Content="Stage View"
-                            Style="{StaticResource SecondaryButton}"
-                            Click="OnTogglePresenterClick"
-                            Padding="12,8"
-                            Margin="0,0,10,0" />
 
                     <Button Content="Open Screen"
                             Style="{StaticResource SecondaryButton}"

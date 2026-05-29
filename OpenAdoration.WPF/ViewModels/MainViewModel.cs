@@ -84,6 +84,13 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         NavigateTo<ThemeViewModel>();
     }
 
+    [RelayCommand]
+    private void NavigateToStage()
+    {
+        _logger.LogDebug("Navigating to Stage View");
+        NavigateTo<StageViewModel>();
+    }
+
     private void NavigateTo<T>() where T : BaseViewModel
     {
         if (CurrentView is T)

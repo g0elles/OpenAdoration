@@ -149,12 +149,12 @@ public partial class App : WpfApp
         services.AddTransient<MediaViewModel>();
         services.AddTransient<ThemeViewModel>();
         services.AddTransient<AddEditThemeViewModel>();
+        services.AddTransient<StageViewModel>();
     }
 
     private static void RegisterWindows(IServiceCollection services)
     {
         services.AddSingleton<MainWindow>();
         services.AddSingleton<ProjectionWindow>();
-        services.AddSingleton<PresenterWindow>();
     }
 }
