@@ -97,54 +97,12 @@
                 Padding="12,8">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- ── Preview thumbnail (16:9 miniature) ── -->
-                <Border Grid.Column="0"
-                        Width="112" Height="63"
-                        Background="Black"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="3"
-                        Margin="0,0,12,0">
-                    <Grid>
-                        <TextBlock Text="{Binding PreviewText}"
-                                   Foreground="White"
-                                   FontSize="7"
-                                   FontFamily="Arial"
-                                   TextWrapping="Wrap"
-                                   TextAlignment="Center"
-                                   Padding="4"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-
-                        <Border Background="#CC000000"
-                                Visibility="{Binding PreviewIsBlank, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="BLANK"
-                                       Foreground="#888888"
-                                       FontSize="9"
-                                       FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </Border>
-
-                        <Border Background="#CC0D0D14"
-                                Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
-                            <TextBlock Text="NO SIGNAL"
-                                       Foreground="#444466"
-                                       FontSize="8"
-                                       FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </Border>
-                    </Grid>
-                </Border>
-
                 <!-- ── Current item info ── -->
-                <StackPanel Grid.Column="1"
+                <StackPanel Grid.Column="0"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
@@ -172,7 +130,7 @@
                 </StackPanel>
 
                 <!-- ── Transport controls + Open Screen ── -->
-                <StackPanel Grid.Column="2"
+                <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">

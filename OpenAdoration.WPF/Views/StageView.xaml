@@ -51,12 +51,25 @@
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
 
-                <!-- Slide position -->
-                <TextBlock Grid.Column="2"
-                           Text="{Binding SlidePosition}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="13" VerticalAlignment="Center"
-                           Margin="16,0,0,0" />
+                <!-- Slide position + schedule navigation -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SlidePosition}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="13" VerticalAlignment="Center"
+                               Margin="0,0,16,0" />
+
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
+                        <Button Content="◀ Prev Item"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding PrevItemCommand}"
+                                Padding="10,6" Margin="0,0,6,0" />
+                        <Button Content="Next Item ▶"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding NextItemCommand}"
+                                Padding="10,6" />
+                    </StackPanel>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -143,13 +156,13 @@
                                Stretch="Uniform"
                                Visibility="{Binding CurrentPreview.IsImageMedia, Converter={StaticResource BoolToVis}}" />
 
-                        <!-- Layer 6: media video placeholder -->
-                        <Border Background="#111111"
-                                Visibility="{Binding CurrentPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="▶  Video"
-                                       Foreground="#AAFFFFFF" FontSize="100"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <!-- Layer 6: media video (muted live preview) -->
+                        <MediaElement x:Name="CurrentVideoMedia"
+                                      LoadedBehavior="Manual"
+                                      IsMuted="True"
+                                      Stretch="Uniform"
+                                      MediaEnded="OnCurrentVideoEnded"
+                                      Visibility="{Binding CurrentPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}" />
 
                         <!-- Layer 7: blank overlay -->
                         <Rectangle Fill="Black"
@@ -263,12 +276,12 @@
                                    Stretch="Uniform"
                                    Visibility="{Binding NextPreview.IsImageMedia, Converter={StaticResource BoolToVis}}" />
 
-                            <Border Background="#111111"
-                                    Visibility="{Binding NextPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="▶  Video"
-                                           Foreground="#AAFFFFFF" FontSize="100"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
+                            <MediaElement x:Name="NextVideoMedia"
+                                          LoadedBehavior="Manual"
+                                          IsMuted="True"
+                                          Stretch="Uniform"
+                                          MediaEnded="OnNextVideoEnded"
+                                          Visibility="{Binding NextPreview.IsVideoMedia, Converter={StaticResource BoolToVis}}" />
 
                             <Rectangle Fill="Black"
                                        Visibility="{Binding NextPreview.IsBlank, Converter={StaticResource BoolToVis}}" />

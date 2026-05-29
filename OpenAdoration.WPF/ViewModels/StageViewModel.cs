@@ -86,6 +86,14 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         _logger            = logger;
     }
 
+    // ── Schedule item navigation (delegated to ServiceScheduleViewModel via IProjectionService) ──
+
+    [RelayCommand]
+    private void NextItem() => _projectionService.RequestNextScheduleItem();
+
+    [RelayCommand]
+    private void PrevItem() => _projectionService.RequestPreviousScheduleItem();
+
     // ── Load ─────────────────────────────────────────────────────────────────
 
     [RelayCommand]

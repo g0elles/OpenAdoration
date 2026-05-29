@@ -123,7 +123,9 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _logger            = logger;
 
-        _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
+        _projectionService.ProjectionStateChanged      += OnProjectionStateChanged;
+        _projectionService.NextScheduleItemRequested     += OnNextItemRequested;
+        _projectionService.PreviousScheduleItemRequested += OnPrevItemRequested;
     }
 
     partial void OnServicesChanged(ObservableCollection<WorshipService> value)
@@ -814,6 +816,18 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         }
     }
 
+    private void OnNextItemRequested(object? sender, EventArgs e)
+    {
+        if (!IsLiveMode || !CanNextItem()) return;
+        System.Windows.Application.Current?.Dispatcher.Invoke(NextItem);
+    }
+
+    private void OnPrevItemRequested(object? sender, EventArgs e)
+    {
+        if (!IsLiveMode || !CanPrevItem()) return;
+        System.Windows.Application.Current?.Dispatcher.Invoke(PrevItem);
+    }
+
     private void OnProjectionStateChanged(object? sender, bool isProjecting)
     {
         // If the operator stops projection from the main bar while in live mode, exit live mode.
@@ -829,7 +843,9 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
+        _projectionService.ProjectionStateChanged      -= OnProjectionStateChanged;
+        _projectionService.NextScheduleItemRequested     -= OnNextItemRequested;
+        _projectionService.PreviousScheduleItemRequested -= OnPrevItemRequested;
         foreach (var vm in ScheduleItems)
             UnsubscribeItemEvents(vm);
     }

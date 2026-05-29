@@ -43,4 +43,19 @@ public interface IProjectionService
 
     /// <summary>Re-fires the current slide so subscribers re-render it (e.g., after a theme change).</summary>
     void RefreshCurrentSlide();
+
+    /// <summary>
+    /// Fires when the stage view asks the active service schedule to advance to the next schedule item.
+    /// ServiceScheduleViewModel subscribes and handles it while in live mode.
+    /// </summary>
+    event EventHandler? NextScheduleItemRequested;
+
+    /// <summary>Fires when the stage view asks the active service schedule to go back one schedule item.</summary>
+    event EventHandler? PreviousScheduleItemRequested;
+
+    /// <summary>Raises <see cref="NextScheduleItemRequested"/>.</summary>
+    void RequestNextScheduleItem();
+
+    /// <summary>Raises <see cref="PreviousScheduleItemRequested"/>.</summary>
+    void RequestPreviousScheduleItem();
 }

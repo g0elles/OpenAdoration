@@ -28,11 +28,9 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     [ObservableProperty]
     private bool _isScreenOpen;
 
-    // Current slide info — drives the bottom-bar preview panel
+    // Current slide info — drives the bottom bar
     [ObservableProperty] private string _currentSongTitle  = string.Empty;
     [ObservableProperty] private string _currentSlideLabel = string.Empty;
-    [ObservableProperty] private string _previewText       = string.Empty;
-    [ObservableProperty] private bool   _previewIsBlank;
 
     public MainViewModel(
         IServiceProvider services,
@@ -155,8 +153,6 @@ public partial class MainViewModel : BaseViewModel, IDisposable
             {
                 CurrentSongTitle  = string.Empty;
                 CurrentSlideLabel = string.Empty;
-                PreviewText       = string.Empty;
-                PreviewIsBlank    = false;
 
                 // Projection stopped while the live scope was parked — no longer needed
                 _liveServiceScope?.Dispose();
@@ -173,21 +169,6 @@ public partial class MainViewModel : BaseViewModel, IDisposable
             CurrentSongTitle  = _projectionService.ContextLabel;
             CurrentSlideLabel = slide?.Label ?? string.Empty;
 
-            if (slide is null)
-            {
-                PreviewText    = string.Empty;
-                PreviewIsBlank = false;
-            }
-            else if (slide.Type == SlideType.Blank)
-            {
-                PreviewText    = string.Empty;
-                PreviewIsBlank = true;
-            }
-            else
-            {
-                PreviewText    = slide.Content;
-                PreviewIsBlank = false;
-            }
         });
     }
 
