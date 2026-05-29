@@ -622,6 +622,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.DeleteRequested            += OnItemDelete;
         vm.Selected                   += OnItemSelected;
         vm.AutoAdvanceChangeRequested += OnAutoAdvanceChangeRequested;
+        vm.VerseOrderOverrideChangeRequested += OnVerseOrderOverrideChangeRequested;
     }
 
     private void UnsubscribeItemEvents(ScheduleItemViewModel vm)
@@ -631,6 +632,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.DeleteRequested            -= OnItemDelete;
         vm.Selected                   -= OnItemSelected;
         vm.AutoAdvanceChangeRequested -= OnAutoAdvanceChangeRequested;
+        vm.VerseOrderOverrideChangeRequested -= OnVerseOrderOverrideChangeRequested;
     }
 
     private async void OnItemMoveUp(object? sender, EventArgs e)
@@ -790,7 +792,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             {
                 case SongScheduleItem songItem:
                 {
-                    var slides = _songService.GenerateSlides(songItem.Song, songItem.ThemeId);
+                    var slides = _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride);
                     if (slides.Count == 0) { SetError("This song has no lyrics to project."); return; }
                     _projectionService.LoadSlides(slides, songItem.Song.Title);
                     break;
@@ -839,7 +841,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             return ScheduleItems[nextIdx].Item switch
             {
                 SongScheduleItem songItem =>
-                    _songService.GenerateSlides(songItem.Song, songItem.ThemeId).FirstOrDefault(),
+                    _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride).FirstOrDefault(),
 
                 BibleScheduleItem bibleItem when bibleItem.BibleVersionId.HasValue =>
                     await GetBibleItemFirstSlideAsync(bibleItem),
@@ -945,6 +947,20 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist auto-advance for item {ItemId}", vm.Item.Id);
+        }
+    }
+
+    private async void OnVerseOrderOverrideChangeRequested(object? sender, string? verseOrder)
+    {
+        if (sender is not ScheduleItemViewModel vm || vm.Item is not SongScheduleItem songItem) return;
+        try
+        {
+            await _serviceService.SetItemVerseOrderOverrideAsync(vm.Item.Id, verseOrder);
+            songItem.VerseOrderOverride = verseOrder; // keep entity in sync without a full reload
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist verse order override for item {ItemId}", vm.Item.Id);
         }
     }
 

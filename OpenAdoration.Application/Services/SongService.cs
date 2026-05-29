@@ -103,11 +103,11 @@ public sealed class SongService : ISongService
         }
     }
 
-    public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null)
+    public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null)
     {
         ArgumentNullException.ThrowIfNull(song);
 
-        var ordered = song.GetOrderedSections();
+        var ordered = song.GetOrderedSections(verseOrderOverride);
 
         if (ordered.Count == 0)
         {

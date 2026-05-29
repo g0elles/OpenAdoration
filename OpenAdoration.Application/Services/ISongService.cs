@@ -21,6 +21,8 @@ public interface ISongService
     /// Generates the ordered list of projection slides for a song.
     /// Pass <paramref name="themeId"/> to override the default theme on every generated slide.
     /// When null, the default theme is used.
+    /// Pass <paramref name="verseOrderOverride"/> to reorder sections for this projection only,
+    /// overriding the song's own <see cref="Song.VerseOrder"/>.
     /// </summary>
-    IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null);
+    IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null);
 }

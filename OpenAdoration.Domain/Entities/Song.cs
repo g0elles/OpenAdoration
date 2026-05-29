@@ -20,14 +20,22 @@ public class Song : BaseEntity
 
     public List<SongSection> Sections { get; set; } = new();
 
-    public IReadOnlyList<SongSection> GetOrderedSections()
+    /// <summary>
+    /// Returns the song's sections in projection order.
+    /// Pass <paramref name="verseOrderOverride"/> to use a per-service order token string
+    /// instead of the song's own <see cref="VerseOrder"/>. When both are null/empty the
+    /// raw definition order (<see cref="SongSection.Order"/>) is used.
+    /// </summary>
+    public IReadOnlyList<SongSection> GetOrderedSections(string? verseOrderOverride = null)
     {
         var definitionOrder = Sections.OrderBy(s => s.Order).ToList();
 
-        if (string.IsNullOrWhiteSpace(VerseOrder))
+        var order = string.IsNullOrWhiteSpace(verseOrderOverride) ? VerseOrder : verseOrderOverride;
+
+        if (string.IsNullOrWhiteSpace(order))
             return definitionOrder;
 
-        var resolved = VerseOrder
+        var resolved = order
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(ResolveToken)
             .Where(r => r.HasValue)

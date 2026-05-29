@@ -37,16 +37,26 @@ public partial class ScheduleItemViewModel : ObservableObject
     public bool   HasAutoAdvance    => AutoAdvanceSeconds > 0;
     public string AutoAdvanceLabel  => AutoAdvanceSeconds > 0 ? $"{AutoAdvanceSeconds}s" : "Manual";
 
+    /// <summary>True only for song items — gates the verse-order override field in the builder.</summary>
+    public bool IsSongItem => Item is SongScheduleItem;
+
+    // Per-service section order; empty = use the song's own VerseOrder.
+    [ObservableProperty]
+    private string _verseOrderOverride = string.Empty;
+
     public event EventHandler? MoveUpRequested;
     public event EventHandler? MoveDownRequested;
     public event EventHandler? DeleteRequested;
     public event EventHandler? Selected;
     public event EventHandler<int?>? AutoAdvanceChangeRequested;
+    public event EventHandler<string?>? VerseOrderOverrideChangeRequested;
 
     public ScheduleItemViewModel(ScheduleItem item)
     {
         Item = item;
         _autoAdvanceSeconds = item.AutoAdvanceSeconds ?? 0;
+        if (item is SongScheduleItem songItem)
+            _verseOrderOverride = songItem.VerseOrderOverride ?? string.Empty;
     }
 
     [RelayCommand]
@@ -60,6 +70,11 @@ public partial class ScheduleItemViewModel : ObservableObject
 
     [RelayCommand]
     private void Select() => Selected?.Invoke(this, EventArgs.Empty);
+
+    // Bound with UpdateSourceTrigger=LostFocus, so this fires once the operator
+    // finishes editing — persisting the override without a separate Apply button.
+    partial void OnVerseOrderOverrideChanged(string value) =>
+        VerseOrderOverrideChangeRequested?.Invoke(this, string.IsNullOrWhiteSpace(value) ? null : value.Trim());
 
     [RelayCommand]
     private void IncreaseAutoAdvance()

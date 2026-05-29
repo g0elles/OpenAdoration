@@ -174,4 +174,18 @@ public sealed class WorshipServiceService : IWorshipServiceService
             throw;
         }
     }
+
+    public async Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Setting verse order override for item {ItemId}", itemId);
+        try
+        {
+            await _repository.SetItemVerseOrderOverrideAsync(itemId, verseOrderOverride, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set verse order override for item {ItemId}", itemId);
+            throw;
+        }
+    }
 }

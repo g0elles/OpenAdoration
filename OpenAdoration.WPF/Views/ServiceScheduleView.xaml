@@ -504,11 +504,20 @@
                                                FontSize="16"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding DisplayTitle}"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
-                                               FontSize="13"
-                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayTitle}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontSize="13" />
+                                        <!-- Per-service verse order override (song items only) -->
+                                        <TextBox Style="{StaticResource FieldTextBox}"
+                                                 Tag="Order override (e.g. V1 C V2 C)"
+                                                 Text="{Binding VerseOrderOverride, UpdateSourceTrigger=LostFocus}"
+                                                 FontSize="11"
+                                                 Margin="0,4,8,0"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="220"
+                                                 Visibility="{Binding IsSongItem, Converter={StaticResource BoolToVis}}" />
+                                    </StackPanel>
 
                                     <!-- Auto-advance control: [−] [⏱ Ns / Manual] [+] -->
                                     <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">

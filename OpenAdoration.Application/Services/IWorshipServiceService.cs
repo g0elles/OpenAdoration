@@ -16,4 +16,5 @@ public interface IWorshipServiceService
     Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default);
     Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default);
     Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
+    Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default);
 }

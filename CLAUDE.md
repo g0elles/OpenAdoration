@@ -84,7 +84,7 @@ database:
   engine: SQLite
   migration_command: "dotnet ef migrations add <Name> --project OpenAdoration.Infrastructure --startup-project OpenAdoration.WPF"
   migrations_applied: automatically at startup via MigrateAsync()
-  current_migration: 20260529012740_AddScheduleItemAutoAdvance
+  current_migration: 20260529210146_AddSongScheduleItemVerseOrderOverride
   migrations_history:
     - 20260505012006_InitialCreate
     - 20260511000000_AddSongClassification
@@ -96,6 +96,7 @@ database:
     - AddThemeHeaderFooter
     - 20260529011841_AddSongCopyrightAndCcli
     - 20260529012740_AddScheduleItemAutoAdvance
+    - 20260529210146_AddSongScheduleItemVerseOrderOverride
 
   tables:
     Songs: Id, Title(NOT NULL), Author(NULL), Classification(NULL), VerseOrder(NULL),
@@ -113,7 +114,7 @@ database:
     WorshipServices: Id, Name, Date, CreatedAt, UpdatedAt
     ScheduleItems: TPH discriminator ItemType("Song"|"Bible"|"Media"); (ServiceId,Order) composite index
       base_extra: AutoAdvanceSeconds(NULL INT) — null/0=manual; positive=seconds between slide advances
-      song_extra: SongId(FK); bible_extra: Book,Chapter,VerseStart,VerseEnd,BibleVersionId(NULL FK); media_extra: MediaFileId(FK)
+      song_extra: SongId(FK), VerseOrderOverride(NULL TEXT — per-service section order, overrides Song.VerseOrder); bible_extra: Book,Chapter,VerseStart,VerseEnd,BibleVersionId(NULL FK); media_extra: MediaFileId(FK)
     MediaFiles: Id, FileName, FilePath, Type(INT: Image=0 Video=1), CreatedAt, UpdatedAt
 
   key_patterns:
@@ -439,8 +440,9 @@ feature_status:  # as of 2026-05-29
           text alignment; HeaderTemplate/FooterTemplate with token chips; 3-zone projection
   Bible: DONE — 3-column browser; single-click projection; FTS search; 8-format import (8/8 tests);
          localized book names; [BibleReference] token ("John 3:16"); cancel+summary
-  ServiceSchedule: DONE — service list + builder (song/bible/media, reorder ▲▼, auto-advance [⏱])
-                   + live mode (per-item projection, Prev/Next item, click-to-jump, auto-advance timer)
+  ServiceSchedule: DONE — service list + builder (song/bible/media, reorder ▲▼, auto-advance [⏱],
+                   per-item verse order override TextBox for songs) + live mode (per-item projection,
+                   Prev/Next item, click-to-jump, auto-advance timer)
   Media: DONE — import, project, delete; ProjectionWindow handles SlideType.Media (image + video with audio)
   Projection: DONE — 3-zone layout (Header/Body/Footer); ITokenResolver; theme per slide via IServiceScopeFactory;
               CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination
@@ -482,17 +484,13 @@ roadmap:
   vp_stage: Stage View embedded nav; themed previews; cross-item UP NEXT; video; Prev/Next Item — DONE
   vp_tokens_extra: [BibleReference]; Copyright+CcliNumber fields; [SongCopyright][SongCCLI] tokens — DONE
   vp_autoadvance: Auto-advance per schedule item (DispatcherTimer, +/- UI, DB persist) — DONE
+  vp_verse_order_override: Verse order override per agenda item — DONE
+    # VerseOrderOverride (NULL TEXT) on SongScheduleItem; Song.GetOrderedSections(override) wins over VerseOrder.
+    # SongService.GenerateSlides(song, themeId, verseOrderOverride); IWorshipServiceService.SetItemVerseOrderOverrideAsync.
+    # ScheduleItemViewModel.VerseOrderOverride + IsSongItem gate; persists on LostFocus via VerseOrderOverrideChangeRequested.
+    # Builder row: TextBox under title, visible only for song items. Migration 20260529210146.
 
   # Remaining P1 (VP parity gap matrix)
-  next_p1_verse_order_override:
-    title: Verse order override per agenda item
-    description: >
-      Let a SongScheduleItem specify its own section order for one service,
-      overriding Song.VerseOrder. Add VerseOrderOverride (NULL TEXT) to SongScheduleItem.
-      UI: editable token string in the builder row or live mode panel.
-      Logic: ServiceScheduleViewModel passes override to SongService.GenerateSlides() if set.
-    migration: AddSongScheduleItemVerseOrderOverride
-
   next_p1_settings:
     title: Settings page + church CCLI [SiteLicense] token
     description: >
