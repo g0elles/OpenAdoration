@@ -89,6 +89,13 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         NavigateTo<StageViewModel>();
     }
 
+    [RelayCommand]
+    private void NavigateToSettings()
+    {
+        _logger.LogDebug("Navigating to Settings");
+        NavigateTo<SettingsViewModel>();
+    }
+
     private void NavigateTo<T>() where T : BaseViewModel
     {
         if (CurrentView is T)

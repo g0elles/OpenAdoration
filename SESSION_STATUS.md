@@ -11,7 +11,7 @@ Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
 Tests:    8/8 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
-Last commit: 2779b83  docs(claude): full context update for VP-parity session (uncommitted: P1-1 verse order override)
+Last commit: 3ce1a3c  feat(schedule): verse order override per agenda item (uncommitted: P1-2 settings page)
 Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride
 Branch: master
 ```
@@ -41,6 +41,7 @@ Branch: master
 | Stage View — embedded nav section (not window); 1920×1080 Viewbox themed preview; UP NEXT cross-item; Prev/Next Item buttons (live only); real video via MediaElement | DONE |
 | Auto-advance per schedule item — DispatcherTimer, +/- UI in builder, DB persist, cross-item advance at end | DONE |
 | Verse order override per agenda item — `VerseOrderOverride` on `SongScheduleItem`; builder TextBox (LostFocus persist); passed to `GenerateSlides` | DONE |
+| Settings page + church tokens — `settings.json` (ChurchName/ChurchCcliNumber/DefaultAutoAdvanceSeconds); `[ChurchName]`/`[SiteLicense]` tokens; `IAppSettingsService`; ⚙ Settings nav | DONE |
 
 ---
 
@@ -99,13 +100,20 @@ Branch: master
 
 | # | Feature | Notes |
 |---|---|---|
-| **P1-2** | **Settings page + church CCLI token** | JSON settings file (`%LOCALAPPDATA%\OpenAdoration\settings.json`); ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds; `[SiteLicense]` + `[ChurchName]` tokens; `IAppSettingsService` singleton; SettingsViewModel + SettingsView |
 | P2 | Live announcement slide | Push free-text slide to screen mid-service without stopping projection |
 | P2 | Bible phrase search mode | FTS5 `"..."` quoted phrase alongside keyword mode |
 | P2 | Additional song import formats | OpenSong, plain text |
 | M6c | Packaging | MSIX or Setup; users shouldn't run via `dotnet run` |
 
-**Start next session with P1-2 (settings page + church CCLI token)** unless the user specifies otherwise.
+**All P1 items are done.** Start next session with a P2 item (live announcement slide is the most user-visible) unless the user specifies otherwise.
+
+### P1-2 (settings page + church tokens) — DONE this session
+- `AppSettings` (Application/Common): ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds.
+- `IAppSettingsService` → `AppSettingsService` (Infrastructure/Settings): singleton, loads `settings.json` once at construction (defaults on missing/corrupt), `SaveAsync` rewrites + updates `Current`.
+- `AddInfrastructure(services, dbPath, settingsPath)` — **settingsPath is now a required 2nd arg**; `App.xaml.cs` passes `appDataDir\settings.json`.
+- `TokenResolver` ctor takes `IAppSettingsService`; `[ChurchName]` → ChurchName, `[SiteLicense]` → ChurchCcliNumber (app-wide, not per-slide).
+- `SettingsViewModel` (transient) + `SettingsView` + "⚙ Settings" nav button + `NavigateToSettingsCommand` + DataTemplate. Save calls `IProjectionService.NotifyThemeChanged()` so active header/footer re-resolve.
+- `DefaultAutoAdvanceSeconds`: `Add{Song,Bible,Media}ItemAsync` gained `int? autoAdvanceSeconds`; `ServiceScheduleViewModel` passes the default (null when 0) on each ConfirmAdd. No migration (JSON-only).
 
 ### P1-1 (verse order override) — DONE this session
 - `SongScheduleItem.VerseOrderOverride (string?)` — per-service section order, same token syntax as `Song.VerseOrder`; null/empty falls back to the song's own order.

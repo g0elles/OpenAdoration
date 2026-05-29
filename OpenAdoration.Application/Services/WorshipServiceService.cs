@@ -91,12 +91,12 @@ public sealed class WorshipServiceService : IWorshipServiceService
         return await _repository.GetWithItemsAsync(serviceId, ct);
     }
 
-    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, CancellationToken ct = default)
+    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Adding song {SongId} to service {ServiceId}", songId, serviceId);
         try
         {
-            await _repository.AddSongItemAsync(serviceId, songId, themeId, ct);
+            await _repository.AddSongItemAsync(serviceId, songId, themeId, autoAdvanceSeconds, ct);
         }
         catch (Exception ex)
         {
@@ -105,12 +105,12 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
-    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, CancellationToken ct = default)
+    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Adding Bible {Book} {Chapter}:{VerseStart}-{VerseEnd} to service {ServiceId}", book, chapter, verseStart, verseEnd, serviceId);
         try
         {
-            await _repository.AddBibleItemAsync(serviceId, book, chapter, verseStart, verseEnd, bibleVersionId, themeId, ct);
+            await _repository.AddBibleItemAsync(serviceId, book, chapter, verseStart, verseEnd, bibleVersionId, themeId, autoAdvanceSeconds, ct);
         }
         catch (Exception ex)
         {
@@ -119,12 +119,12 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
-    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default)
+    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Adding media {MediaFileId} to service {ServiceId}", mediaFileId, serviceId);
         try
         {
-            await _repository.AddMediaItemAsync(serviceId, mediaFileId, themeId, ct);
+            await _repository.AddMediaItemAsync(serviceId, mediaFileId, themeId, autoAdvanceSeconds, ct);
         }
         catch (Exception ex)
         {

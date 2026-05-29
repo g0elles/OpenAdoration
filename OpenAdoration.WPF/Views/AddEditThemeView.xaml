@@ -328,6 +328,8 @@
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
+                                <Button Content="Church Name"     Tag="[ChurchName]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
+                                <Button Content="Site License"    Tag="[SiteLicense]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
                                 <Button Content="Song Title"      Tag="[SongTitle]"        Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
                                 <Button Content="Song Author"     Tag="[SongAuthor]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
                                 <Button Content="Section"         Tag="[SongVerseTag]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertHeaderToken" />
@@ -355,6 +357,8 @@
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
+                                <Button Content="Church Name"     Tag="[ChurchName]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
+                                <Button Content="Site License"    Tag="[SiteLicense]"      Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
                                 <Button Content="Song Title"      Tag="[SongTitle]"        Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
                                 <Button Content="Song Author"     Tag="[SongAuthor]"       Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />
                                 <Button Content="Section"         Tag="[SongVerseTag]"     Style="{StaticResource SecondaryButton}" FontSize="11" Padding="6,2" Margin="0,0,4,4" Click="OnInsertFooterToken" />

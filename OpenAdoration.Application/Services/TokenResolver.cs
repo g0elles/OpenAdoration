@@ -5,6 +5,13 @@ namespace OpenAdoration.Application.Services;
 
 public sealed partial class TokenResolver : ITokenResolver
 {
+    private readonly IAppSettingsService _settings;
+
+    public TokenResolver(IAppSettingsService settings)
+    {
+        _settings = settings;
+    }
+
     // Matches [AnyToken] — same bracket convention as VideoPsalm.
     [GeneratedRegex(@"\[(\w+)\]", RegexOptions.Compiled)]
     private static partial Regex TokenPattern();
@@ -17,6 +24,10 @@ public sealed partial class TokenResolver : ITokenResolver
         {
             return m.Groups[1].Value switch
             {
+                // Church-wide tokens (from app settings, not the slide)
+                "ChurchName"      => _settings.Current.ChurchName       ?? string.Empty,
+                "SiteLicense"     => _settings.Current.ChurchCcliNumber ?? string.Empty,
+
                 "SongTitle"       => context.SongTitle        ?? string.Empty,
                 "SongAuthor"      => context.SongAuthor       ?? string.Empty,
                 "SongVerseTag"    => context.SongVerseTag     ?? string.Empty,

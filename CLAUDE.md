@@ -68,9 +68,9 @@ architecture:
     Views fire LoadCommand from Loaded event in code-behind.
 
   di_lifetime_rules:
-    singletons: MainViewModel, MainWindow, ProjectionWindow, IProjectionService, ITokenResolver
+    singletons: MainViewModel, MainWindow, ProjectionWindow, IProjectionService, ITokenResolver, IAppSettingsService
     transients: SongsViewModel, BibleViewModel, ServiceScheduleViewModel, MediaViewModel, ThemeViewModel,
-                AddEditSongViewModel, AddEditThemeViewModel, StageViewModel
+                AddEditSongViewModel, AddEditThemeViewModel, StageViewModel, SettingsViewModel
     scoped: all services (ISongService, IBibleService, IThemeService, IMediaService, IWorshipServiceService)
             + all repos (ISongRepository, IBibleRepository, IThemeRepository, IMediaRepository, IWorshipServiceRepository)
     factory: IDbContextFactory<AppDbContext> — AddDbContextFactory (singleton factory, scoped context)
@@ -167,10 +167,13 @@ projection_engine:
 token_system:
   resolver: ITokenResolver → TokenResolver (sealed partial; [GeneratedRegex] for \[(\w+)\] pattern)
   registration: AddSingleton<ITokenResolver, TokenResolver>() in InfrastructureServiceExtensions
+  church_tokens: TokenResolver ctor takes IAppSettingsService; [ChurchName]/[SiteLicense] resolved from settings.json (app-wide), not SlideContext
   context_source: SlideContext built in SongService.GenerateSlides() and BibleService.GenerateSlide()
   resolve_call: ProjectionWindow.ShowText() and StageViewModel.BuildPreview() both call _tokenResolver.Resolve()
 
   tokens:
+    "[ChurchName]"     → IAppSettingsService.Current.ChurchName        # app-wide, not per-slide
+    "[SiteLicense]"    → IAppSettingsService.Current.ChurchCcliNumber  # app-wide, not per-slide
     "[SongTitle]"      → SlideContext.SongTitle
     "[SongAuthor]"     → SlideContext.SongAuthor
     "[SongVerseTag]"   → SlideContext.SongVerseTag  # e.g. "Verse 1", "Chorus"
@@ -190,6 +193,18 @@ token_system:
 
   template_storage: Theme.HeaderTemplate (NULL TEXT), Theme.FooterTemplate (NULL TEXT)
   ui_chips: AddEditThemeView.xaml — clickable chip buttons insert token at cursor via code-behind InsertToken()
+
+# ─────────────────────────────────────────────────────────────────────────────
+settings_system:
+  storage: "%LOCALAPPDATA%\\OpenAdoration\\settings.json"  # JSON, NOT the DB — no migration
+  model: AppSettings (Application/Common) — ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds
+  service: IAppSettingsService → AppSettingsService (Infrastructure/Settings)
+    lifetime: Singleton; loads JSON once at construction (defaults on missing/corrupt file); SaveAsync rewrites + updates Current
+    registration: AddInfrastructure(services, dbPath, settingsPath) — settingsPath now a required 2nd arg; App.xaml.cs passes appDataDir\settings.json
+  ui: SettingsViewModel (Transient) + SettingsView; nav "⚙ Settings" → NavigateToSettingsCommand; DataTemplate in App.xaml
+    save_pipeline: SaveAsync persists, then IProjectionService.NotifyThemeChanged() so active header/footer re-resolve church tokens
+  default_auto_advance: applied to NEW schedule items only — Add{Song,Bible,Media}ItemAsync gained int? autoAdvanceSeconds;
+    ServiceScheduleViewModel passes _appSettings.Current.DefaultAutoAdvanceSeconds (null when 0) on each ConfirmAdd
 
 # ─────────────────────────────────────────────────────────────────────────────
 stage_view:
@@ -448,7 +463,9 @@ feature_status:  # as of 2026-05-29
               CornerLabel fallback; Open/Close screen toggle; full event bus for stage coordination
   StageView: DONE — embedded nav section; themed 1920×1080 Viewbox previews; cross-item UP NEXT;
              Prev/Next Item buttons (visible only when IsServiceScheduleActive); real video via MediaElement
-  TokenSystem: DONE — 10 tokens across song+bible; auto-hide zones; clickable chip insertion in theme editor
+  TokenSystem: DONE — 12 tokens (2 church + 5 song + 5 bible); auto-hide zones; clickable chip insertion in theme editor
+  Settings: DONE — settings.json (ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds);
+            [ChurchName]/[SiteLicense] tokens; IAppSettingsService singleton; SettingsView nav section
   AutoAdvance: DONE — per-item seconds (0=manual); DispatcherTimer resets on every SlideChanged;
                persists to DB immediately; cross-item advance at last slide
 
@@ -490,14 +507,11 @@ roadmap:
     # ScheduleItemViewModel.VerseOrderOverride + IsSongItem gate; persists on LostFocus via VerseOrderOverrideChangeRequested.
     # Builder row: TextBox under title, visible only for song items. Migration 20260529210146.
 
-  # Remaining P1 (VP parity gap matrix)
-  next_p1_settings:
-    title: Settings page + church CCLI [SiteLicense] token
-    description: >
-      Persistent app settings: ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds.
-      Stored in %LOCALAPPDATA%\OpenAdoration\settings.json (not DB — no migration needed).
-      [SiteLicense] token → resolves to ChurchCcliNumber; [ChurchName] → church name.
-      New SettingsViewModel + SettingsView nav section; IAppSettingsService (singleton).
+  vp_settings: Settings page + church CCLI [SiteLicense]/[ChurchName] tokens — DONE
+    # AppSettings (ChurchName, ChurchCcliNumber, DefaultAutoAdvanceSeconds) in settings.json (no DB).
+    # IAppSettingsService singleton; TokenResolver reads church tokens from it.
+    # SettingsViewModel/View + "⚙ Settings" nav; SaveAsync → NotifyThemeChanged re-renders.
+    # DefaultAutoAdvanceSeconds applied to new schedule items via Add*ItemAsync autoAdvanceSeconds param.
 
   # P2 remaining
   p2_live_announcement: Push free-text slide to screen mid-service without stopping projection

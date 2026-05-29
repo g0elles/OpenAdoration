@@ -41,6 +41,9 @@
             <DataTemplate DataType="{x:Type vm:StageViewModel}">
                 <views:StageView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 

@@ -18,6 +18,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private readonly IMediaService               _mediaService;
     private readonly IProjectionService          _projectionService;
     private readonly IDialogService              _dialogService;
+    private readonly IAppSettingsService         _appSettings;
     private readonly ILogger<ServiceScheduleViewModel> _logger;
 
     // ── Service list ─────────────────────────────────────────────────────────
@@ -115,6 +116,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IMediaService               mediaService,
         IProjectionService          projectionService,
         IDialogService              dialogService,
+        IAppSettingsService         appSettings,
         ILogger<ServiceScheduleViewModel> logger)
     {
         _serviceService    = serviceService;
@@ -123,6 +125,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _mediaService      = mediaService;
         _projectionService = projectionService;
         _dialogService     = dialogService;
+        _appSettings       = appSettings;
         _logger            = logger;
 
         _projectionService.ProjectionStateChanged        += OnProjectionStateChanged;
@@ -130,6 +133,10 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _projectionService.NextScheduleItemRequested     += OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested += OnPrevItemRequested;
     }
+
+    // App-wide default applied to newly added items; null = manual.
+    private int? DefaultAutoAdvanceSeconds =>
+        _appSettings.Current.DefaultAutoAdvanceSeconds > 0 ? _appSettings.Current.DefaultAutoAdvanceSeconds : null;
 
     partial void OnServicesChanged(ObservableCollection<WorshipService> value)
     {
@@ -337,7 +344,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
         try
         {
-            await _serviceService.AddSongItemAsync(OpenedService.Id, PickerSelectedSong.Id);
+            await _serviceService.AddSongItemAsync(OpenedService.Id, PickerSelectedSong.Id, autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
             _logger.LogInformation("Added song {SongId} to service {ServiceId}", PickerSelectedSong.Id, OpenedService.Id);
             IsAddingSong = false;
             await RefreshScheduleItemsAsync();
@@ -526,7 +533,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
         try
         {
-            await _serviceService.AddMediaItemAsync(OpenedService.Id, PickerSelectedMedia.Id);
+            await _serviceService.AddMediaItemAsync(OpenedService.Id, PickerSelectedMedia.Id, autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
             _logger.LogInformation("Added media {MediaId} to service {ServiceId}",
                 PickerSelectedMedia.Id, OpenedService.Id);
             IsAddingMedia = false;
@@ -563,7 +570,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                 OpenedService.Id,
                 SelectedAddBibleBook.Name,
                 chapter, verseStart, verseEnd,
-                SelectedAddBibleVersion.Id);
+                SelectedAddBibleVersion.Id,
+                autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
             _logger.LogInformation("Added Bible {Book} {Ch}:{Vs}-{Ve} to service {ServiceId}",
                 SelectedAddBibleBook.Name, chapter, verseStart, verseEnd, OpenedService.Id);
             IsAddingBible = false;

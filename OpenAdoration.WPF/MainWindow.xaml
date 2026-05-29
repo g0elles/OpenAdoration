@@ -78,6 +78,9 @@
                         <Button Style="{StaticResource NavButton}"
                                 Content="📺  Stage View"
                                 Command="{Binding NavigateToStageCommand}" />
+                        <Button Style="{StaticResource NavButton}"
+                                Content="⚙  Settings"
+                                Command="{Binding NavigateToSettingsCommand}" />
                     </StackPanel>
 
                 </DockPanel>

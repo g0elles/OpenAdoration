@@ -155,7 +155,7 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         return service;
     }
 
-    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, CancellationToken ct = default)
+    public async Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -166,15 +166,16 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
 
         context.ScheduleItems.Add(new SongScheduleItem
         {
-            ServiceId = serviceId,
-            SongId    = songId,
-            ThemeId   = themeId,
-            Order     = nextOrder + 1
+            ServiceId          = serviceId,
+            SongId             = songId,
+            ThemeId            = themeId,
+            AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
+            Order              = nextOrder + 1
         });
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, CancellationToken ct = default)
+    public async Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -185,19 +186,20 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
 
         context.ScheduleItems.Add(new BibleScheduleItem
         {
-            ServiceId     = serviceId,
-            Book          = book,
-            Chapter       = chapter,
-            VerseStart    = verseStart,
-            VerseEnd      = verseEnd,
-            BibleVersionId = bibleVersionId,
-            ThemeId       = themeId,
-            Order         = nextOrder + 1
+            ServiceId          = serviceId,
+            Book               = book,
+            Chapter            = chapter,
+            VerseStart         = verseStart,
+            VerseEnd           = verseEnd,
+            BibleVersionId     = bibleVersionId,
+            ThemeId            = themeId,
+            AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
+            Order              = nextOrder + 1
         });
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default)
+    public async Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -208,10 +210,11 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
 
         context.ScheduleItems.Add(new MediaScheduleItem
         {
-            ServiceId   = serviceId,
-            MediaFileId = mediaFileId,
-            ThemeId     = themeId,
-            Order       = nextOrder + 1
+            ServiceId          = serviceId,
+            MediaFileId        = mediaFileId,
+            ThemeId            = themeId,
+            AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
+            Order              = nextOrder + 1
         });
         await context.SaveChangesAsync(ct);
     }

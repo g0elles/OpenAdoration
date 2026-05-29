@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Infrastructure.Persistence;
 using OpenAdoration.Infrastructure.Repositories;
+using OpenAdoration.Infrastructure.Settings;
 
 namespace OpenAdoration.Infrastructure.Extensions;
 
@@ -14,9 +16,10 @@ public static class InfrastructureServiceExtensions
     /// Call once from the WPF app's composition root.
     /// </summary>
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, string dbPath)
+        this IServiceCollection services, string dbPath, string settingsPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(settingsPath);
 
         EnsureDirectoryExists(dbPath);
 
@@ -41,7 +44,11 @@ public static class InfrastructureServiceExtensions
         // Projection is singleton — owns the live session state for the app's lifetime
         services.AddSingleton<IProjectionService, ProjectionService>();
 
-        // Token resolution: stateless, singleton is fine
+        // App settings — singleton, loads the JSON file once at construction
+        services.AddSingleton<IAppSettingsService>(sp =>
+            new AppSettingsService(settingsPath, sp.GetRequiredService<ILogger<AppSettingsService>>()));
+
+        // Token resolution: singleton; reads church tokens from IAppSettingsService
         services.AddSingleton<ITokenResolver, TokenResolver>();
 
         return services;

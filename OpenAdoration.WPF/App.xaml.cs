@@ -29,8 +29,9 @@ public partial class App : WpfApp
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "OpenAdoration");
 
-        var dbPath  = Path.Combine(appDataDir, "openadoration.db");
-        var logDir  = Path.Combine(appDataDir, "logs");
+        var dbPath       = Path.Combine(appDataDir, "openadoration.db");
+        var settingsPath = Path.Combine(appDataDir, "settings.json");
+        var logDir       = Path.Combine(appDataDir, "logs");
 
         // Logging must be configured before the host is built
         LoggingConfiguration.Configure(logDir);
@@ -89,7 +90,7 @@ public partial class App : WpfApp
             .ConfigureLogging(logging => logging.UseOpenAdorationSerilog())
             .ConfigureServices(services =>
             {
-                services.AddInfrastructure(dbPath);
+                services.AddInfrastructure(dbPath, settingsPath);
                 RegisterViewModels(services);
                 RegisterWindows(services);
             })
@@ -150,6 +151,7 @@ public partial class App : WpfApp
         services.AddTransient<ThemeViewModel>();
         services.AddTransient<AddEditThemeViewModel>();
         services.AddTransient<StageViewModel>();
+        services.AddTransient<SettingsViewModel>();
     }
 
     private static void RegisterWindows(IServiceCollection services)

@@ -1,0 +1,94 @@
+<UserControl x:Class="OpenAdoration.WPF.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
+
+    <Grid Background="{StaticResource SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /> <!-- header -->
+            <RowDefinition Height="*"    /> <!-- form -->
+            <RowDefinition Height="Auto" /> <!-- error banner -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource PrimaryBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <TextBlock Text="Settings"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="16" FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+        </Border>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
+
+                <TextBlock Text="CHURCH / ORGANISATION"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+
+                <TextBlock Text="Church name" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="e.g. Grace Community Church"
+                         Text="{Binding ChurchName, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="Resolves the [ChurchName] token in theme header/footer templates."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                <TextBlock Text="CCLI / site licence number" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="e.g. 1234567"
+                         Text="{Binding ChurchCcliNumber, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="Resolves the [SiteLicense] token in theme header/footer templates."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
+                <TextBlock Text="SERVICE DEFAULTS"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+
+                <TextBlock Text="Default auto-advance (seconds)" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="0 = manual"
+                         Text="{Binding DefaultAutoAdvanceSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="Applied to newly added schedule items. 0 keeps new items in manual mode."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Save"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}" />
+                    <TextBlock Text="✓ Saved"
+                               Foreground="#4CAF50"
+                               FontSize="13" FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0"
+                               Visibility="{Binding ShowSavedConfirmation, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Error banner -->
+        <Border Grid.Row="2"
+                Background="#3E1A1A"
+                BorderBrush="{StaticResource DangerBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{StaticResource DangerBrush}"
+                       FontSize="13" TextWrapping="Wrap" />
+        </Border>
+    </Grid>
+</UserControl>

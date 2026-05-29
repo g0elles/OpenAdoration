@@ -10,9 +10,9 @@ public interface IWorshipServiceService
     Task<WorshipService> CreateAsync(WorshipService service, CancellationToken ct = default);
     Task UpdateAsync(WorshipService service, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
-    Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, CancellationToken ct = default);
-    Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, CancellationToken ct = default);
-    Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, CancellationToken ct = default);
+    Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
+    Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
+    Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
     Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default);
     Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default);
     Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
