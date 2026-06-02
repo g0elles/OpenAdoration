@@ -1,6 +1,8 @@
 # OpenAdoration — Development Roadmap
 
-> This roadmap reflects the **actual state of the codebase** as of May 2026.
+> This roadmap reflects the **actual state of the codebase**.
+> **v1.0 shipped 2026-06-01** — Milestones 0–7 are complete (see the version log below).
+> **v2.0 is now in planning** — Milestones 8–10 (Reliability & Releases, Content & Imports, Presentation Richness).
 > Every milestone starts by verifying the feature truly works before adding anything new.
 
 ---
@@ -24,17 +26,22 @@ A church operator opens this app 15 minutes before a service and uses it under p
 
 ---
 
-## Current feature state
+## Current feature state (v1.0 — shipped)
 
-| Feature | Domain | Infrastructure | Application | UI | Works end-to-end |
-|---|---|---|---|---|---|
-| Songs | ✅ | ✅ | ✅ | ✅ | Needs manual test (M0) |
-| Bible | ✅ | ✅ | ✅ | ✅ | Needs manual test (M1) |
-| Themes | ✅ | ✅ | ✅ | ✅ | Needs manual test (M1) |
-| Service Schedule | ✅ | ✅ | ✅ stub | ✅ stub | Not started (M3) |
-| Media | ✅ | ✅ | ✅ stub | ✅ stub | Not started (M4) |
-| Keyboard shortcuts | — | — | — | — | Not started (M5) |
-| Projection preview | — | — | — | — | Partial — data flows (`CurrentSlide`, `PreviewText`, `PreviewIsBlank` in `MainViewModel`); UI not yet built (M6) |
+> Updated 2026-06-01. Every feature below is implemented end-to-end and builds clean (16/16 tests green).
+
+| Feature | Status | Notes |
+|---|---|---|
+| Songs | ✅ Done | CRUD, two-step search, projection, VerseOrder, Copyright/CCLI, import (OpenLyrics / OpenSong / plain text) |
+| Bible | ✅ Done | 3-column browser, FTS keyword+phrase search, 8-format import, verses-per-slide |
+| Themes | ✅ Done | CRUD, 3-zone Header/Body/Footer, token chips, background colour/image/video |
+| Service Schedule | ✅ Done | Builder + live mode + per-item auto-advance + per-item verse-order override |
+| Media | ✅ Done | Import, project, delete (images **and** video) |
+| Keyboard shortcuts | ✅ Done | Space/arrows/B/Esc/1–9/Ctrl+1–5 |
+| Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal) |
+| Projection | ✅ Done | 3-zone tokens, announcement banner, configurable fade transition |
+| Settings | ✅ Done | settings.json; church tokens; default auto-advance / verses-per-slide |
+| Packaging | ✅ Done | Self-contained single-file exe + WiX v5 MSI (M7.5) |
 
 ---
 
@@ -394,33 +401,128 @@ Accessible from a `?` button in the toolbar.
 - WiX v5 chosen over v6/v7 (those require accepting the paid OSMF EULA).
 
 ---
+---
 
-## What is explicitly out of scope for MVP
+# Version 2.0 — planning
 
-| Feature | Reason deferred |
+> v1.0 is feature-complete and shipping for church testing. v2.0 adds three themes:
+> **Reliability & Releases**, **Content & Imports**, and **Presentation Richness**.
+> Same rules apply: offline-first, operator-safe, nothing ships unless it's trustworthy live.
+> Each milestone respects Clean Architecture — new behaviour enters as Application interfaces +
+> Infrastructure implementations + WPF VMs/Views, never by crossing layer boundaries.
+
+## Milestone 8 — Reliability & Releases
+
+**Why:** Now that there's an installer, the next safety nets are *not losing data* and *staying current* — both without violating offline-first (no cloud, no telemetry; the only network call is an opt-in update check).
+
+### 8.1 — Backup & Restore
+**Goal:** the operator exports everything to a single portable file and can restore it on any machine.
+
+- **Application:** `IBackupService { Task CreateAsync(string path, CancellationToken ct); Task<RestoreResult> RestoreAsync(string path, CancellationToken ct); }`. Define `BackupManifest` (app version, created-at UTC, current EF migration id) and `RestoreResult` (compatible / needs-newer-app / corrupt).
+- **Infrastructure:** `ZipBackupService` — bundles the SQLite DB (via SQLite Online Backup API or a connection-closed file copy), the media folder, and `settings.json` into one `.oabak` (zip) plus `manifest.json`. Restore validates the manifest migration id ≤ current before overwriting; never restore a backup from a newer schema.
+- **WPF:** Settings → "Create Backup…" / "Restore Backup…" with file dialogs + a confirm dialog. Restore writes the files then prompts an app restart (DB swapped before `AppDbContext` is in heavy use).
+- **Done when:** export on PC A, restore on a fresh PC B, all songs/Bibles/themes/services/media present.
+
+### 8.2 — Auto-update (opt-in)
+**Goal:** the app can tell the operator a newer version exists and install it in one click.
+
+- **Application:** `IUpdateService { Task<UpdateInfo?> CheckAsync(CancellationToken ct); Task DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct); }`. `UpdateInfo` = version, notes URL, MSI asset URL, size.
+- **Infrastructure:** `GitHubUpdateService` — `HttpClient` GET `releases/latest`, SemVer-compare against the assembly version, download the `.msi` asset to temp, then launch `msiexec /i` and exit. Fails silently when offline.
+- **WPF:** Settings → "Check for updates" + an opt-in "check on startup" toggle (default off). When found, a non-blocking banner: *"v2.1 available — Update"*.
+- **Offline-first note:** this is the **only** outbound network feature; it is opt-in, update-only, and sends no data. Document the tension explicitly.
+- **Done when:** a published GitHub release with a higher version is detected, downloaded, and the installer launches.
+
+### 8.3 — Release infrastructure
+- `CHANGELOG.md` (Keep a Changelog + SemVer); update on every release.
+- `docs/RELEASE.md` — the tag → `installer/build.ps1 -Version x.y.z` → upload MSI to a GitHub release flow that 8.2 consumes.
+- Single source of version truth (`Version` in the WPF csproj) flowed into the MSI and the update check.
+
+**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it.
+
+---
+
+## Milestone 9 — Content & Imports
+
+**Why:** churches arrive with existing libraries in other tools and slide decks. The less retyping, the faster adoption.
+
+### 9.1 — More song importers
+Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain text):
+- **ChordPro / SongPro** (`.cho`, `.crd`, `.pro`) — text-based, directive `{title}`/`{c:}`; strip chords to lyrics. *(Easy — do first.)*
+- **EasyWorship** — EW7 stores songs in a bundled SQLite DB; read songs + slides. *(Medium.)*
+- **ProPresenter** — best-effort text extraction from `.pro` bundles (RTF inside). *(Hard — best-effort, clearly labelled.)*
+- Each new format → a fixture + a `SongParserTests` case; the dispatcher's file filter grows.
+
+### 9.2 — Media: decks & folders
+- **Image-folder import** — pick a folder, register every image as one ordered media set / schedule item. *(Easy — do first.)*
+- **PDF → image slides** — render pages to images via a BCL-friendly renderer (e.g. `Docnet.Core`/PDFium), store as a media set. *(Medium.)*
+- **PowerPoint (`.pptx`)** — render slides to images. *(Hard; needs a converter — scope as stretch, may require LibreOffice headless or a library. Defer if no clean dependency.)*
+
+### 9.3 — Bible quick-reference jump
+- A reference box ("John 3:16", "Jn 3:16-18") that parses book/chapter/verse and jumps/projects instantly, alongside the existing browser. Book-name matching reuses `OsisBookCatalog` + localized names.
+
+**Milestone 9 done when:** an operator imports songs from at least one other app, projects a folder of images, and jumps to any verse by typing a reference.
+
+---
+
+## Milestone 10 — Presentation Richness
+
+**Why:** stronger visuals and livestream support without compromising the operator's live reliability.
+
+### 10.1 — Transition library
+- Extend the single Fade into a small, named set: **Cut** (instant), **Fade** (done), **Slide/Push**, **Zoom**. WPF animations on the existing `ContentLayers`; pick per-theme or global; `0 ms`/Cut always available as the safe default.
+
+### 10.2 — Lower-thirds / persistent overlays
+- Beyond the announcement banner: named overlays (speaker, sermon title, scripture ref) that **persist across slide changes** until cleared, rendered by `ProjectionWindow` + Stage View. Managed from a small overlays panel. Builds on the existing `AnnouncementChanged` overlay plumbing.
+
+### 10.3 — Dual-version scripture
+- Project two Bible versions on one slide (e.g. heart-language + lingua-franca). `IBibleService.GenerateSlides` gains an optional secondary `BibleVersion`; theme layout gains a two-zone body. Reuses the verses-per-slide chunking.
+
+### 10.4 — Clean output for livestream *(stretch)*
+- A second **clean** output (slide content only, no operator overlays) for OBS capture; optional **NDI** sender if a clean managed/native path exists. Start with a clean borderless output window before committing to NDI (native SDK).
+
+### 10.5 — Media transport controls *(operator-requested)*
+**Problem:** projected video currently auto-plays with **no controls** — the operator cannot pause, restart, or scrub. This is a live-reliability gap (can't hold a frame, can't replay a clip).
+
+- **Application:** extend `IProjectionService` with media transport: `PlayMedia()`, `PauseMedia()`, `RestartMedia()`, `SeekMedia(TimeSpan delta)`, plus state (`IsMediaPlaying`, `MediaPosition`, `MediaDuration`) and a `MediaPositionChanged` event. No-ops unless the current slide is video.
+- **Infrastructure/WPF:** `ProjectionWindow` already hosts the playing `MediaElement` (`LoadedBehavior=Manual`) — wire these to `Play()/Pause()/Position`. The Stage View preview `MediaElement` mirrors position via the existing `SyncVideo()` path.
+- **UI:** a transport bar (⏮ ⏯ ⏩ + scrub slider + time) shown in the projection control bar **and** Stage View, visible only when the current slide is video. Add keyboard shortcuts (e.g. `K`/`,`/`.` or reuse Space carefully — Space is "next slide", so use a dedicated key for play/pause to avoid collisions).
+- **Auto-advance interaction:** a paused/seeking video must not be yanked by the auto-advance timer; pause should pause the countdown too.
+
+**Milestone 10 done when:** the operator can choose a transition, keep a speaker lower-third up across slides, show two scripture versions at once, feed a clean output to the livestream, and **pause / restart / scrub a projected video**.
+
+---
+
+## Out of scope (and why)
+
+| Feature | Status / reason |
 |---|---|
-| Media-library video playback | `MediaElement` state management is complex; images cover 90% of need. **Theme background video already exists** (`Theme.BackgroundVideoPath`, played by `ProjectionWindow`). This exclusion covers only imported video files in the Media library. |
-| Multi-user / network sync | One PC per service is universal in small churches |
-| Cloud backup | Violates offline-first principle |
-| CCLI licence tracking | Useful but not blocking |
-| Remote control (phone app) | Requires a local HTTP server — future feature |
-| Drag-to-reorder in schedule | Up/Down buttons are sufficient for MVP |
+| Media-library video playback | ✅ **Now shipped** (M4) — images and video both project. |
+| Remote control (phone/tablet) | Considered for v2.0, **deferred** by product decision. Revisit in a later version; needs a local LAN HTTP server. |
+| Multi-user / network sync | Out — one PC per service is universal in small churches. |
+| **Cloud** backup / sync | Out — violates offline-first. (Note: **local** backup/restore is in scope as M8.1 — a portable file, no cloud.) |
+| CCLI licence tracking / reporting | Out for now — useful but not blocking. |
+| Drag-to-reorder in schedule | Out — Up/Down buttons are sufficient. |
 
 ---
 
 ## Build sequence
 
 ```
-Milestone 0           Milestone 1           Milestone 2
-Songs stable    →     Themes + Bible    →   Bible importer
-(verify end-to-       (verify end-to-        hardening + tests
- end, fix B3)          end, theme on
-                       projection)
+── v1.0 (shipped 2026-06-01) ───────────────────────────────────────────────
+Milestone 0     Milestone 1     Milestone 2     Milestone 3
+Songs      →    Themes+Bible →  Bible import →  Schedule  →
+                                hardening       (builder+live)
 
-Milestone 3       Milestone 4       Milestone 5       Milestone 6       Milestone 7
-Schedule     →    Media        →    Shortcuts    →    Preview      →    Polish + ship
-(builder +         (import +         (live-safe         (single-          (production
- live mode)         project)          keyboard)          monitor UX)        ready)
+Milestone 4     Milestone 5     Milestone 6     Milestone 7
+Media      →    Shortcuts   →   Preview     →   Polish + ship
+                                (Stage View)    (installer)
+
+── v2.0 (planning) ─────────────────────────────────────────────────────────
+Milestone 8         Milestone 9          Milestone 10
+Reliability    →    Content &       →    Presentation
+& Releases          Imports              Richness
+(backup/restore,    (song formats,       (transitions, overlays,
+ auto-update)        decks, ref-jump)     dual scripture, clean out)
 ```
 
 Each milestone leaves the app in a better, shippable state than before it. No milestone introduces new features on top of unverified ones.
@@ -429,13 +531,21 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 
 ## Summary
 
+### v1.0 — shipped
+| Milestone | Goal | Status |
+|---|---|---|
+| **0 — Songs stable** | Verify songs end-to-end; fix B3 | ✅ |
+| **1 — Themes + Bible stable** | Theme projection; Bible browse/search/project | ✅ |
+| **2 — Bible hardening** | Progress UI, cancellation, errors, parser tests | ✅ |
+| **3 — Schedule** | Builder; live nav with ThemeId overrides | ✅ |
+| **4 — Media** | Import + project (images and video) | ✅ |
+| **5 — Shortcuts** | Keyboard navigation for live use | ✅ |
+| **6 — Preview** | Operator preview (delivered as Stage View) | ✅ |
+| **7 — Polish & Release** | Validation, error states, first-run UX, installer | ✅ |
+
+### v2.0 — planning
 | Milestone | Goal | Effort |
 |---|---|---|
-| **0 — Songs stable** | Verify every songs action works end-to-end; fix B3 | Small |
-| **1 — Themes + Bible stable** | Verify theme projection and Bible browse/search/project | Small |
-| **2 — Bible hardening** | Progress UI, cancellation, error messages, parser tests | Medium |
-| **3 — Schedule** | Service builder; live navigation with ThemeId overrides | Large |
-| **4 — Media** | Import images; project to screen | Small |
-| **5 — Shortcuts** | Keyboard navigation for live use | Small |
-| **6 — Preview** | In-window projection thumbnail + slide navigator | Small |
-| **7 — Polish** | Validation, error states, first-run UX, installer | Medium |
+| **8 — Reliability & Releases** | Backup/restore, opt-in auto-update, release infra | Medium |
+| **9 — Content & Imports** | More song formats, image/PDF decks, Bible ref-jump | Large |
+| **10 — Presentation Richness** | Transition library, overlays, dual scripture, clean output, video transport controls | Large |

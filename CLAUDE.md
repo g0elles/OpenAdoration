@@ -248,3 +248,16 @@ Packaging (M7.5: self‑contained single‑file exe via win‑x64.pubxml + WiX v
 - Installer: `installer/OpenAdoration.wxs` (WiX **v5** — v6/v7 require the paid OSMF EULA). Per-machine MSI, Program Files, Start Menu + Desktop shortcuts, ARP metadata, MajorUpgrade. Fixed UpgradeCode 94340D83-8ACA-413F-A3C8-3B71C73D8D5C.
 - One-command build: `pwsh installer/build.ps1 [-Version x.y.z]` → `installer/out/OpenAdoration-<ver>-win-x64.msi` (~76 MB, gitignored).
 - Requires `dotnet tool install --global wix --version 5.0.2`.
+
+## Versioning & Roadmap
+- **v1.0 shipped 2026-06-01** — Milestones 0–7 complete.
+- **v2.0 in planning** — see `ROADMAP.md` (canonical) + `CHANGELOG.md`. Three milestones:
+  - **M8 Reliability & Releases** — local backup/restore (`.oabak` zip; `IBackupService`/`ZipBackupService`), opt-in auto-update from GitHub releases (`IUpdateService`/`GitHubUpdateService` → `msiexec`), release infra (`CHANGELOG.md`, `docs/RELEASE.md`).
+  - **M9 Content & Imports** — more song importers (ChordPro/SongPro, EasyWorship, best-effort ProPresenter) via `SongFormatDispatcher`; image-folder + PDF deck import; Bible quick-reference jump box.
+  - **M10 Presentation Richness** — transition library (cut/fade/slide/zoom); persistent lower-third overlays; dual-version scripture; clean output for livestream; **media transport controls (play/pause/seek/back) for projected video** (M10.5).
+- New work enters as Application interface + Infrastructure impl + WPF VM/View — never cross layers.
+- Release flow: bump csproj `<Version>` → update CHANGELOG → `installer/build.ps1` → tag `vX.Y.Z` → GitHub release with `OpenAdoration-<ver>-win-x64.msi` asset (auto-update parses this).
+
+## Media / video (current state + v2.0 gap)
+- Video plays via `System.Windows.Controls.MediaElement` in **ProjectionWindow** (`ContentVideo`, with audio) and **StageView** (muted preview, `LoadedBehavior=Manual`, synced in code-behind `SyncVideo()`).
+- **Gap (M10.5):** projected video has **no transport controls** — no play/pause, seek, or restart. Plan: add Play/Pause/SeekRelative/Restart to `IProjectionService` (or a media-control sub-API) that drives the ProjectionWindow `MediaElement` (`Play()/Pause()/Position`), surface a transport bar in the projection control bar + Stage View when the current slide `IsVideoMedia`, and keep Stage preview position in sync.

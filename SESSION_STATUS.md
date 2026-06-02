@@ -1,6 +1,6 @@
 # Session Status — OpenAdoration WPF
 
-_Last updated: 2026-05-29_
+_Last updated: 2026-06-01_
 
 ---
 
@@ -10,11 +10,19 @@ _Last updated: 2026-05-29_
 Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
-Tests:    10/10 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
-Last commit: 3a15b4e  fix(review): … (uncommitted: slide transitions + Bible phrase search)
+Tests:    16/16 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
+Release:  v1.0.0 SHIPPED 2026-06-01 — self-contained single-file exe + WiX v5 MSI
 Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration since)
 Branch: master
 ```
+
+**Since 2026-05-29 (v1.0 finishing + ship):**
+- Song import expanded: OpenSong XML + plain text via `SongFormatDispatcher` (+ `SongSectionTokens`); 6 new parser tests (16/16 total).
+- M7.1 polish: 200-char max on song title input.
+- M7.5 packaging: `win-x64.pubxml` single-file publish + WiX v5 MSI (`installer/`); release infra (`CHANGELOG.md`, `docs/RELEASE.md`).
+- **All roadmap milestones M0–M7 complete.** `ROADMAP.md` is canonical (its old top table was corrected).
+
+**Next: v2.0 planning** — `ROADMAP.md` Milestones 8–10: Reliability & Releases (backup/restore, auto-update), Content & Imports (more song/media formats, Bible ref-jump), Presentation Richness (transitions, overlays, dual scripture, **video transport controls**).
 
 ---
 
