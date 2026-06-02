@@ -71,6 +71,7 @@
                     <TextBlock Text="TITLE" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource FieldTextBox}"
                              Tag="Song title"
+                             MaxLength="200"
                              Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,14" />
 
