@@ -239,4 +239,12 @@ Projection (3‑zone+tokens+announcements+fade transition) – DONE
 StageView (previews+UP NEXT+Prev/Next Item+video) – DONE  
 TokenSystem (12 tokens+auto‑hide+chip insertion) – DONE  
 Settings (JSON+church tokens+default auto‑advance) – DONE  
-AutoAdvance (per‑item seconds+persist+timer reset) – DONE
+AutoAdvance (per‑item seconds+persist+timer reset) – DONE  
+Packaging (M7.5: self‑contained single‑file exe via win‑x64.pubxml + WiX v5 MSI in installer/) – DONE  
+
+## Packaging / Release (M7.5)
+- Publish profile `OpenAdoration.WPF/Properties/PublishProfiles/win-x64.pubxml` — self-contained, single-file, win-x64, ReadyToRun, compressed, native libs self-extracted (SQLite). Publish-only settings live here, NOT in the csproj (a global RuntimeIdentifier/SelfContained would break `dotnet build`/`dotnet ef`).
+- `dotnet publish OpenAdoration.WPF -c Release -p:PublishProfile=win-x64` → single `OpenAdoration.exe` (~82 MB), runs on Win10+ with no .NET prerequisite.
+- Installer: `installer/OpenAdoration.wxs` (WiX **v5** — v6/v7 require the paid OSMF EULA). Per-machine MSI, Program Files, Start Menu + Desktop shortcuts, ARP metadata, MajorUpgrade. Fixed UpgradeCode 94340D83-8ACA-413F-A3C8-3B71C73D8D5C.
+- One-command build: `pwsh installer/build.ps1 [-Version x.y.z]` → `installer/out/OpenAdoration-<ver>-win-x64.msi` (~76 MB, gitignored).
+- Requires `dotnet tool install --global wix --version 5.0.2`.

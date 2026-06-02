@@ -380,11 +380,18 @@ Every feature view must show the `ErrorMessage` / `HasError` banner from `BaseVi
 ### 7.4 — About & keyboard shortcut reference
 Accessible from a `?` button in the toolbar.
 
-### 7.5 — Publish
-```bash
-dotnet publish OpenAdoration.WPF -c Release -r win-x64 --self-contained true
-```
-Package with NSIS or WiX. Target: single `.exe`, no .NET prerequisite.
+### 7.5 — Publish ✅ DONE (2026-06-01)
+
+- **Publish profile** `OpenAdoration.WPF/Properties/PublishProfiles/win-x64.pubxml`:
+  self-contained, single-file, win-x64, ReadyToRun, compressed, native libs self-extracted.
+  `dotnet publish OpenAdoration.WPF -c Release -p:PublishProfile=win-x64` →
+  one `OpenAdoration.exe` (~82 MB) that runs on Windows 10+ with no .NET prerequisite.
+- **Installer** authored with **WiX v5** (`installer/OpenAdoration.wxs`): per-machine MSI,
+  Program Files install, Start Menu + Desktop shortcuts, Add/Remove Programs metadata,
+  `MajorUpgrade` for in-place upgrades. Fixed `UpgradeCode` 94340D83-…-8D5C.
+- **One-command build**: `pwsh installer/build.ps1 [-Version x.y.z]` publishes then builds
+  `installer/out/OpenAdoration-<version>-win-x64.msi` (~76 MB).
+- WiX v5 chosen over v6/v7 (those require accepting the paid OSMF EULA).
 
 ---
 

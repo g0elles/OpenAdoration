@@ -5,12 +5,21 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <ApplicationIcon>Assets\openadoration.ico</ApplicationIcon>
     <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>  <!-- needed for Screen.AllScreens multi-monitor -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>OpenAdoration</AssemblyName>
     <RootNamespace>OpenAdoration.WPF</RootNamespace>
+
+    <!-- Release identity / installer metadata -->
+    <Product>OpenAdoration</Product>
+    <Company>OpenAdoration</Company>
+    <Authors>Gabri Elles</Authors>
+    <Copyright>Copyright © 2026 OpenAdoration contributors · MIT License</Copyright>
+    <Description>Free open-source offline worship-presentation software for Windows.</Description>
   </PropertyGroup>
 
   <ItemGroup>

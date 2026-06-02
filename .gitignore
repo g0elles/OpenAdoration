@@ -18,6 +18,11 @@
 *.obj
 *.iobj
 *.pch
+
+## Installer output (built artifacts — not source)
+installer/out/
+*.msi
+*.wixpdb
 *.pgc
 *.pgd
 *.rsp

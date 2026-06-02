@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WiX installer for OpenAdoration (per-machine MSI).
+  Build with installer\build.ps1, or directly:
+
+    wix build installer\OpenAdoration.wxs ^
+        -d PublishDir=OpenAdoration.WPF\bin\Release\net10.0-windows\win-x64\publish ^
+        -d IconPath=OpenAdoration.WPF\Assets\openadoration.ico ^
+        -d Version=1.0.0.0 ^
+        -o installer\out\OpenAdoration-1.0.0-win-x64.msi
+
+  Installs the single self-contained OpenAdoration.exe to Program Files,
+  with Start Menu + Desktop shortcuts and Add/Remove Programs metadata.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package Name="OpenAdoration"
+           Manufacturer="OpenAdoration"
+           Version="$(var.Version)"
+           UpgradeCode="94340D83-8ACA-413F-A3C8-3B71C73D8D5C"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of OpenAdoration is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Add/Remove Programs presentation -->
+    <Icon Id="AppIcon" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/g0elles/openadoration" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/g0elles/openadoration" />
+
+    <!-- Install layout -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="OpenAdoration" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppMenuFolder" Name="OpenAdoration" />
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder" />
+
+    <!-- The application binary -->
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="*">
+      <File Id="OpenAdorationExe"
+            Source="$(var.PublishDir)\OpenAdoration.exe"
+            KeyPath="yes" />
+    </Component>
+
+    <!-- Shortcuts (HKCU keypath per Windows Installer best practice) -->
+    <Component Id="Shortcuts" Directory="AppMenuFolder" Guid="*">
+      <Shortcut Id="StartMenuShortcut"
+                Name="OpenAdoration"
+                Description="Free open-source worship presentation software"
+                Target="[#OpenAdorationExe]"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <Shortcut Id="DesktopShortcut"
+                Directory="DesktopFolder"
+                Name="OpenAdoration"
+                Description="Free open-source worship presentation software"
+                Target="[#OpenAdorationExe]"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <RemoveFolder Id="RemoveAppMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\OpenAdoration"
+                     Name="installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+    <Feature Id="Main" Title="OpenAdoration" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="Shortcuts" />
+    </Feature>
+
+  </Package>
+</Wix>
