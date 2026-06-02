@@ -1,7 +1,8 @@
 <Window x:Class="OpenAdoration.WPF.Views.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="About OpenAdoration"
+        xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+        Title="{loc:Loc Menu_About}"
         Width="440" Height="480"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -34,10 +35,12 @@
                        FontSize="12"
                        HorizontalAlignment="Center"
                        Margin="0,3,0,0" />
-            <TextBlock Text="Free open-source worship presentation software"
+            <TextBlock Text="{loc:Loc About_Tagline}"
                        Foreground="{StaticResource TextSecondaryBrush}"
                        FontSize="12"
                        HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
                        Margin="0,6,0,0" />
         </StackPanel>
 
@@ -63,45 +66,45 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                           Text="KEYBOARD SHORTCUTS"
+                           Text="{loc:Loc About_ShortcutsHeader}"
                            Foreground="{StaticResource AccentBrush}"
                            FontSize="10" FontWeight="SemiBold"
                            Margin="0,0,0,8" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Space / → / PgDn"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="Next slide"
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{loc:Loc About_NextSlide}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="← / PgUp"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="Previous slide"
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{loc:Loc About_PrevSlide}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="B"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="Blank screen"
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{loc:Loc About_BlankScreen}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Esc"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="4" Grid.Column="1" Text="Stop projection"
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{loc:Loc About_StopProjection}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="1 – 9"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="5" Grid.Column="1" Text="Jump to slide N"
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{loc:Loc About_JumpToSlide}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Ctrl + 1–5"
                            Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
-                <TextBlock Grid.Row="6" Grid.Column="1" Text="Navigate tabs"
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="{loc:Loc About_NavigateTabs}"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
             </Grid>
         </Border>
 
         <!-- License -->
-        <TextBlock Text="Released under the MIT License · github.com/g0elles/openadoration"
+        <TextBlock Text="{loc:Loc About_License}"
                    Foreground="{StaticResource TextSecondaryBrush}"
                    FontSize="11"
                    HorizontalAlignment="Center"

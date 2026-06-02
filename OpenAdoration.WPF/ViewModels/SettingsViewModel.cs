@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -10,6 +11,7 @@ public partial class SettingsViewModel : BaseViewModel
 {
     private readonly IAppSettingsService _settings;
     private readonly IProjectionService _projectionService;
+    private readonly ILocalizationService _localization;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty] private string _churchName = string.Empty;
@@ -18,6 +20,10 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
     [ObservableProperty] private int _announcementDurationSeconds = 25;
     [ObservableProperty] private int _slideTransitionMilliseconds = 300;
+
+    public IReadOnlyList<LanguageOption> AvailableLanguages => _localization.AvailableLanguages;
+
+    [ObservableProperty] private LanguageOption? _selectedLanguage;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowSavedConfirmation))]
@@ -28,10 +34,12 @@ public partial class SettingsViewModel : BaseViewModel
     public SettingsViewModel(
         IAppSettingsService settings,
         IProjectionService projectionService,
+        ILocalizationService localization,
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
         _projectionService = projectionService;
+        _localization      = localization;
         _logger            = logger;
     }
 
@@ -50,6 +58,8 @@ public partial class SettingsViewModel : BaseViewModel
             DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
             AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
             SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
+            SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
+                               ?? AvailableLanguages.FirstOrDefault();
         }
         finally
         {
@@ -73,7 +83,8 @@ public partial class SettingsViewModel : BaseViewModel
                 DefaultAutoAdvanceSeconds   = DefaultAutoAdvanceSeconds < 0 ? 0 : DefaultAutoAdvanceSeconds,
                 DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
-                SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds
+                SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
+                UiCulture                   = SelectedLanguage?.Code
             };
 
             await _settings.SaveAsync(updated);
@@ -93,6 +104,13 @@ public partial class SettingsViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    partial void OnSelectedLanguageChanged(LanguageOption? value)
+    {
+        if (value is null) return;
+        _localization.SetLanguage(value.Code); // live preview; persisted on Save
+        IsSaved = false;
     }
 
     partial void OnChurchNameChanged(string value) => IsSaved = false;

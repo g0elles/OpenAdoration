@@ -260,6 +260,15 @@ Packaging (M7.5: self‑contained single‑file exe via win‑x64.pubxml + WiX v
 - New work enters as Application interface + Infrastructure impl + WPF VM/View — never cross layers.
 - Release flow: bump csproj `<Version>` → update CHANGELOG → `installer/build.ps1` → tag `vX.Y.Z` → GitHub release with `OpenAdoration-<ver>-win-x64.msi` asset (auto-update parses this).
 
+## Internationalization (i18n) — M11 foundation (in progress)
+- **Resources:** `OpenAdoration.WPF/Resources/Strings.resx` (English neutral) + `Strings.es.resx` (Spanish). Keys are PascalCase grouped by area (`Nav_*`, `Projection_*`, `About_*`, `Settings_*`). Manifest base name `OpenAdoration.WPF.Resources.Strings`.
+- **Live binding:** `Localization/TranslationSource.cs` (singleton `INotifyPropertyChanged` over `ResourceManager`; setting `CurrentCulture` raises blanket PropertyChanged → all bindings refresh). `Localization/LocExtension.cs` markup extension → `{loc:Loc Key}` in XAML (fully-qualify `System.Windows.Data.Binding` per G1).
+- **Service:** `Services/ILocalizationService.cs` + `LocalizationService.cs` (WPF). Singleton; ctor applies saved/OS culture; `SetLanguage(code)` switches live. `AppSettings.UiCulture` persists it. `LanguageOption(Code, NativeName)` list = the registry of languages — **add a new language by dropping `Strings.<code>.resx` + a `LanguageOption` here**, and add the code to `SatelliteResourceLanguages` in `win-x64.pubxml`.
+- **Startup:** `App.OnStartup` resolves `ILocalizationService` before creating `MainWindow`.
+- **Settings:** language dropdown bound to `AvailableLanguages`/`SelectedLanguage`; live preview, persisted on Save (`UiCulture`).
+- **To localize a string:** add a key to BOTH resx files, replace the literal with `{loc:Loc Key}` (XAML) — for VM strings, read via `TranslationSource.Instance["Key"]`. Do NOT translate tokens (`[SongTitle]`…) or Bible book names.
+- **Localized so far:** MainWindow chrome, AboutWindow, SettingsView. **Remaining:** Songs/Bible/Themes/Media/Schedule/Stage views, dialogs, VM messages. Tests: `OpenAdoration.Tests.Infrastructure/Localization/LocalizationResourceTests.cs`.
+
 ## Media / video (current state + v2.0 gap)
 - Video plays via `System.Windows.Controls.MediaElement` in **ProjectionWindow** (`ContentVideo`, with audio) and **StageView** (muted preview, `LoadedBehavior=Manual`, synced in code-behind `SyncVideo()`).
 - **Gap (M10.5):** projected video has **no transport controls** — no play/pause, seek, or restart. Plan: add Play/Pause/SeekRelative/Restart to `IProjectionService` (or a media-control sub-API) that drives the ProjectionWindow `MediaElement` (`Play()/Pause()/Position`), surface a transport bar in the projection control bar + Stage View when the current slide `IsVideoMedia`, and keep Stage preview position in sync.

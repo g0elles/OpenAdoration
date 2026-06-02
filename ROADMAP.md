@@ -497,17 +497,26 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 **Why:** the app ships English-only, but the primary congregations are Spanish-speaking (and others may follow). Operators should run the whole app in their own language. The Spanish **user guide** (`docs/GUIA-USUARIO.md`) already exists and is the terminology reference for the translation.
 
-### 11.1 — Localization infrastructure
+> **Status — in progress (2026-06-01):** the localization **foundation is built and verified**
+> (resx en+es, `TranslationSource`, `{loc:Loc}` extension, `ILocalizationService`,
+> `AppSettings.UiCulture`, startup culture, live language dropdown in Settings).
+> Localized so far: the app chrome (nav, projection bar, Help/About menu), the About window,
+> and the Settings page. **Remaining:** externalize strings in the Songs, Bible, Themes, Media,
+> Service Schedule and Stage views, the dialogs, and ViewModel error/validation messages.
+> Adding a language later = drop in a new `Strings.<code>.resx` + register it in `LocalizationService`.
+
+### 11.1 — Localization infrastructure ✅ done
 - Externalize **every** user-facing WPF string into `.resx` resource files: `Strings.resx` (English, neutral) + `Strings.es.resx` (Spanish). No hard-coded UI strings left in XAML or ViewModels.
 - A shared lookup usable from both XAML and code — a generated `Strings` class plus a `{loc:Str Key}` markup extension (or `WPFLocalizeExtension`) so views and VMs read the same keys.
 - **Application:** `ILocalizationService` exposing `CurrentCulture` + `AvailableCultures`; the WPF implementation sets `CultureInfo.CurrentUICulture` / `CurrentCulture`. Stays behind an interface — no culture-switching logic leaks into ViewModels beyond the service.
 
-### 11.2 — Language setting + runtime switch
+### 11.2 — Language setting + runtime switch ✅ done
 - `AppSettings.UiCulture` (in `settings.json`); applied at startup. Default = OS culture when supported, else English.
-- Settings page: a language dropdown (English / Español). Switching applies live where practical (dynamic localization extension); otherwise prompt a quick restart.
+- Settings page: a language dropdown (English / Español). Switching applies **live** via `TranslationSource` (no restart).
 
-### 11.3 — Spanish translation (first locale)
-- Translate navigation, buttons, dialogs, empty-state CTAs, the About window, validation/error messages, and Settings labels.
+### 11.3 — Spanish translation (first locale) 🔶 in progress
+- Done: navigation, projection bar, Help/About menu, the About window, and Settings labels.
+- Remaining: Songs, Bible, Themes, Media, Service Schedule, Stage views; dialogs; empty-state CTAs; ViewModel validation/error messages.
 - **Do not** translate template **tokens** (`[SongTitle]`…) or Bible book names (those come from the imported Bible data, already localized per version).
 - Use `docs/GUIA-USUARIO.md` as the canonical Spanish terminology.
 

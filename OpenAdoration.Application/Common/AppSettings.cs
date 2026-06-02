@@ -33,4 +33,10 @@ public sealed class AppSettings
     /// Default 300.
     /// </summary>
     public int SlideTransitionMilliseconds { get; set; } = 300;
+
+    /// <summary>
+    /// UI language as a two-letter ISO code (e.g. "en", "es"). Null/empty = follow the
+    /// operating system language when supported, otherwise English.
+    /// </summary>
+    public string? UiCulture { get; set; }
 }

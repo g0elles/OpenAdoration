@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="App_Subtitle" xml:space="preserve"><value>Worship Presenter</value></data>
+
+  <data name="Nav_Songs" xml:space="preserve"><value>🎵  Songs</value></data>
+  <data name="Nav_Bible" xml:space="preserve"><value>📖  Bible</value></data>
+  <data name="Nav_Schedule" xml:space="preserve"><value>📋  Service Schedule</value></data>
+  <data name="Nav_Media" xml:space="preserve"><value>🖼  Media</value></data>
+  <data name="Nav_Themes" xml:space="preserve"><value>🎨  Themes</value></data>
+  <data name="Nav_Stage" xml:space="preserve"><value>📺  Stage View</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>⚙  Settings</value></data>
+
+  <data name="Menu_Help" xml:space="preserve"><value>Help</value></data>
+  <data name="Menu_About" xml:space="preserve"><value>About OpenAdoration</value></data>
+
+  <data name="Live_Badge" xml:space="preserve"><value>LIVE</value></data>
+  <data name="Projection_AnnouncementPlaceholder" xml:space="preserve"><value>Announcement…</value></data>
+  <data name="Projection_Announce" xml:space="preserve"><value>📢 Announce</value></data>
+  <data name="Projection_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Projection_OpenScreen" xml:space="preserve"><value>Open Screen</value></data>
+  <data name="Projection_CloseScreen" xml:space="preserve"><value>Close Screen</value></data>
+  <data name="Projection_Blank" xml:space="preserve"><value>Blank</value></data>
+  <data name="Projection_Stop" xml:space="preserve"><value>Stop</value></data>
+
+  <data name="About_Tagline" xml:space="preserve"><value>Free open-source worship presentation software</value></data>
+  <data name="About_ShortcutsHeader" xml:space="preserve"><value>KEYBOARD SHORTCUTS</value></data>
+  <data name="About_NextSlide" xml:space="preserve"><value>Next slide</value></data>
+  <data name="About_PrevSlide" xml:space="preserve"><value>Previous slide</value></data>
+  <data name="About_BlankScreen" xml:space="preserve"><value>Blank screen</value></data>
+  <data name="About_StopProjection" xml:space="preserve"><value>Stop projection</value></data>
+  <data name="About_JumpToSlide" xml:space="preserve"><value>Jump to slide N</value></data>
+  <data name="About_NavigateTabs" xml:space="preserve"><value>Navigate tabs</value></data>
+  <data name="About_License" xml:space="preserve"><value>Released under the MIT License · github.com/g0elles/openadoration</value></data>
+
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_ChurchSection" xml:space="preserve"><value>CHURCH / ORGANISATION</value></data>
+  <data name="Settings_ChurchName" xml:space="preserve"><value>Church name</value></data>
+  <data name="Settings_ChurchNamePlaceholder" xml:space="preserve"><value>e.g. Grace Community Church</value></data>
+  <data name="Settings_ChurchNameHelp" xml:space="preserve"><value>Resolves the [ChurchName] token in theme header/footer templates.</value></data>
+  <data name="Settings_Ccli" xml:space="preserve"><value>CCLI / site licence number</value></data>
+  <data name="Settings_CcliPlaceholder" xml:space="preserve"><value>e.g. 1234567</value></data>
+  <data name="Settings_CcliHelp" xml:space="preserve"><value>Resolves the [SiteLicense] token in theme header/footer templates.</value></data>
+  <data name="Settings_DefaultsSection" xml:space="preserve"><value>SERVICE DEFAULTS</value></data>
+  <data name="Settings_AutoAdvance" xml:space="preserve"><value>Default auto-advance (seconds)</value></data>
+  <data name="Settings_AutoAdvancePlaceholder" xml:space="preserve"><value>0 = manual</value></data>
+  <data name="Settings_AutoAdvanceHelp" xml:space="preserve"><value>Applied to newly added schedule items. 0 keeps new items in manual mode.</value></data>
+  <data name="Settings_VersesPerSlide" xml:space="preserve"><value>Bible verses per slide</value></data>
+  <data name="Settings_VersesPerSlideHelp" xml:space="preserve"><value>How many verses to place on one projected Bible slide. Minimum 1.</value></data>
+  <data name="Settings_AnnouncementDuration" xml:space="preserve"><value>Announcement duration (seconds)</value></data>
+  <data name="Settings_AnnouncementDurationHelp" xml:space="preserve"><value>How long the announcement banner stays on screen before it vanishes. Minimum 1.</value></data>
+  <data name="Settings_Transition" xml:space="preserve"><value>Slide transition (milliseconds)</value></data>
+  <data name="Settings_TransitionHelp" xml:space="preserve"><value>Fade duration when the projected slide changes. 0 = no transition.</value></data>
+  <data name="Settings_LanguageSection" xml:space="preserve"><value>LANGUAGE</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Application language</value></data>
+  <data name="Settings_LanguageHelp" xml:space="preserve"><value>Changes the language of the application interface.</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Settings_Saved" xml:space="preserve"><value>✓ Saved</value></data>
+</root>

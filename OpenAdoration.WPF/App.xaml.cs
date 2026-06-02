@@ -116,6 +116,10 @@ public partial class App : WpfApp
             return;
         }
 
+        // Apply the saved/OS UI language before any window is created so the first
+        // frame renders in the correct language (the service applies it in its ctor).
+        _host.Services.GetRequiredService<ILocalizationService>();
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
@@ -154,6 +158,7 @@ public partial class App : WpfApp
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
+        services.AddSingleton<ILocalizationService, LocalizationService>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();

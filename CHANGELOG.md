@@ -16,8 +16,11 @@ Target themes (see `ROADMAP.md`, Milestones 8–10):
 - **Presentation Richness (M10):** transition library (cut/fade/slide/zoom); persistent
   lower-third overlays; dual-version scripture slides; clean output for livestream;
   media transport controls (play/pause/seek/restart) for projected video (M10.5).
-- **Internationalization (M11):** multi-language UI (.resx infrastructure, language
-  setting in Settings, Spanish translation as the first locale).
+- **Internationalization (M11):** multi-language UI. *Foundation done* — resx (en + es),
+  `{loc:Loc}` markup extension + live `TranslationSource`, `ILocalizationService`,
+  `UiCulture` setting, and a language dropdown in Settings; app chrome, About window and
+  Settings localized to Spanish. *Remaining* — externalize the rest of the views, dialogs
+  and ViewModel messages.
 
 ## [1.0.0] — 2026-06-01
 
