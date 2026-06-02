@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<song>
+  <title>Amazing Grace</title>
+  <author>John Newton</author>
+  <copyright>Public Domain</copyright>
+  <ccli>22025</ccli>
+  <presentation>V1 C V2</presentation>
+  <lyrics>[V1]
+ Amazing grace how sweet the sound
+ That saved a wretch like me
+[C]
+ How precious did that grace appear
+ The hour I first believed
+.A   D   A
+ 10,000 reasons line stays intact
+[V2]
+ Through many dangers toils and snares
+ I have already come
+; this is a comment and must be ignored
+</lyrics>
+</song>

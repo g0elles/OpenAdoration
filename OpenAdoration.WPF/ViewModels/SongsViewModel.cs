@@ -163,7 +163,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title  = "Import Song",
-            Filter = "OpenLyrics XML (*.xml)|*.xml",
+            Filter = SongFormatDispatcher.FileDialogFilter,
             Multiselect = false
         };
 
@@ -175,7 +175,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
 
         try
         {
-            var song = OpenLyricsParser.Parse(dialog.FileName);
+            var song = SongFormatDispatcher.Import(dialog.FileName);
             await _songService.CreateAsync(song);
             _logger.LogInformation("Imported song '{Title}' from {File}", song.Title, dialog.FileName);
             await LoadAsync();
@@ -183,7 +183,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to import song from {File}", dialog.FileName);
-            SetError("Import failed. The file may not be a valid OpenLyrics XML.");
+            SetError("Import failed. Supported formats: OpenLyrics XML, OpenSong, plain text.");
         }
         finally
         {

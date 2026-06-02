@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<song xmlns="http://openlyrics.info/namespace/2009/song" version="0.8">
+  <properties>
+    <titles><title>OpenLyrics Sample</title></titles>
+    <authors><author>Jane Doe</author></authors>
+    <copyright>2026</copyright>
+    <ccliNo>98765</ccliNo>
+    <verseOrder>v1 c v2</verseOrder>
+  </properties>
+  <lyrics>
+    <verse name="v1"><lines>Line one<br/>Line two</lines></verse>
+    <verse name="c"><lines>Chorus line</lines></verse>
+    <verse name="v2"><lines>Verse two line</lines></verse>
+  </lyrics>
+</song>
