@@ -1,8 +1,8 @@
 # VideoPsalm → OpenAdoration Reference
 # Purpose: Feature gap analysis + implementation guidance based on reverse-engineering of VP 1.29.
 # Read this when: designing or implementing new OA features; answering "how does VP do X?"; planning the roadmap.
-# Companion files: CLAUDE.md (code standards), ARCHITECTURE.md (design), SESSION_STATUS.md (current build state).
-# Last updated: 2026-05-29 (v3 — gap matrix reconciled after VP-parity batch + P1-1 verse-order-override + P1-2 settings/church-tokens; P0 now 100%, P1 only gap is slide transitions)
+# Companion files: CLAUDE.md (code standards), ARCHITECTURE.md (design), ROADMAP.md (canonical roadmap), CHANGELOG.md (shipped).
+# Last updated: 2026-06-01 (v4 — v1.0 shipped; OpenSong + plain-text song import done; packaging done. Remaining VP-parity gaps now mapped to v2.0 milestones M8–M10 in ROADMAP.md.)
 
 ---
 
@@ -39,7 +39,7 @@ Status reconciled 2026-05-29 against actual code (was last accurate before the V
 | Auto-advance (configurable interval per item) | ✅ | `ScheduleItem.AutoAdvanceSeconds`; DispatcherTimer (one-shot, resets on SlideChanged); cross-item advance at end. `DefaultAutoAdvanceSeconds` in settings applies to new items. |
 | Verse order customization (reorder song sections per service) | ✅ | `Song.VerseOrder` (default) **and** `SongScheduleItem.VerseOrderOverride` (per-agenda override). `GetOrderedSections(override)` resolves token string. |
 | CCLI license tracking (`[SiteLicense]` in footer) | ✅ | `Song.CcliNumber` + `[SongCCLI]` token; church-wide `ChurchCcliNumber` in settings + `[SiteLicense]` token; `[ChurchName]` too |
-| Slide transitions (animated) | 🔶 | **Fade DONE** (configurable opacity DoubleAnimation on ContentLayers; `SlideTransitionMilliseconds`). VP's other 16 HLSL shader effects (FadeAndBlur, Blinds, Checkerboard, Melt, RotateWipe, Star, …) not implemented — not needed for now. |
+| Slide transitions (animated) | 🔶 → **v2.0 M10.1** | **Fade DONE** (configurable opacity DoubleAnimation on ContentLayers; `SlideTransitionMilliseconds`). A small transition library (cut/fade/slide/zoom) is planned as M10.1. VP's 16 HLSL shader effects remain out of scope. |
 
 ### P2 — Nice to have
 
@@ -47,16 +47,16 @@ Status reconciled 2026-05-29 against actual code (was last accurate before the V
 |---|---|---|
 | Live announcement / message slide | ✅ | `IProjectionService.ShowAnnouncement/ClearAnnouncement` + `CurrentAnnouncement`/`AnnouncementChanged`. Blue lower-third **banner overlay** (white text) over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds` (default 25). Rendered by ProjectionWindow + StageView. |
 | Bible search — phrase / word / Strong's modes | 🔶 | **Keyword (all-words, prefix) + exact-Phrase modes DONE** (FTS5; UI toggle in Bible browser). Strong's not planned (needs Strong's markup in source). |
-| Song import formats (20+ formats) | 🔶 | **OpenLyrics XML done.** Planned next: OpenSong, plain text (P2-c). VP also imports CCLI `.usr`, EasyWorship, ZionWorx, ChordPro, SoftProjector, WorshipCenterPro, etc. |
+| Song import formats (20+ formats) | 🔶 → **v2.0 M9.1** | **OpenLyrics XML, OpenSong, plain text DONE** (`SongFormatDispatcher`). Next (M9.1): ChordPro/SongPro, EasyWorship, best-effort ProPresenter. VP also imports CCLI `.usr`, ZionWorx, SoftProjector, WorshipCenterPro, etc. |
 | Configurable verses-per-slide (Bible) | ✅ | `DefaultBibleVersesPerSlide` setting; `BibleService.GenerateSlides` chunks verses. Applies to schedule Bible items + multi-verse selection. |
-| Chord display (ChordPro / bracket) | ❌ | VP shows chords above lyrics or inline; `ViewBracketContentAsChord` flag on songbook |
+| Chord display (ChordPro / bracket) | ❌ | VP shows chords above lyrics or inline; `ViewBracketContentAsChord` flag on songbook. (M9.1 will *import* ChordPro by stripping chords to lyrics; rendering chords on slides is a separate future item.) |
 | Audio-only agenda item | ❌ | VP: `AgendaAudio` item type — audio plays during service with no visual content (pre-service music). OA has no audio-only item. |
 | Clock overlay (analog/digital, countdown) | — | DROPPED (decided with user — not needed). VP: 3 analog styles × 3 modes (clock/countdown/stopwatch). |
 | Aspect-ratio presets / background brightness | ❌ | VP Fondo tab: Actual/4:3/16:9/16:10/16:8 + brightness slider on bg media |
-| Bilingual / dual Bible mode | ❌ | VP shows two versions side-by-side on one slide |
+| Bilingual / dual Bible mode | ❌ → **v2.0 M10.3** | VP shows two versions side-by-side on one slide. Planned: `IBibleService.GenerateSlides` gains an optional secondary version + two-zone theme body. |
 | Selectable zone-layout presets | ❌ | VP "Apariencia" 3×3 grid of Header/Body/Footer arrangements |
 | Camera input (OBS Virtual Camera supported) | ❌ | VP: live camera feed as content layer |
-| Stage view — remote (browser, password-protected) | ❌ | VP HTTP server streams stage view to tablets/phones on LAN |
+| Stage view — remote (browser, password-protected) | ❌ (deferred) | VP HTTP server streams stage view to tablets/phones on LAN. Considered for v2.0 as "Remote control" but **declined** by product decision — revisit in a later version. |
 | Online catalog (downloadable Bibles + songbooks) | ❌ | VP: `Meta.json` catalogs available content; downloads to local store |
 | Songbook grouping layer + style inheritance | ❌ | VP: songbooks → songs tree; 4-level style cascade (§4.1, §12). OA songs are a flat list. |
 

@@ -1,7 +1,12 @@
 # OpenAdoration — Architecture & Developer Reference
 
-> Last updated: 2026-05-21
-> Status: Pre-beta — all core features implemented; keyboard shortcuts and packaging remain
+> Last updated: 2026-06-01
+> Status: **v1.0 released** — all milestones (M0–M7) complete, including keyboard shortcuts and packaging.
+> v2.0 (M8–M10) is in planning — see `ROADMAP.md`.
+>
+> **Scope note:** the core architecture below (layers, DI, projection engine, theme resolution, DB,
+> Bible import) is current. Subsystems added during the v1.0 finishing batch are summarised in
+> [§12](#12-subsystems-added-after-the-core-diagrams); for exhaustive detail see `CLAUDE.md`.
 
 ---
 
@@ -458,6 +463,15 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `20260518_AddThemeVideoBackground` | `BackgroundVideoPath` on Themes |
 | `20260519005541_AddThemeTextAlignment` | `TextAlignment` column on Themes |
 | `20260520041713_AddBibleVersesFts` | `BibleVersesFts` FTS5 virtual table |
+| `AddSongVerseOrder` | `VerseOrder` token string on Songs |
+| `AddSongSectionsFts` | `SongSectionsFts` FTS5 table for lyrics search |
+| `AddThemeHeaderFooter` | `HeaderTemplate` / `FooterTemplate` on Themes |
+| `20260529011841_AddSongCopyrightAndCcli` | `Copyright` / `CcliNumber` on Songs |
+| `20260529012740_AddScheduleItemAutoAdvance` | `AutoAdvanceSeconds` on ScheduleItems |
+| `20260529210146_AddSongScheduleItemVerseOrderOverride` | `VerseOrderOverride` on song schedule items |
+
+> Note: app **Settings** (church name/CCLI, default auto-advance, verses-per-slide,
+> announcement duration, transition ms) live in `settings.json`, **not** the database — no migration.
 
 ### 5.3 Table Per Hierarchy — ScheduleItems
 
@@ -669,8 +683,12 @@ OpenAdoration.WPF/
 
 OpenAdoration.Tests.Infrastructure/
   BibleImport/
-    BibleParserTests.cs         ← 8 [Fact] tests, one per format, via BibleFormatDispatcher
+    BibleParserTests.cs         ← 8-format tests + ZIP guards, via BibleFormatDispatcher
     Fixtures/                   ← Minimal XML/JSON/ZIP/SQLite fixtures
+  SongImport/
+    SongParserTests.cs          ← OpenLyrics / OpenSong / plain-text tests via SongFormatDispatcher
+    Fixtures/                   ← Minimal song fixtures
+  (16/16 tests total)
 
 ★ = highest-leverage files; start here when debugging
 ```
@@ -757,8 +775,9 @@ Get-Content "$env:LOCALAPPDATA\OpenAdoration\logs\openadoration-$(Get-Date -Form
 ### Run tests
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# Expected: 8/8 pass (Zefania, OSIS, USFX, thiagobodruk, OpenAdoration JSON,
-#                      BibleSuperSearch JSON / ZIP / SQLite)
+# Expected: 16/16 pass — 10 Bible parser tests (Zefania, OSIS, USFX, thiagobodruk,
+#   OpenAdoration JSON, BibleSuperSearch JSON / ZIP / SQLite + ZIP guards)
+#   and 6 song import tests (OpenLyrics, OpenSong, plain text)
 ```
 
 ### Debug projection issues
@@ -777,3 +796,36 @@ dotnet test OpenAdoration.Tests.Infrastructure
 | Service Schedule | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Media | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Projection engine | — | ✅ | — | ✅ | ✅ |
+
+---
+
+## 12. Subsystems added after the core diagrams
+
+These shipped during the v1.0 finishing batch (after §3's data-flow diagrams were written).
+They follow the same layering and patterns. Full detail in `CLAUDE.md`.
+
+- **Token system** — `ITokenResolver` (singleton, `[GeneratedRegex]`) resolves `[SongTitle]`,
+  `[BibleReference]`, `[ChurchName]`, etc. in theme Header/Footer templates. 12 tokens
+  (2 church from settings + 5 song + 5 Bible). Zones auto-hide when the resolved text has no
+  letter/digit (G20). Rendered by `ProjectionWindow` and Stage View.
+- **3-zone projection layout** — Header (Auto) / Body (`Viewbox`) / Footer (Auto); each zone's
+  text comes from the theme's `HeaderTemplate` / `FooterTemplate` through the token resolver.
+- **Stage View** — operator monitor as a sidebar nav section (`StageViewModel` + `StageView`):
+  themed 1920×1080 previews of the current slide + UP NEXT (including the first slide of the next
+  schedule item), Prev/Next item, real video preview. Subscribes to the extended
+  `IProjectionService` event bus.
+- **Announcements** — `IProjectionService.ShowAnnouncement/ClearAnnouncement` + `CurrentAnnouncement`
+  / `AnnouncementChanged`. A blue lower-third **banner overlay** over the untouched slide; auto-dismisses
+  after `AnnouncementDurationSeconds`. Not a slide type.
+- **Auto-advance** — `ScheduleItem.AutoAdvanceSeconds`; `DispatcherTimer` (one-shot, resets on every
+  `SlideChanged`, stopped on every exit path — G19).
+- **Slide transition** — configurable opacity fade on the projection `ContentLayers`
+  (`SlideTransitionMilliseconds`; 0 = off).
+- **Settings** — `IAppSettingsService` (singleton) over `settings.json` (not the DB).
+- **Song import** — `SongFormatDispatcher` (OpenLyrics / OpenSong / plain text), mirroring the
+  Bible import dispatcher pattern.
+- **Packaging** — self-contained single-file publish (`win-x64.pubxml`) + WiX v5 MSI
+  (`installer/`). See `docs/RELEASE.md`.
+
+For the v2.0 plan (M8 Reliability & Releases, M9 Content & Imports, M10 Presentation Richness
+incl. video transport controls), see `ROADMAP.md`.

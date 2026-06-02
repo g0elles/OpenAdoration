@@ -10,20 +10,25 @@ A single operator runs OpenAdoration during a church service to control what app
 
 | Module | What you can do |
 |---|---|
-| **Songs** | Build a song library with structured sections (Verse, Chorus, Bridge, etc.); search and project any song; navigate between sections with ◀/▶ |
+| **Songs** | Build a song library with structured sections (Verse, Chorus, Bridge, etc.); search and project any song; navigate between sections with ◀/▶; set play order; import from OpenLyrics, OpenSong, and plain text |
 | **Bible** | Browse any imported translation by book and chapter; click a verse to project it; search by keyword (FTS); select multi-verse ranges; import from 8 file formats |
 | **Themes** | Control fonts, colors, and backgrounds (solid color, image, or looping video) for all projected content |
 | **Media** | Import images and videos; project them full-screen with a click; videos play with audio |
-| **Service Schedule** | Build a setlist before the service; add songs, Bible passages, and media; reorder items; go live and navigate through the schedule; add items to the queue on the fly during the service |
-| **Projection** | Full-screen output on a secondary monitor; preview window on single-screen setups; blank screen with one key; theme applies per slide |
+| **Service Schedule** | Build a setlist before the service; add songs, Bible passages, and media; reorder items; per-item auto-advance and verse-order override; go live and navigate the schedule; add items to the queue on the fly |
+| **Projection** | Full-screen output on a secondary monitor; header/body/footer zones with template tokens; announcement banner; configurable fade; blank screen with one key; theme applies per slide |
+| **Stage View** | Operator monitor: themed preview of the current slide + UP NEXT (including the next schedule item); Prev/Next item controls |
+| **Settings** | Church name + CCLI for `[ChurchName]`/`[SiteLicense]` tokens; default auto-advance; verses-per-slide; announcement duration; transition speed |
 
 ---
 
 ## Requirements
 
+**To run the installed app:**
 - Windows 10 or later
-- .NET 10 Runtime
+- *No .NET install needed* — the release is a self-contained build
 - A secondary monitor or projector (optional — a floating preview window is shown on single-screen setups)
+
+**To build from source:** see [Getting started](#getting-started) — needs the .NET 10 SDK.
 
 ---
 
@@ -53,19 +58,26 @@ The database is created and migrated automatically on first launch.
 | `%LocalAppData%\OpenAdoration\Media\` | Imported media files (managed copy) |
 | `%LocalAppData%\OpenAdoration\logs\` | Daily rolling log files |
 
-### Build for release
+### Build a release (self-contained exe + installer)
 
-```bash
-dotnet build OpenAdoration.sln --configuration Release
-# Output: OpenAdoration.WPF\bin\Release\net10.0-windows\OpenAdoration.exe
+```powershell
+# Requires the WiX v5 CLI once per machine:
+dotnet tool install --global wix --version 5.0.2
+
+pwsh installer/build.ps1 -Version 1.0.0
+# → installer/out/OpenAdoration-1.0.0-win-x64.msi
+#   (and a single self-contained OpenAdoration.exe that needs no .NET install)
 ```
+
+See [`docs/RELEASE.md`](docs/RELEASE.md) for the full tag → build → GitHub-release flow.
 
 ### Run tests
 
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# 8/8 Bible parser tests (Zefania, OSIS, USFX, thiagobodruk JSON,
-#   OpenAdoration JSON, BibleSuperSearch JSON / ZIP / SQLite)
+# 16/16 — 10 Bible parser tests (Zefania, OSIS, USFX, thiagobodruk JSON,
+#   OpenAdoration JSON, BibleSuperSearch JSON / ZIP / SQLite + ZIP guards)
+#   and 6 song import tests (OpenLyrics, OpenSong, plain text)
 ```
 
 ---
@@ -110,25 +122,31 @@ OpenAdoration.Domain/           Entities, enums, BaseEntity
 OpenAdoration.Application/      Service + repository interfaces, ProjectionService, Slide DTO
 OpenAdoration.Infrastructure/   EF Core DbContext, migrations, repositories, Serilog setup
 OpenAdoration.WPF/              WPF app — windows, views, view models, converters, styles
-OpenAdoration.Tests.Infrastructure/  Bible parser integration tests
+OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 ```
 
 ---
 
 ## Status
 
-Pre-beta — all core features implemented.
+**v1.0 — released.** All milestones (M0–M7) complete; v2.0 is in planning (see [`ROADMAP.md`](ROADMAP.md)).
 
 | Feature | Status |
 |---|---|
-| Songs — CRUD, search, projection | Done |
-| Themes — colors, fonts, image/video backgrounds | Done |
-| Bible — browser, multi-verse selection, 8-format import, FTS | Done |
-| Service Schedule — builder + live mode + on-the-fly queue editing | Done |
+| Songs — CRUD, search, projection, play order, OpenLyrics/OpenSong/text import | Done |
+| Themes — colors, fonts, image/video backgrounds, 3-zone layout + tokens | Done |
+| Bible — browser, multi-verse selection, 8-format import, keyword + phrase FTS | Done |
+| Service Schedule — builder + live mode + auto-advance + verse-order override | Done |
 | Media — import, project images and videos (with audio) | Done |
-| Projection engine — multi-monitor, theme per slide, blank | Done |
-| Keyboard shortcuts | Planned |
-| Installer / packaging | Planned |
+| Projection — multi-monitor, theme per slide, tokens, announcements, fade, blank | Done |
+| Stage View — operator preview + cross-item UP NEXT | Done |
+| Settings — church tokens, defaults | Done |
+| Keyboard shortcuts | Done |
+| Installer / packaging (self-contained exe + MSI) | Done |
+
+### Coming in v2.0
+
+Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks), Bible quick-reference jump, richer transitions, persistent overlays, dual-version scripture, and **video transport controls** (play/pause/seek). See [`ROADMAP.md`](ROADMAP.md) Milestones 8–10.
 
 ---
 
