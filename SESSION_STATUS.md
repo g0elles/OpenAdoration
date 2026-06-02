@@ -10,19 +10,25 @@ _Last updated: 2026-06-01_
 Build:    SUCCEEDED  (dotnet build OpenAdoration.sln --configuration Debug)
 Errors:   0
 Warnings: 0
-Tests:    16/16 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
+Tests:    23/23 pass  (dotnet test OpenAdoration.Tests.Infrastructure)
 Release:  v1.0.0 SHIPPED 2026-06-01 — self-contained single-file exe + WiX v5 MSI
+          GitHub release on g0elles/OpenAdoration (private) — tag v1.0.0, MSI attached
 Current migration: 20260529210146_AddSongScheduleItemVerseOrderOverride (no new migration since)
-Branch: master
+Branch: master (pushed to origin/OpenAdoration)
 ```
 
-**Since 2026-05-29 (v1.0 finishing + ship):**
-- Song import expanded: OpenSong XML + plain text via `SongFormatDispatcher` (+ `SongSectionTokens`); 6 new parser tests (16/16 total).
+**v1.0 (M0–M7) — shipped 2026-06-01:**
+- Song import expanded: OpenSong XML + plain text via `SongFormatDispatcher` (+ `SongSectionTokens`).
 - M7.1 polish: 200-char max on song title input.
 - M7.5 packaging: `win-x64.pubxml` single-file publish + WiX v5 MSI (`installer/`); release infra (`CHANGELOG.md`, `docs/RELEASE.md`).
-- **All roadmap milestones M0–M7 complete.** `ROADMAP.md` is canonical (its old top table was corrected).
+- Released on GitHub; repo renamed `OpenAdorationMaui` → `OpenAdoration` (legacy 2024 repo → `OpenAdoration-old`). Repo is **private** for now (user will make public later); distribute MSI directly meanwhile.
+- Spanish end-user guide added: `docs/GUIA-USUARIO.md`.
 
-**Next: v2.0 planning** — `ROADMAP.md` Milestones 8–10: Reliability & Releases (backup/restore, auto-update), Content & Imports (more song/media formats, Bible ref-jump), Presentation Richness (transitions, overlays, dual scripture, **video transport controls**).
+**v2.0 — in progress / planning** (`ROADMAP.md` Milestones 8–11):
+- **M8** Reliability & Releases (backup/restore, opt-in auto-update) — planned.
+- **M9** Content & Imports (more song/media formats, Bible ref-jump) — planned.
+- **M10** Presentation Richness (transitions, overlays, dual scripture, **video transport controls** M10.5) — planned.
+- **M11** Internationalization — **foundation BUILT (en+es)**: resx + `{loc:Loc}`/`TranslationSource` live switch, `ILocalizationService`, `AppSettings.UiCulture`, Settings language dropdown; chrome + About + Settings localized (+7 tests). Remaining: Songs/Bible/Themes/Media/Schedule/Stage views, dialogs, VM messages.
 
 ---
 
@@ -59,6 +65,13 @@ Branch: master
 | #2 DispatcherUnhandledException — explicit recoverable allowlist (IO/UnauthorizedAccess/OperationCanceled); unknown → terminate | DONE |
 | #3 Media import — magic-byte signature validation before copy (MediaSignatureValidator) + skipped-count message | DONE |
 | #4 ZIP ratio guard — overflow-safe IsCompressionRatioSuspicious (division, MaxCompressionRatio=50) + 2 guard tests | DONE |
+| **v1.0 ship + v2.0 start (2026-06-01):** | |
+| Song import — OpenSong XML + plain text via `SongFormatDispatcher` (+ `SongSectionTokens`); 6 tests | DONE |
+| M7.1 polish — 200-char max on song title | DONE |
+| M7.5 packaging — single-file self-contained exe (`win-x64.pubxml`) + WiX v5 MSI (`installer/`) | DONE |
+| Release — GitHub v1.0.0 on `g0elles/OpenAdoration` (renamed from `OpenAdorationMaui`); MSI asset | DONE |
+| Docs — `CHANGELOG.md`, `docs/RELEASE.md`, Spanish `docs/GUIA-USUARIO.md`; AGENTS.md slimmed to a pointer | DONE |
+| M11 i18n foundation — resx (en+es), `{loc:Loc}`/`TranslationSource` live switch, `ILocalizationService`, `AppSettings.UiCulture`, Settings language dropdown; chrome+About+Settings localized; 7 tests | DONE |
 
 ---
 
