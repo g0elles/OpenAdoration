@@ -16,6 +16,8 @@ Target themes (see `ROADMAP.md`, Milestones 8–10):
 - **Presentation Richness (M10):** transition library (cut/fade/slide/zoom); persistent
   lower-third overlays; dual-version scripture slides; clean output for livestream;
   media transport controls (play/pause/seek/restart) for projected video (M10.5).
+- **Internationalization (M11):** multi-language UI (.resx infrastructure, language
+  setting in Settings, Spanish translation as the first locale).
 
 ## [1.0.0] — 2026-06-01
 

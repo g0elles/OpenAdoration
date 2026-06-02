@@ -2,6 +2,8 @@
 
 Free, open-source worship presentation software for Windows. A self-hostable alternative to EasyWorship — fully offline, no accounts, no subscriptions.
 
+📖 **Guía del usuario (español):** [`docs/GUIA-USUARIO.md`](docs/GUIA-USUARIO.md) — cómo usar la aplicación durante el servicio.
+
 ---
 
 ## What it does
@@ -149,6 +151,18 @@ OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks), Bible quick-reference jump, richer transitions, persistent overlays, dual-version scripture, and **video transport controls** (play/pause/seek). See [`ROADMAP.md`](ROADMAP.md) Milestones 8–10.
 
 ---
+
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [`docs/GUIA-USUARIO.md`](docs/GUIA-USUARIO.md) | **User guide (Spanish)** — operating the app during a service |
+| [`ROADMAP.md`](ROADMAP.md) | Milestones — v1.0 shipped, v2.0 in planning |
+| [`CHANGELOG.md`](CHANGELOG.md) | What shipped in each version |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Developer reference — layers, data flows, DB schema |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | How to cut a release |
+
+> A multi-language UI (including English + Spanish) is planned for v2.0 — see ROADMAP.md, Milestone 11.
 
 ## Contributing
 

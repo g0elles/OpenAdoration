@@ -255,6 +255,8 @@ Packaging (M7.5: self‑contained single‑file exe via win‑x64.pubxml + WiX v
   - **M8 Reliability & Releases** — local backup/restore (`.oabak` zip; `IBackupService`/`ZipBackupService`), opt-in auto-update from GitHub releases (`IUpdateService`/`GitHubUpdateService` → `msiexec`), release infra (`CHANGELOG.md`, `docs/RELEASE.md`).
   - **M9 Content & Imports** — more song importers (ChordPro/SongPro, EasyWorship, best-effort ProPresenter) via `SongFormatDispatcher`; image-folder + PDF deck import; Bible quick-reference jump box.
   - **M10 Presentation Richness** — transition library (cut/fade/slide/zoom); persistent lower-third overlays; dual-version scripture; clean output for livestream; **media transport controls (play/pause/seek/back) for projected video** (M10.5).
+  - **M11 Internationalization** — multi-language UI: `.resx` (Strings.resx + Strings.es.resx), `ILocalizationService`, `AppSettings.UiCulture` + Settings language dropdown, Spanish first locale. Tokens + Bible book names stay untranslated. Terminology reference: `docs/GUIA-USUARIO.md`.
+- End-user docs: **`docs/GUIA-USUARIO.md`** (Spanish operator guide). UI is English until M11.
 - New work enters as Application interface + Infrastructure impl + WPF VM/View — never cross layers.
 - Release flow: bump csproj `<Version>` → update CHANGELOG → `installer/build.ps1` → tag `vX.Y.Z` → GitHub release with `OpenAdoration-<ver>-win-x64.msi` asset (auto-update parses this).
 

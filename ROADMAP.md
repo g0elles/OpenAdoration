@@ -405,8 +405,9 @@ Accessible from a `?` button in the toolbar.
 
 # Version 2.0 — planning
 
-> v1.0 is feature-complete and shipping for church testing. v2.0 adds three themes:
-> **Reliability & Releases**, **Content & Imports**, and **Presentation Richness**.
+> v1.0 is feature-complete and shipping for church testing. v2.0 adds four themes:
+> **Reliability & Releases**, **Content & Imports**, **Presentation Richness**, and
+> **Internationalization** (multi-language UI).
 > Same rules apply: offline-first, operator-safe, nothing ships unless it's trustworthy live.
 > Each milestone respects Clean Architecture — new behaviour enters as Application interfaces +
 > Infrastructure implementations + WPF VMs/Views, never by crossing layer boundaries.
@@ -492,6 +493,28 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 ---
 
+## Milestone 11 — Internationalization (multi-language UI)
+
+**Why:** the app ships English-only, but the primary congregations are Spanish-speaking (and others may follow). Operators should run the whole app in their own language. The Spanish **user guide** (`docs/GUIA-USUARIO.md`) already exists and is the terminology reference for the translation.
+
+### 11.1 — Localization infrastructure
+- Externalize **every** user-facing WPF string into `.resx` resource files: `Strings.resx` (English, neutral) + `Strings.es.resx` (Spanish). No hard-coded UI strings left in XAML or ViewModels.
+- A shared lookup usable from both XAML and code — a generated `Strings` class plus a `{loc:Str Key}` markup extension (or `WPFLocalizeExtension`) so views and VMs read the same keys.
+- **Application:** `ILocalizationService` exposing `CurrentCulture` + `AvailableCultures`; the WPF implementation sets `CultureInfo.CurrentUICulture` / `CurrentCulture`. Stays behind an interface — no culture-switching logic leaks into ViewModels beyond the service.
+
+### 11.2 — Language setting + runtime switch
+- `AppSettings.UiCulture` (in `settings.json`); applied at startup. Default = OS culture when supported, else English.
+- Settings page: a language dropdown (English / Español). Switching applies live where practical (dynamic localization extension); otherwise prompt a quick restart.
+
+### 11.3 — Spanish translation (first locale)
+- Translate navigation, buttons, dialogs, empty-state CTAs, the About window, validation/error messages, and Settings labels.
+- **Do not** translate template **tokens** (`[SongTitle]`…) or Bible book names (those come from the imported Bible data, already localized per version).
+- Use `docs/GUIA-USUARIO.md` as the canonical Spanish terminology.
+
+**Milestone 11 done when:** an operator can switch the entire UI to Spanish in Settings and run a full service without seeing any English text.
+
+---
+
 ## Out of scope (and why)
 
 | Feature | Status / reason |
@@ -518,11 +541,11 @@ Media      →    Shortcuts   →   Preview     →   Polish + ship
                                 (Stage View)    (installer)
 
 ── v2.0 (planning) ─────────────────────────────────────────────────────────
-Milestone 8         Milestone 9          Milestone 10
-Reliability    →    Content &       →    Presentation
-& Releases          Imports              Richness
-(backup/restore,    (song formats,       (transitions, overlays,
- auto-update)        decks, ref-jump)     dual scripture, clean out)
+Milestone 8         Milestone 9          Milestone 10         Milestone 11
+Reliability    →    Content &       →    Presentation    →    i18n
+& Releases          Imports              Richness             (multi-language)
+(backup/restore,    (song formats,       (transitions, overlays,  (resx, language
+ auto-update)        decks, ref-jump)     dual scripture, video)    setting, Spanish)
 ```
 
 Each milestone leaves the app in a better, shippable state than before it. No milestone introduces new features on top of unverified ones.
@@ -549,3 +572,4 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **8 — Reliability & Releases** | Backup/restore, opt-in auto-update, release infra | Medium |
 | **9 — Content & Imports** | More song formats, image/PDF decks, Bible ref-jump | Large |
 | **10 — Presentation Richness** | Transition library, overlays, dual scripture, clean output, video transport controls | Large |
+| **11 — Internationalization** | Multi-language UI (.resx infra, language setting, Spanish translation) | Medium |
