@@ -24,7 +24,7 @@ internal static class UsfxXmlParser
     {
         var version = new BibleVersion { Name = "Unknown", Abbreviation = "?", Language = "Unknown" };
         var books   = new List<BibleBook>();
-        var verses  = new List<BibleVerse>();
+        var merger  = new VerseMerger();
 
         // Parser state
         string currentBookId   = "";
@@ -39,22 +39,20 @@ internal static class UsfxXmlParser
         int    tocLevel        = 0;
         var    verseText       = new StringBuilder();
 
-        var pendingVerses = new List<BibleVerse>();
+        // The book name used for BOTH the BibleBook row and its verses, so they always
+        // match on lookup. Files without an <h>/toc name fall back to the canonical
+        // catalog name (e.g. id "JDG" → "Judges"), never the raw book id (G21).
+        string ResolveBookName() =>
+            currentBookName.Length > 0
+                ? currentBookName
+                : OsisBookCatalog.GetOrFallback(currentBookId, currentBookPos, currentBookName).Name;
 
         void FinaliseVerse()
         {
             if (!inVerse || currentVerse == 0) return;
             var text = verseText.ToString().Trim();
             if (text.Length > 0)
-            {
-                pendingVerses.Add(new BibleVerse
-                {
-                    Book    = currentBookName.Length > 0 ? currentBookName : currentBookId,
-                    Chapter = currentChapter,
-                    Verse   = currentVerse,
-                    Text    = text
-                });
-            }
+                merger.Add(ResolveBookName(), currentChapter, currentVerse, text);
             inVerse   = false;
             skipDepth = 0;
             verseText.Clear();
@@ -66,14 +64,12 @@ internal static class UsfxXmlParser
             var info = OsisBookCatalog.GetOrFallback(currentBookId, currentBookPos, currentBookName);
             books.Add(new BibleBook
             {
-                Name         = currentBookName.Length > 0 ? currentBookName : info.Name,
+                Name         = ResolveBookName(),
                 Abbreviation = currentBookAbbr.Length > 0 ? currentBookAbbr : info.Abbreviation,
                 Testament    = info.Testament,
                 BookNumber   = info.Number > 0 ? info.Number : currentBookPos,
                 ChapterCount = chapCount
             });
-            verses.AddRange(pendingVerses);
-            pendingVerses.Clear();
         }
 
         var settings = new XmlReaderSettings
@@ -200,6 +196,6 @@ internal static class UsfxXmlParser
         if (books.Count == 0)
             throw new InvalidDataException("No <book> elements found in USFX XML.");
 
-        return new BibleImportResult(version, books, verses);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 }

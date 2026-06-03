@@ -40,7 +40,7 @@ internal static class BibleSuperSearchJsonParser
 
         var bookNames        = new Dictionary<int, string>(); // localized names from book_name field
         var chapterMaxByBook = new Dictionary<int, int>();
-        var versesList       = new List<BibleVerse>();
+        var merger           = new VerseMerger();
 
         foreach (var v in versesEl.EnumerateArray())
         {
@@ -60,13 +60,7 @@ internal static class BibleSuperSearchJsonParser
             var bookInfo = OsisBookCatalog.GetByNumber(bookNum);
             var bookName = bookNames.TryGetValue(bookNum, out var localName) ? localName : bookInfo.Name;
 
-            versesList.Add(new BibleVerse
-            {
-                Book    = bookName,
-                Chapter = chapter,
-                Verse   = verseNum,
-                Text    = text.Trim()
-            });
+            merger.Add(bookName, chapter, verseNum, text.Trim());
 
             if (!chapterMaxByBook.TryGetValue(bookNum, out var maxChap) || chapter > maxChap)
                 chapterMaxByBook[bookNum] = chapter;
@@ -91,7 +85,7 @@ internal static class BibleSuperSearchJsonParser
         if (books.Count == 0)
             throw new InvalidDataException("No verses found in BibleSuperSearch JSON file.");
 
-        return new BibleImportResult(version, books, versesList);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 
     private static string? GetString(JsonElement el, params string[] keys)

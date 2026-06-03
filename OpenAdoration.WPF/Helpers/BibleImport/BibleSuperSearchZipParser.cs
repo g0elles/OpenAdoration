@@ -63,9 +63,9 @@ internal static class BibleSuperSearchZipParser
         var (version, delim, bookCol, chapCol, verseCol, textCol) = ReadInfoJson(zip, filePath);
 
         var chapterMaxByBook = new Dictionary<int, int>();
-        var versesList       = new List<BibleVerse>();
+        var merger           = new VerseMerger();
 
-        ReadVersesTxt(zip, delim, bookCol, chapCol, verseCol, textCol, chapterMaxByBook, versesList);
+        ReadVersesTxt(zip, delim, bookCol, chapCol, verseCol, textCol, chapterMaxByBook, merger);
 
         var books = chapterMaxByBook.Keys
             .OrderBy(n => n)
@@ -86,7 +86,7 @@ internal static class BibleSuperSearchZipParser
         if (books.Count == 0)
             throw new InvalidDataException("No verses found in BibleSuperSearch ZIP file.");
 
-        return new BibleImportResult(version, books, versesList);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 
     // ── info.json ─────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ internal static class BibleSuperSearchZipParser
     private static void ReadVersesTxt(
         ZipArchive zip, char delim,
         int bookCol, int chapCol, int verseCol, int textCol,
-        Dictionary<int, int> chapterMaxByBook, List<BibleVerse> versesList)
+        Dictionary<int, int> chapterMaxByBook, VerseMerger merger)
     {
         var entry = zip.GetEntry("verses.txt")
             ?? throw new InvalidDataException("BibleSuperSearch ZIP is missing verses.txt.");
@@ -182,13 +182,7 @@ internal static class BibleSuperSearchZipParser
 
             var bookInfo = OsisBookCatalog.GetByNumber(bookNum);
 
-            versesList.Add(new BibleVerse
-            {
-                Book    = bookInfo.Name,
-                Chapter = chapter,
-                Verse   = verse,
-                Text    = text
-            });
+            merger.Add(bookInfo.Name, chapter, verse, text);
 
             if (!chapterMaxByBook.TryGetValue(bookNum, out var maxChap) || chapter > maxChap)
                 chapterMaxByBook[bookNum] = chapter;

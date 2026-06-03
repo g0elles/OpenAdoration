@@ -94,6 +94,8 @@ public sealed class BibleService : IBibleService
             "Starting Bible import: {Name} ({Abbreviation}) -- {Books} book(s), {Verses} verse(s)",
             version.Name, version.Abbreviation, books.Count, verses.Count);
 
+        WarnOnBooksWithoutVerses(version.Abbreviation, books, verses);
+
         try
         {
             await _repository.ImportVersionAsync(version, books, verses, progress, ct);
@@ -112,6 +114,27 @@ public sealed class BibleService : IBibleService
             _logger.LogError(ex, "Bible import failed: {Abbreviation}", version.Abbreviation);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Logs a warning for any book whose <see cref="BibleBook.Name"/> has no verse with a
+    /// matching <see cref="BibleVerse.Book"/>. Such a book is listed in the browser but its
+    /// verses can never be looked up (the query keys on the book name) — the symptom of a
+    /// parser storing the book row and its verses under different names (G21).
+    /// </summary>
+    private void WarnOnBooksWithoutVerses(
+        string abbreviation, IReadOnlyList<BibleBook> books, IReadOnlyList<BibleVerse> verses)
+    {
+        var booksWithVerses = verses.Select(v => v.Book).ToHashSet();
+        var orphans = books
+            .Where(b => !booksWithVerses.Contains(b.Name))
+            .Select(b => b.Name)
+            .ToList();
+
+        if (orphans.Count > 0)
+            _logger.LogWarning(
+                "Bible import {Abbreviation}: {Count} book(s) have no matching verses and will be unreadable: {Books}",
+                abbreviation, orphans.Count, string.Join(", ", orphans));
     }
 
     public async Task DeleteVersionAsync(int versionId, CancellationToken ct = default)

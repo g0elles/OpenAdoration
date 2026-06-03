@@ -61,7 +61,7 @@ internal static class ThiagobodrukJsonParser
         };
 
         var books   = new List<BibleBook>();
-        var verses  = new List<BibleVerse>();
+        var merger  = new VerseMerger();
         int bookPos = 0;
 
         foreach (var bookEl in booksArray.EnumerateArray())
@@ -93,13 +93,7 @@ internal static class ThiagobodrukJsonParser
                         ? verseEl.GetString() ?? string.Empty
                         : verseEl.ToString();
 
-                    verses.Add(new BibleVerse
-                    {
-                        Book    = bookName,
-                        Chapter = chapPos,
-                        Verse   = versePos,
-                        Text    = text.Trim()
-                    });
+                    merger.Add(bookName, chapPos, versePos, text.Trim());
                 }
             }
 
@@ -116,7 +110,7 @@ internal static class ThiagobodrukJsonParser
         if (books.Count == 0)
             throw new InvalidDataException("No books found in the array-format JSON file.");
 
-        return new BibleImportResult(version, books, verses);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 
     private static string? GetString(JsonElement el, params string[] keys)

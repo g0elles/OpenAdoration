@@ -19,6 +19,18 @@ public sealed class BibleParserTests
     }
 
     [Fact]
+    public void ZefaniaXml_MergesRepeatedVerseNumbersIntoOneEntry()
+    {
+        var result = BibleFormatDispatcher.Import(FixturePath("zefania_split_verses.xml"));
+
+        // Two <VERS vnumber="1"> fragments must collapse to a single verse so the
+        // unique (Book, Chapter, Verse) constraint is not violated on import.
+        Assert.Equal(2, result.Verses.Count);
+        var verse1 = result.Verses.Single(v => v.Chapter == 1 && v.Verse == 1);
+        Assert.Equal("En el principio creó Dios los cielos y la tierra.", verse1.Text);
+    }
+
+    [Fact]
     public void OsisXml_ParsesOneBookThreeVerses()
     {
         var result = BibleFormatDispatcher.Import(FixturePath("osis_minimal.xml"));
@@ -26,6 +38,31 @@ public sealed class BibleParserTests
         Assert.NotNull(result.Version);
         Assert.Single(result.Books);
         Assert.Equal(3, result.Verses.Count);
+    }
+
+    [Fact]
+    public void OsisXml_MergesRepeatedVerseNumbersIntoOneEntry()
+    {
+        var result = BibleFormatDispatcher.Import(FixturePath("osis_split_verses.xml"));
+
+        // Two <verse osisID="Gen.1.1"> fragments must collapse to a single verse.
+        Assert.Equal(2, result.Verses.Count);
+        var verse1 = result.Verses.Single(v => v.Chapter == 1 && v.Verse == 1);
+        Assert.Equal("In the beginning God created the heavens and the earth.", verse1.Text);
+    }
+
+    [Fact]
+    public void OsisXml_VerseBookNameMatchesBookRowWhenTitleMissing()
+    {
+        var result = BibleFormatDispatcher.Import(FixturePath("osis_no_title.xml"));
+
+        // With no <title>, the book row and its verses must both resolve to the
+        // canonical catalog name ("Judges") — not the raw osisID ("Judg") — or the
+        // browser lists "Judges" while verses are stored under "Judg" and never match.
+        Assert.Single(result.Books);
+        Assert.Equal("Judges", result.Books[0].Name);
+        Assert.NotEmpty(result.Verses);
+        Assert.All(result.Verses, v => Assert.Equal("Judges", v.Book));
     }
 
     [Fact]

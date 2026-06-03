@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLBIBLE biblename="Split Verse Test">
+  <INFORMATION>
+    <identifier>SPL</identifier>
+    <language>SPA</language>
+  </INFORMATION>
+  <BIBLEBOOK bnumber="1" bname="Genesis" bsname="Gen">
+    <CHAPTER cnumber="1">
+      <VERS vnumber="1">En el principio creó Dios</VERS>
+      <VERS vnumber="1">los cielos y la tierra.</VERS>
+      <VERS vnumber="2">Y la tierra estaba desordenada y vacía.</VERS>
+    </CHAPTER>
+  </BIBLEBOOK>
+</XMLBIBLE>

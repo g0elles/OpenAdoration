@@ -25,7 +25,7 @@ internal static class OsisXmlParser
     {
         var version = new BibleVersion { Name = "Unknown", Abbreviation = "?", Language = "Unknown" };
         var books   = new List<BibleBook>();
-        var verses  = new List<BibleVerse>();
+        var merger  = new VerseMerger();
 
         // Parser state
         string currentBookOsisId = "";
@@ -38,9 +38,16 @@ internal static class OsisXmlParser
         int    skipDepth         = 0;  // > 0 when inside a skip element
         var    verseText         = new StringBuilder();
 
-        // Per-book accumulation (finalised when next book/end starts)
-        var pendingVerses     = new List<BibleVerse>();
+        // Book-level chapter count, finalised when the next book/end starts
         int lastChapterCount  = 0;
+
+        // The book name used for BOTH the BibleBook row and its verses, so they always
+        // match on lookup. Files without a <title> fall back to the canonical catalog
+        // name (e.g. osisID "Judg" → "Judges"), never the raw osisID (G21).
+        string ResolveBookName() =>
+            currentBookName.Length > 0
+                ? currentBookName
+                : OsisBookCatalog.GetOrFallback(currentBookOsisId, currentBookPos, currentBookName).Name;
 
         void FinaliseBook()
         {
@@ -48,14 +55,12 @@ internal static class OsisXmlParser
             var info = OsisBookCatalog.GetOrFallback(currentBookOsisId, currentBookPos, currentBookName);
             books.Add(new BibleBook
             {
-                Name         = currentBookName.Length > 0 ? currentBookName : info.Name,
+                Name         = ResolveBookName(),
                 Abbreviation = info.Abbreviation,
                 Testament    = info.Testament,
                 BookNumber   = info.Number > 0 ? info.Number : currentBookPos,
                 ChapterCount = lastChapterCount
             });
-            verses.AddRange(pendingVerses);
-            pendingVerses.Clear();
         }
 
         void FinaliseVerse()
@@ -63,17 +68,7 @@ internal static class OsisXmlParser
             if (!inVerse || currentVerse == 0) return;
             var text = verseText.ToString().Trim();
             if (text.Length > 0)
-            {
-                pendingVerses.Add(new BibleVerse
-                {
-                    Book    = currentBookName.Length > 0
-                              ? currentBookName
-                              : currentBookOsisId,
-                    Chapter = currentChapter,
-                    Verse   = currentVerse,
-                    Text    = text
-                });
-            }
+                merger.Add(ResolveBookName(), currentChapter, currentVerse, text);
             inVerse  = false;
             skipDepth = 0;
             verseText.Clear();
@@ -241,6 +236,6 @@ internal static class OsisXmlParser
         if (books.Count == 0)
             throw new InvalidDataException("No books (div[@type='book']) found in OSIS XML.");
 
-        return new BibleImportResult(version, books, verses);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 }

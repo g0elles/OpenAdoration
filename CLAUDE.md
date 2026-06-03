@@ -124,6 +124,7 @@ WPF (App, Windows, VMs, Views, Converters, Styles)
 - **G18** `Run.Text` bindings on read‑only properties must be `Mode=OneWay` – default TwoWay causes runtime error.
 - **G19** `DispatcherTimer` must be stopped in `StopLive()`, `OnProjectionStateChanged(false)`, **and** `Dispose()`.
 - **G20** Token zone auto‑hide uses `resolved.Any(char.IsLetterOrDigit)`, not whitespace trim.
+- **G21** Bible import: a book's verses and its `BibleBook` row **must** resolve their `Book` name identically (browser queries verses by `BibleBook.Name`). All parsers funnel verses through `VerseMerger` to collapse repeated `(Book,Chapter,Verse)` keys (split verses → UNIQUE constraint crash); OSIS/USFX use a shared `ResolveBookName()` so a missing `<title>` falls back to the canonical catalog name (`"Judges"`), never the raw osisID (`"Judg"`).
 
 ## Key Files (read first when debugging)
 **WPF**:

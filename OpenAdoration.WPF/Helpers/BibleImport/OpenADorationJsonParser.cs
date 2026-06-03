@@ -58,7 +58,7 @@ internal static class OpenADorationJsonParser
             throw new InvalidDataException("JSON must have a 'books' array.");
 
         var books  = new List<BibleBook>();
-        var verses = new List<BibleVerse>();
+        var merger = new VerseMerger();
         int pos    = 0;
 
         foreach (var bookEl in booksEl.EnumerateArray())
@@ -92,13 +92,7 @@ internal static class OpenADorationJsonParser
                     int verseNum = TryGetInt(verseEl, "number") ?? versePos;
                     var text     = GetString(verseEl, "text") ?? string.Empty;
 
-                    verses.Add(new BibleVerse
-                    {
-                        Book    = bookName,
-                        Chapter = chapNum,
-                        Verse   = verseNum,
-                        Text    = text.Trim()
-                    });
+                    merger.Add(bookName, chapNum, verseNum, text.Trim());
                 }
             }
 
@@ -115,7 +109,7 @@ internal static class OpenADorationJsonParser
         if (books.Count == 0)
             throw new InvalidDataException("The JSON file contains no books.");
 
-        return new BibleImportResult(version, books, verses);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

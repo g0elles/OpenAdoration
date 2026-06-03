@@ -62,7 +62,7 @@ internal static class ZefaniaXmlParser
 
         // ── Books ─────────────────────────────────────────────────────────────
         var books  = new List<BibleBook>();
-        var verses = new List<BibleVerse>();
+        var merger = new VerseMerger();
         int bookPos = 0;
 
         foreach (var bookEl in root.Elements("BIBLEBOOK"))
@@ -73,30 +73,7 @@ internal static class ZefaniaXmlParser
             string babbr = bookEl.Attribute("bsname")?.Value ?? bname[..Math.Min(4, bname.Length)];
             var testament = bookNum >= 40 ? Testament.New : Testament.Old;
 
-            int chapCount = 0, chapPos = 0;
-            foreach (var chapEl in bookEl.Elements("CHAPTER"))
-            {
-                chapPos++;
-                int chapNum = ParseInt(chapEl.Attribute("cnumber")?.Value) ?? chapPos;
-                chapCount   = Math.Max(chapCount, chapNum);
-
-                int versePos = 0;
-                foreach (var versEl in chapEl.Elements("VERS"))
-                {
-                    versePos++;
-                    int verseNum = ParseInt(versEl.Attribute("vnumber")?.Value) ?? versePos;
-                    var text     = ExtractText(versEl).Trim();
-                    if (text.Length == 0) continue;
-
-                    verses.Add(new BibleVerse
-                    {
-                        Book    = bname,
-                        Chapter = chapNum,
-                        Verse   = verseNum,
-                        Text    = text
-                    });
-                }
-            }
+            int chapCount = AppendBookVerses(bookEl, bname, merger);
 
             books.Add(new BibleBook
             {
@@ -111,10 +88,40 @@ internal static class ZefaniaXmlParser
         if (books.Count == 0)
             throw new InvalidDataException("No BIBLEBOOK elements found in Zefania XML.");
 
-        return new BibleImportResult(version, books, verses);
+        return new BibleImportResult(version, books, merger.Verses);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Feeds a book's verses into <paramref name="merger"/> (which collapses any VERS
+    /// elements that repeat a verse number — a common Zefania idiom for split verses).
+    /// Returns the highest chapter number seen.
+    /// </summary>
+    private static int AppendBookVerses(XElement bookEl, string bookName, VerseMerger merger)
+    {
+        int chapCount = 0, chapPos = 0;
+
+        foreach (var chapEl in bookEl.Elements("CHAPTER"))
+        {
+            chapPos++;
+            int chapNum = ParseInt(chapEl.Attribute("cnumber")?.Value) ?? chapPos;
+            chapCount   = Math.Max(chapCount, chapNum);
+
+            int versePos = 0;
+            foreach (var versEl in chapEl.Elements("VERS"))
+            {
+                versePos++;
+                int verseNum = ParseInt(versEl.Attribute("vnumber")?.Value) ?? versePos;
+                var text     = ExtractText(versEl).Trim();
+                if (text.Length == 0) continue;
+
+                merger.Add(bookName, chapNum, verseNum, text);
+            }
+        }
+
+        return chapCount;
+    }
 
     /// <summary>
     /// Recursively collects text from an element, skipping the content

@@ -110,7 +110,7 @@ internal static class BibleSuperSearchSqliteParser
 
     private static List<BibleVerse> ReadVerses(SqliteConnection conn)
     {
-        var verses = new List<BibleVerse>();
+        var merger = new VerseMerger();
 
         using var cmd    = conn.CreateCommand();
         cmd.CommandText  = "SELECT book, chapter, verse, text FROM verses ORDER BY book, chapter, verse";
@@ -125,15 +125,9 @@ internal static class BibleSuperSearchSqliteParser
 
             var bookInfo = OsisBookCatalog.GetByNumber(bookNum);
 
-            verses.Add(new BibleVerse
-            {
-                Book    = bookInfo.Name,
-                Chapter = chapter,
-                Verse   = verse,
-                Text    = text.Trim()
-            });
+            merger.Add(bookInfo.Name, chapter, verse, text.Trim());
         }
 
-        return verses;
+        return merger.Verses;
     }
 }

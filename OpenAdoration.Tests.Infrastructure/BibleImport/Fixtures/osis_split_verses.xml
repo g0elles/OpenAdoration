@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osis xmlns="http://www.bibletechnologies.net/2003/OSIS/namespace">
+  <osisText>
+    <header>
+      <work osisWork="SPL">
+        <title>Split Verse Test</title>
+      </work>
+    </header>
+    <div type="book" osisID="Gen">
+      <title>Genesis</title>
+      <chapter osisID="Gen.1">
+        <verse osisID="Gen.1.1">In the beginning God created</verse>
+        <verse osisID="Gen.1.1">the heavens and the earth.</verse>
+        <verse osisID="Gen.1.2">And the earth was without form.</verse>
+      </chapter>
+    </div>
+  </osisText>
+</osis>
