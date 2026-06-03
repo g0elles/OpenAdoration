@@ -22,6 +22,26 @@ Target themes (see `ROADMAP.md`, Milestones 8–10):
   Settings localized to Spanish. *Remaining* — externalize the rest of the views, dialogs
   and ViewModel messages.
 
+## [1.0.1] — 2026-06-03
+
+Bug-fix release. Bible import is now resilient to real-world data files.
+
+### Fixed
+- **Bible import no longer crashes on split verses.** Exchange formats (Zefania, OSIS,
+  USFX, …) often emit one logical verse as several elements sharing a verse number;
+  these previously tripped a `UNIQUE` constraint and aborted the whole import (e.g. the
+  Reina Valera RVA). Repeated `(Book, Chapter, Verse)` keys are now merged across all
+  eight importers.
+- **Imported verses are no longer unreadable.** OSIS/USFX files without a book `<title>`
+  stored the book under its canonical name ("Judges") but the verses under the raw book
+  id ("Judg"), so lookups found nothing. The book row and its verses now resolve the same
+  name.
+- Added a post-import check that warns when any book has no matching verses, surfacing
+  this class of mismatch at import time.
+
+> Existing Bibles imported with a prior version should be deleted and re-imported to
+> pick up these fixes.
+
 ## [1.0.0] — 2026-06-01
 
 First public release. Free, fully offline, SQLite-only worship presentation for Windows 10+.
