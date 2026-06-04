@@ -39,6 +39,12 @@ public sealed class ProjectionService : IProjectionService
     public string? CurrentAnnouncement         => _currentAnnouncement;
     public bool   IsAnnouncementActive         => _currentAnnouncement is not null;
 
+    private bool                _isVideoSlideActive;
+    private MediaTransportState _mediaTransport = MediaTransportState.Empty;
+
+    public bool                IsVideoSlideActive => _isVideoSlideActive;
+    public MediaTransportState MediaTransport     => _mediaTransport;
+
     public event EventHandler<Slide?>? SlideChanged;
     public event EventHandler<bool>?   ProjectionStateChanged;
     public event EventHandler?         ThemeChanged;
@@ -47,6 +53,10 @@ public sealed class ProjectionService : IProjectionService
     public event EventHandler?         ServiceScheduleActiveChanged;
     public event EventHandler?         NextScheduleItemPreviewChanged;
     public event EventHandler?         AnnouncementChanged;
+    public event EventHandler?              VideoSlideActiveChanged;
+    public event EventHandler?              MediaTransportChanged;
+    public event EventHandler<MediaCommand>? MediaCommandRequested;
+    public event EventHandler<TimeSpan>?     MediaSeekRequested;
 
     public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel)
     {
@@ -248,6 +258,69 @@ public sealed class ProjectionService : IProjectionService
         RaiseSafe(NextScheduleItemPreviewChanged);
     }
 
+    public void RequestMediaCommand(MediaCommand command)
+    {
+        if (!_isVideoSlideActive) return;
+        RaiseMediaCommand(command);
+    }
+
+    public void RequestMediaSeek(TimeSpan delta)
+    {
+        if (!_isVideoSlideActive) return;
+        RaiseMediaSeek(delta);
+    }
+
+    public void ReportMediaTransport(MediaTransportState state)
+    {
+        if (_mediaTransport.Equals(state)) return;
+        _mediaTransport = state;
+        RaiseSafe(MediaTransportChanged);
+    }
+
+    /// <summary>
+    /// Recomputes <see cref="IsVideoSlideActive"/> for the slide about to be shown and resets the
+    /// transport snapshot. The projection window republishes live values once the video opens.
+    /// </summary>
+    private void UpdateMediaForSlide(Slide? slide)
+    {
+        var active = slide is { Type: SlideType.Media } && MediaFormats.IsVideo(slide.MediaPath);
+        if (active != _isVideoSlideActive)
+        {
+            _isVideoSlideActive = active;
+            RaiseSafe(VideoSlideActiveChanged);
+        }
+
+        if (!_mediaTransport.Equals(MediaTransportState.Empty))
+        {
+            _mediaTransport = MediaTransportState.Empty;
+            RaiseSafe(MediaTransportChanged);
+        }
+    }
+
+    private void RaiseMediaCommand(MediaCommand command)
+    {
+        var handlers = MediaCommandRequested?.GetInvocationList();
+        if (handlers is null) return;
+
+        foreach (var handler in handlers)
+        {
+            try { ((EventHandler<MediaCommand>)handler)(this, command); }
+            catch (Exception ex) { _logger.LogError(ex, "Unhandled exception in MediaCommandRequested subscriber"); }
+        }
+    }
+
+    private void RaiseMediaSeek(TimeSpan delta)
+    {
+        var handlers = MediaSeekRequested?.GetInvocationList();
+        if (handlers is null) return;
+
+        foreach (var handler in handlers)
+        {
+            try { ((EventHandler<TimeSpan>)handler)(this, delta); }
+            catch (Exception ex) { _logger.LogError(ex, "Unhandled exception in MediaSeekRequested subscriber"); }
+        }
+    }
+
     private void RaiseSafe(EventHandler? @event)
     {
         var handlers = @event?.GetInvocationList();
@@ -262,6 +335,9 @@ public sealed class ProjectionService : IProjectionService
 
     private void RaiseSlideChanged(Slide? slide)
     {
+        // Refresh media-transport state before notifying so subscribers see a consistent view.
+        UpdateMediaForSlide(slide);
+
         // Iterate the invocation list individually so one throwing subscriber
         // cannot prevent later subscribers from receiving the event.
         var handlers = SlideChanged?.GetInvocationList();

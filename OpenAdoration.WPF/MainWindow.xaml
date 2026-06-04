@@ -171,6 +171,45 @@
                             Margin="0,0,10,0"
                             Visibility="{Binding IsScreenOpen, Converter={StaticResource BoolToVis}}" />
 
+                    <!-- Video transport — only while a video slide is projected (M10.5) -->
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="0,0,10,0"
+                                Visibility="{Binding IsVideoSlideActive, Converter={StaticResource BoolToVis}}">
+                        <Button Content="⏮"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding MediaRestartCommand}"
+                                ToolTip="{loc:Loc Projection_Restart}"
+                                Margin="0,0,4,0" />
+                        <Button Content="⏪"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding MediaBackCommand}"
+                                ToolTip="{loc:Loc Projection_Back}"
+                                Margin="0,0,4,0" />
+                        <Button Content="{Binding MediaPlayPauseGlyph}"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding MediaTogglePlayPauseCommand}"
+                                ToolTip="{loc:Loc Projection_PlayPause}"
+                                Margin="0,0,4,0" />
+                        <Button Content="⏩"
+                                Style="{StaticResource ProjectionButton}"
+                                Command="{Binding MediaForwardCommand}"
+                                ToolTip="{loc:Loc Projection_Forward}"
+                                Margin="0,0,6,0" />
+                        <ProgressBar Width="120"
+                                     Height="6"
+                                     VerticalAlignment="Center"
+                                     Minimum="0"
+                                     Maximum="{Binding MediaDurationSeconds}"
+                                     Value="{Binding MediaPositionSeconds}"
+                                     Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding MediaTimeText}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0" />
+                    </StackPanel>
+
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
                         <Button Content="◀"

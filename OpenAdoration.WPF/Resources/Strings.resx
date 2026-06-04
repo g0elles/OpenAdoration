@@ -80,6 +80,10 @@
   <data name="Projection_CloseScreen" xml:space="preserve"><value>Close Screen</value></data>
   <data name="Projection_Blank" xml:space="preserve"><value>Blank</value></data>
   <data name="Projection_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Projection_Restart" xml:space="preserve"><value>Restart video</value></data>
+  <data name="Projection_Back" xml:space="preserve"><value>Back 10 seconds</value></data>
+  <data name="Projection_PlayPause" xml:space="preserve"><value>Play / Pause</value></data>
+  <data name="Projection_Forward" xml:space="preserve"><value>Forward 10 seconds</value></data>
 
   <data name="About_Tagline" xml:space="preserve"><value>Free open-source worship presentation software</value></data>
   <data name="About_ShortcutsHeader" xml:space="preserve"><value>KEYBOARD SHORTCUTS</value></data>

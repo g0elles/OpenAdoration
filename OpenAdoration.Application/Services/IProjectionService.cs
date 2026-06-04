@@ -99,4 +99,33 @@ public interface IProjectionService
 
     /// <summary>Called by ServiceScheduleViewModel after loading each schedule item.</summary>
     void SetNextScheduleItemPreview(Slide? slide);
+
+    // ── Media transport (video media slides, M10.5) ──────────────────────────────
+
+    /// <summary>True when the current slide is a playable video file.</summary>
+    bool IsVideoSlideActive { get; }
+
+    /// <summary>Latest transport snapshot (playing/position/duration) reported by the projection window.</summary>
+    MediaTransportState MediaTransport { get; }
+
+    /// <summary>Fires when <see cref="IsVideoSlideActive"/> changes.</summary>
+    event EventHandler? VideoSlideActiveChanged;
+
+    /// <summary>Fires when <see cref="MediaTransport"/> changes.</summary>
+    event EventHandler? MediaTransportChanged;
+
+    /// <summary>Raised for the projection window to apply a transport command to the video.</summary>
+    event EventHandler<MediaCommand>? MediaCommandRequested;
+
+    /// <summary>Raised for the projection window to seek the video by a relative delta.</summary>
+    event EventHandler<TimeSpan>? MediaSeekRequested;
+
+    /// <summary>Operator transport command (play/pause/restart). No-op unless a video slide is active.</summary>
+    void RequestMediaCommand(MediaCommand command);
+
+    /// <summary>Operator relative seek (e.g. ±10s). No-op unless a video slide is active.</summary>
+    void RequestMediaSeek(TimeSpan delta);
+
+    /// <summary>Called by the projection window to publish the live transport snapshot.</summary>
+    void ReportMediaTransport(MediaTransportState state);
 }

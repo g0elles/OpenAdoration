@@ -40,6 +40,18 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private string _announcementText = string.Empty;
     [ObservableProperty] private bool   _isAnnouncementActive;
 
+    // Video transport bar — visible only when the current slide is a video (M10.5)
+    [ObservableProperty] private bool   _isVideoSlideActive;
+    [ObservableProperty] private bool   _isMediaPlaying;
+    [ObservableProperty] private string _mediaPlayPauseGlyph = PlayGlyph;
+    [ObservableProperty] private double _mediaDurationSeconds;
+    [ObservableProperty] private double _mediaPositionSeconds;
+    [ObservableProperty] private string _mediaTimeText = "0:00 / 0:00";
+
+    private const string PlayGlyph  = "▶";
+    private const string PauseGlyph = "⏸";
+    private static readonly TimeSpan SeekStep = TimeSpan.FromSeconds(10);
+
     public MainViewModel(
         IServiceProvider services,
         IProjectionService projectionService,
@@ -54,6 +66,8 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.SlideChanged           += OnSlideChanged;
         _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
+        _projectionService.VideoSlideActiveChanged += OnVideoSlideActiveChanged;
+        _projectionService.MediaTransportChanged   += OnMediaTransportChanged;
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────
@@ -160,6 +174,41 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _logger.LogInformation("Projection stopped by operator");
     }
 
+    // ── Video transport (M10.5) ───────────────────────────────────────────────
+
+    [RelayCommand]
+    private void MediaTogglePlayPause() => _projectionService.RequestMediaCommand(MediaCommand.TogglePlayPause);
+
+    [RelayCommand]
+    private void MediaRestart() => _projectionService.RequestMediaCommand(MediaCommand.Restart);
+
+    [RelayCommand]
+    private void MediaBack() => _projectionService.RequestMediaSeek(-SeekStep);
+
+    [RelayCommand]
+    private void MediaForward() => _projectionService.RequestMediaSeek(SeekStep);
+
+    private void OnVideoSlideActiveChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            IsVideoSlideActive = _projectionService.IsVideoSlideActive);
+    }
+
+    private void OnMediaTransportChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            var t = _projectionService.MediaTransport;
+            IsMediaPlaying        = t.IsPlaying;
+            MediaPlayPauseGlyph   = t.IsPlaying ? PauseGlyph : PlayGlyph;
+            MediaDurationSeconds  = t.Duration.TotalSeconds;
+            MediaPositionSeconds  = t.Position.TotalSeconds;
+            MediaTimeText         = $"{Format(t.Position)} / {Format(t.Duration)}";
+        });
+    }
+
+    private static string Format(TimeSpan t) => $"{(int)t.TotalMinutes}:{t.Seconds:00}";
+
     // ── Live announcement ─────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -250,6 +299,8 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.SlideChanged           -= OnSlideChanged;
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
+        _projectionService.VideoSlideActiveChanged -= OnVideoSlideActiveChanged;
+        _projectionService.MediaTransportChanged   -= OnMediaTransportChanged;
         _currentScope?.Dispose();
         _liveServiceScope?.Dispose();
         _currentScope     = null;

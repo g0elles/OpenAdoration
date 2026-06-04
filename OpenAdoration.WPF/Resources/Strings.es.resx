@@ -80,6 +80,10 @@
   <data name="Projection_CloseScreen" xml:space="preserve"><value>Cerrar pantalla</value></data>
   <data name="Projection_Blank" xml:space="preserve"><value>Negro</value></data>
   <data name="Projection_Stop" xml:space="preserve"><value>Detener</value></data>
+  <data name="Projection_Restart" xml:space="preserve"><value>Reiniciar video</value></data>
+  <data name="Projection_Back" xml:space="preserve"><value>Retroceder 10 segundos</value></data>
+  <data name="Projection_PlayPause" xml:space="preserve"><value>Reproducir / Pausar</value></data>
+  <data name="Projection_Forward" xml:space="preserve"><value>Avanzar 10 segundos</value></data>
 
   <data name="About_Tagline" xml:space="preserve"><value>Software libre y de código abierto para presentación de adoración</value></data>
   <data name="About_ShortcutsHeader" xml:space="preserve"><value>ATAJOS DE TECLADO</value></data>

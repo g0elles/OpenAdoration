@@ -60,6 +60,8 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.ThemeChanged           += OnThemeChanged;
         _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
+        _projectionService.MediaCommandRequested  += OnMediaCommandRequested;
+        _projectionService.MediaSeekRequested     += OnMediaSeekRequested;
     }
 
     // -- Public API ------------------------------------------------------------
@@ -74,6 +76,11 @@ public partial class ProjectionWindow : Window
     {
         if (IsVisible) return;
 
+        var screens = System.Windows.Forms.Screen.AllScreens;
+        _logger.LogInformation("EnsureShown: {Count} screen(s) detected -- {Screens}",
+            screens.Length,
+            string.Join(", ", screens.Select(s => $"{s.DeviceName} {s.Bounds.Width}x{s.Bounds.Height}{(s.Primary ? " (primary)" : string.Empty)}")));
+
         var secondary = ScreenHelper.GetSecondaryScreen();
 
         if (secondary is not null)
@@ -84,7 +91,10 @@ public partial class ProjectionWindow : Window
         }
         else
         {
-            _logger.LogWarning("No secondary screen -- opening projection as a floating window");
+            _logger.LogWarning(
+                "No secondary (non-primary) screen detected -- opening projection as a floating " +
+                "preview window. If a projector is connected, set Windows display mode to " +
+                "\"Extend\" (not \"Duplicate\").");
             WindowStyle = WindowStyle.SingleBorderWindow;
             ResizeMode  = ResizeMode.CanResize;
             Title       = "Projection Preview";
@@ -101,10 +111,19 @@ public partial class ProjectionWindow : Window
 
     private void ShowOnSecondaryScreen(System.Windows.Forms.Screen screen)
     {
-        _logger.LogInformation("Projecting on: {Screen}", screen.DeviceName);
-        ScreenHelper.PositionOnScreen(this, screen);
-        WindowState = WindowState.Maximized;
+        _logger.LogInformation("Projecting on: {Screen} ({Width}x{Height})",
+            screen.DeviceName, screen.Bounds.Width, screen.Bounds.Height);
+
+        // Show the window FIRST so it has a realized HWND, then drive its position with
+        // physical-pixel SetWindowPos. Setting WindowState.Maximized before Show() (the
+        // previous approach) maximizes onto the PRIMARY monitor regardless of Left/Top, and
+        // device-pixel Left/Top are wrong under display scaling — both put the projection on
+        // the operator's screen. A borderless window sized to the exact monitor bounds is
+        // full-screen without needing Maximized.
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        WindowState           = WindowState.Normal;
         Show();
+        ScreenHelper.PositionOnScreen(this, screen);
     }
 
     // -- Projection service callbacks -----------------------------------------
@@ -336,9 +355,112 @@ public partial class ProjectionWindow : Window
 
     private void StopContentVideo()
     {
+        StopMediaPositionTimer();
+        _contentVideoPlaying = false;
         ContentVideo.Stop();
         ContentVideo.Source     = null;
         ContentVideo.Visibility = Visibility.Collapsed;
+    }
+
+    // -- Media transport (M10.5) -----------------------------------------------
+
+    // True while the projected content video is playing (vs. paused). Drives the
+    // play/pause toggle and the state reported back to the operator UI.
+    private bool _contentVideoPlaying;
+    private System.Windows.Threading.DispatcherTimer? _mediaPositionTimer;
+
+    private void OnMediaCommandRequested(object? sender, MediaCommand command)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            if (ContentVideo.Source is null) return;
+            switch (command)
+            {
+                case MediaCommand.Play:            PlayContentVideo();  break;
+                case MediaCommand.Pause:           PauseContentVideo(); break;
+                case MediaCommand.TogglePlayPause:
+                    if (_contentVideoPlaying) PauseContentVideo(); else PlayContentVideo();
+                    break;
+                case MediaCommand.Restart:
+                    ContentVideo.Position = TimeSpan.Zero;
+                    PlayContentVideo();
+                    break;
+            }
+            ReportMediaTransport();
+        });
+    }
+
+    private void OnMediaSeekRequested(object? sender, TimeSpan delta)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            if (ContentVideo.Source is null) return;
+
+            var duration = ContentVideo.NaturalDuration.HasTimeSpan
+                ? ContentVideo.NaturalDuration.TimeSpan
+                : TimeSpan.Zero;
+
+            var target = ContentVideo.Position + delta;
+            if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+            if (duration > TimeSpan.Zero && target > duration) target = duration;
+
+            ContentVideo.Position = target;
+            ReportMediaTransport();
+        });
+    }
+
+    private void PlayContentVideo()
+    {
+        ContentVideo.Play();
+        _contentVideoPlaying = true;
+        StartMediaPositionTimer();
+    }
+
+    private void PauseContentVideo()
+    {
+        ContentVideo.Pause();
+        _contentVideoPlaying = false;
+    }
+
+    // Loops the projected content video and keeps the operator's progress bar accurate.
+    private void OnContentVideoEnded(object sender, RoutedEventArgs e)
+    {
+        ContentVideo.Position = TimeSpan.Zero;
+        if (_contentVideoPlaying) ContentVideo.Play();
+        ReportMediaTransport();
+    }
+
+    private void OnContentVideoOpened(object sender, RoutedEventArgs e) => ReportMediaTransport();
+
+    private void StartMediaPositionTimer()
+    {
+        if (_mediaPositionTimer is not null) return;
+        _mediaPositionTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _mediaPositionTimer.Tick += OnMediaPositionTick;
+        _mediaPositionTimer.Start();
+    }
+
+    private void StopMediaPositionTimer()
+    {
+        if (_mediaPositionTimer is null) return;
+        _mediaPositionTimer.Stop();
+        _mediaPositionTimer.Tick -= OnMediaPositionTick;
+        _mediaPositionTimer = null;
+    }
+
+    private void OnMediaPositionTick(object? sender, EventArgs e) => ReportMediaTransport();
+
+    private void ReportMediaTransport()
+    {
+        var duration = ContentVideo.NaturalDuration.HasTimeSpan
+            ? ContentVideo.NaturalDuration.TimeSpan
+            : TimeSpan.Zero;
+
+        _projectionService.ReportMediaTransport(
+            new MediaTransportState(_contentVideoPlaying, ContentVideo.Position, duration));
     }
 
     // Loops the video background by seeking back to the start when it finishes.
@@ -347,6 +469,29 @@ public partial class ProjectionWindow : Window
         ThemeBackgroundVideo.Position = TimeSpan.Zero;
         ThemeBackgroundVideo.Play();
     }
+
+    // WPF MediaElement decodes via Windows Media Foundation; an unsupported codec/container
+    // fails here (otherwise silently). Logging e.ErrorException captures the real cause
+    // (e.g. HRESULT 0xC00D5212 "no decoder"), and we degrade gracefully instead of going black.
+    private void OnContentVideoFailed(object sender, System.Windows.ExceptionRoutedEventArgs e)
+    {
+        _logger.LogError(e.ErrorException,
+            "Projection video failed to play -- likely an unsupported codec/container. Showing blank. File: '{FileName}'",
+            VideoSourceName(ContentVideo));
+        ShowBlankOverlay();
+    }
+
+    private void OnThemeVideoFailed(object sender, System.Windows.ExceptionRoutedEventArgs e)
+    {
+        _logger.LogWarning(e.ErrorException,
+            "Theme background video failed to play -- likely an unsupported codec/container. Falling back to image/color. File: '{FileName}'",
+            VideoSourceName(ThemeBackgroundVideo));
+        StopThemeVideo();
+        ApplyThemeImage();
+    }
+
+    private static string VideoSourceName(System.Windows.Controls.MediaElement element) =>
+        element.Source is null ? "(none)" : Path.GetFileName(element.Source.LocalPath);
 
     private static System.Windows.TextAlignment ParseTextAlignment(string? s) => s switch
     {
@@ -367,10 +512,6 @@ public partial class ProjectionWindow : Window
             return new SolidColorBrush(System.Windows.Media.Colors.White);
         }
     }
-
-    private static readonly HashSet<string> VideoExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-            { ".mp4", ".avi", ".wmv", ".mov", ".mkv", ".m4v" };
 
     // -- Rendering -------------------------------------------------------------
 
@@ -476,7 +617,7 @@ public partial class ProjectionWindow : Window
             return;
         }
 
-        if (VideoExtensions.Contains(Path.GetExtension(path)))
+        if (MediaFormats.IsVideo(path))
             ShowVideoMedia(path);
         else
             ShowImageMedia(path);
@@ -490,6 +631,8 @@ public partial class ProjectionWindow : Window
             ContentVideo.Source     = new Uri(path, UriKind.Absolute);
             ContentVideo.Visibility = Visibility.Visible;
             ContentVideo.Play();
+            _contentVideoPlaying = true;
+            StartMediaPositionTimer();
         }
         catch (Exception ex)
         {
@@ -617,6 +760,9 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.ThemeChanged           -= OnThemeChanged;
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
+        _projectionService.MediaCommandRequested  -= OnMediaCommandRequested;
+        _projectionService.MediaSeekRequested     -= OnMediaSeekRequested;
+        StopMediaPositionTimer();
         base.OnClosed(e);
     }
 }

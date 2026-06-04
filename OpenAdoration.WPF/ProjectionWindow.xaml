@@ -24,7 +24,8 @@
                       Stretch="UniformToFill"
                       Visibility="Collapsed"
                       IsMuted="True"
-                      MediaEnded="OnThemeVideoEnded" />
+                      MediaEnded="OnThemeVideoEnded"
+                      MediaFailed="OnThemeVideoFailed" />
 
         <!-- Foreground content layers — opacity-animated on slide change for a fade transition.
              Theme background layers stay outside so they don't flicker between slides. -->
@@ -43,7 +44,10 @@
                       Stretch="Uniform"
                       VerticalAlignment="Center"
                       HorizontalAlignment="Center"
-                      Visibility="Collapsed" />
+                      Visibility="Collapsed"
+                      MediaOpened="OnContentVideoOpened"
+                      MediaEnded="OnContentVideoEnded"
+                      MediaFailed="OnContentVideoFailed" />
 
         <!-- 3-zone text layer: Header / Body / Footer -->
         <Grid x:Name="TextZoneGrid" Visibility="Collapsed">
