@@ -22,6 +22,29 @@ Target themes (see `ROADMAP.md`, Milestones 8–10):
   Settings localized to Spanish. *Remaining* — externalize the rest of the views, dialogs
   and ViewModel messages.
 
+## [1.1.0] — 2026-06-03
+
+Projection reliability and video controls.
+
+### Added
+- **Video transport controls.** When a video media slide is projected, the control bar
+  shows restart, back 10 s, play/pause, forward 10 s, a progress bar, and a time readout.
+
+### Fixed
+- **Multi-monitor projection placement.** The projection window now opens reliably
+  full-screen on the secondary monitor (positioned by physical pixels), instead of
+  landing on the operator's screen under display scaling or a maximize-before-show race.
+  When no second screen is detected it logs a clear hint to set Windows to "Extend".
+- **Silent video failures are now logged.** An unsupported video codec is recorded with
+  its underlying error and shows blank, instead of a silent black screen.
+
+### Changed
+- The UI is temporarily locked to English until the interface is fully translated; the
+  language selector offers only English for now.
+
+> Note: HEVC/H.265 video (e.g. iPhone `.MOV`) still requires a Windows HEVC decoder to
+> play; broad built-in codec support is planned for a later release.
+
 ## [1.0.1] — 2026-06-03
 
 Bug-fix release. Bible import is now resilient to real-world data files.

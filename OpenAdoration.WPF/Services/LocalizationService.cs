@@ -12,24 +12,30 @@ namespace OpenAdoration.WPF.Services;
 /// </summary>
 public sealed class LocalizationService : ILocalizationService
 {
+    // Temporary lock to English until the UI is fully translated (M11). While false, the
+    // app ignores saved/OS culture and offers only English, so a partially-translated UI
+    // is never shown. Flip to true once every view/dialog/VM string is localized.
+    private const bool MultiLanguageEnabled = false;
+
     private static readonly LanguageOption[] Languages =
     {
         new("en", "English"),
         new("es", "Español"),
     };
 
-    public IReadOnlyList<LanguageOption> AvailableLanguages => Languages;
+    public IReadOnlyList<LanguageOption> AvailableLanguages =>
+        MultiLanguageEnabled ? Languages : Languages.Where(l => l.Code == "en").ToList();
 
     public string CurrentLanguageCode =>
         TranslationSource.Instance.CurrentCulture.TwoLetterISOLanguageName;
 
     public LocalizationService(IAppSettingsService settings)
     {
-        Apply(ResolveStartupCode(settings.Current.UiCulture));
+        Apply(MultiLanguageEnabled ? ResolveStartupCode(settings.Current.UiCulture) : "en");
     }
 
     public void SetLanguage(string code) =>
-        Apply(IsSupported(code) ? code : "en");
+        Apply(MultiLanguageEnabled && IsSupported(code) ? code : "en");
 
     private static void Apply(string code)
     {
