@@ -15,6 +15,7 @@ public sealed class ProjectionService : IProjectionService
     private int _currentIndex = -1;
     private bool _isProjecting;
     private string _contextLabel = string.Empty;
+    private string? _contextKey;
 
     public ProjectionService(ILogger<ProjectionService> logger)
     {
@@ -58,7 +59,7 @@ public sealed class ProjectionService : IProjectionService
     public event EventHandler<MediaCommand>? MediaCommandRequested;
     public event EventHandler<TimeSpan>?     MediaSeekRequested;
 
-    public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel)
+    public void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel, string? contextKey = null)
     {
         ArgumentNullException.ThrowIfNull(slides);
         ArgumentException.ThrowIfNullOrWhiteSpace(contextLabel);
@@ -74,6 +75,7 @@ public sealed class ProjectionService : IProjectionService
         _slides = [.. slides];
         _currentIndex = 0;
         _contextLabel = contextLabel;
+        _contextKey = contextKey;
 
         if (!_isProjecting)
         {
@@ -83,6 +85,29 @@ public sealed class ProjectionService : IProjectionService
         }
 
         RaiseSlideChanged(CurrentSlide);
+    }
+
+    public bool TryUpdateSlides(string contextKey, IReadOnlyList<Slide> slides, string contextLabel)
+    {
+        ArgumentNullException.ThrowIfNull(slides);
+        ArgumentException.ThrowIfNullOrWhiteSpace(contextKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(contextLabel);
+
+        if (!_isProjecting || _contextKey != contextKey)
+            return false;
+
+        if (slides.Count == 0)
+        {
+            _logger.LogWarning("TryUpdateSlides for '{Context}' produced no slides — keeping current projection", contextLabel);
+            return false;
+        }
+
+        _slides = [.. slides];
+        _currentIndex = Math.Clamp(_currentIndex, 0, _slides.Count - 1);
+        _contextLabel = contextLabel;
+        _logger.LogInformation("Live-updated {Count} slide(s) for '{Context}' at slide {Index}", _slides.Count, contextLabel, _currentIndex + 1);
+        RaiseSlideChanged(CurrentSlide);
+        return true;
     }
 
     public void Next()
@@ -193,6 +218,7 @@ public sealed class ProjectionService : IProjectionService
         _currentIndex = -1;
         _isProjecting = false;
         _contextLabel = string.Empty;
+        _contextKey = null;
 
         var wasScheduleActive           = _isServiceScheduleActive;
         var wasAnnouncementActive       = _currentAnnouncement is not null;

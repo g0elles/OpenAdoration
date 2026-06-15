@@ -14,6 +14,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private readonly ISongService            _songService;
     private readonly IProjectionService      _projectionService;
     private readonly IDialogService          _dialogService;
+    private readonly ISongLibraryNotifier    _songNotifier;
     private readonly ILogger<SongsViewModel> _logger;
 
     // Child VM -- shares the same DI scope, created once per navigation to Songs
@@ -35,12 +36,14 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         ISongService            songService,
         IProjectionService      projectionService,
         IDialogService          dialogService,
+        ISongLibraryNotifier    songNotifier,
         AddEditSongViewModel    editViewModel,
         ILogger<SongsViewModel> logger)
     {
         _songService       = songService;
         _projectionService = projectionService;
         _dialogService     = dialogService;
+        _songNotifier      = songNotifier;
         _logger            = logger;
         EditViewModel      = editViewModel;
 
@@ -211,7 +214,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
             SetError("This song has no lyrics to project.");
             return;
         }
-        _projectionService.LoadSlides(slides, song.Title);
+        _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));
         _logger.LogInformation("Projecting song: {Title}", song.Title);
     }
 
@@ -220,7 +223,21 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private async void OnSongSaved(object? sender, Song song)
     {
         IsEditing = false;
+        UpdateLiveProjection(song);
+        // Tell other live consumers (e.g. a service projecting this song) to re-render too.
+        _songNotifier.NotifySongSaved(song.Id);
         await LoadAsync();
+    }
+
+    // If this exact song is on the projector standalone right now, push the edits live
+    // (G9 subscribers re-render). Service-driven projection is handled by ServiceScheduleViewModel
+    // via ISongLibraryNotifier, since it must re-apply the item's theme + verse-order override.
+    private void UpdateLiveProjection(Song song)
+    {
+        if (!_projectionService.IsProjecting) return;
+        var slides = _songService.GenerateSlides(song);
+        if (_projectionService.TryUpdateSlides(ProjectionContextKeys.Song(song.Id), slides, song.Title))
+            _logger.LogInformation("Live-updated projection for edited song {SongId}", song.Id);
     }
 
     private void OnEditCancelled(object? sender, EventArgs e)

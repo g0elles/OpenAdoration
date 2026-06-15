@@ -157,6 +157,7 @@ public partial class App : WpfApp
     private static void RegisterViewModels(IServiceCollection services)
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
+        services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
         services.AddSingleton<MainViewModel>();

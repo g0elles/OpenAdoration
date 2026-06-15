@@ -25,8 +25,21 @@ public interface IProjectionService
     /// <summary>Fires when the active theme may have changed (e.g. theme was edited).</summary>
     event EventHandler? ThemeChanged;
 
-    /// <summary>Loads a set of slides and immediately shows the first one.</summary>
-    void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel);
+    /// <summary>
+    /// Loads a set of slides and immediately shows the first one.
+    /// <paramref name="contextKey"/> is an opaque identity for the projected content
+    /// (e.g. <c>"song:42"</c>) so the source can later live-update it via
+    /// <see cref="TryUpdateSlides"/>. Null means the content cannot be live-updated.
+    /// </summary>
+    void LoadSlides(IReadOnlyList<Slide> slides, string contextLabel, string? contextKey = null);
+
+    /// <summary>
+    /// Replaces the projected slides in place — preserving the current slide position
+    /// (clamped to the new range) — but only when projection is active and its
+    /// <paramref name="contextKey"/> matches the content loaded via <see cref="LoadSlides"/>.
+    /// Used to reflect live edits to the item currently on screen. Returns true when applied.
+    /// </summary>
+    bool TryUpdateSlides(string contextKey, IReadOnlyList<Slide> slides, string contextLabel);
 
     void Next();
     void Previous();

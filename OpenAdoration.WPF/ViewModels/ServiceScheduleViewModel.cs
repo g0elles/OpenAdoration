@@ -19,6 +19,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService          _projectionService;
     private readonly IDialogService              _dialogService;
     private readonly IAppSettingsService         _appSettings;
+    private readonly ISongLibraryNotifier        _songNotifier;
     private readonly ILogger<ServiceScheduleViewModel> _logger;
 
     // ── Service list ─────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IProjectionService          projectionService,
         IDialogService              dialogService,
         IAppSettingsService         appSettings,
+        ISongLibraryNotifier        songNotifier,
         ILogger<ServiceScheduleViewModel> logger)
     {
         _serviceService    = serviceService;
@@ -126,12 +128,14 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _projectionService = projectionService;
         _dialogService     = dialogService;
         _appSettings       = appSettings;
+        _songNotifier      = songNotifier;
         _logger            = logger;
 
         _projectionService.ProjectionStateChanged        += OnProjectionStateChanged;
         _projectionService.SlideChanged                  += OnSlideChangedForAutoAdvance;
         _projectionService.NextScheduleItemRequested     += OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested += OnPrevItemRequested;
+        _songNotifier.SongSaved                          += OnSongLibrarySaved;
     }
 
     // App-wide default applied to newly added items; null = manual.
@@ -805,7 +809,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                 {
                     var slides = _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride);
                     if (slides.Count == 0) { SetError("This song has no lyrics to project."); return; }
-                    _projectionService.LoadSlides(slides, songItem.Song.Title);
+                    _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId));
                     break;
                 }
 
@@ -893,6 +897,60 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         if (!IsLiveMode || !CanPrevItem()) return;
         System.Windows.Application.Current?.Dispatcher.Invoke(PrevItem);
     }
+
+    // A library song was edited. Refresh the cached entity on EVERY schedule item that uses it
+    // (the items were loaded once when the service opened, so queued items would otherwise project
+    // stale content), then live-update the projector if the song is the current or next item.
+    private async void OnSongLibrarySaved(object? sender, int songId)
+    {
+        if (SongItems(songId).Count == 0) return;
+        try
+        {
+            var fresh = await _songService.GetByIdAsync(songId);
+            if (fresh is null) return;
+
+            foreach (var item in SongItems(songId))
+                item.Song = fresh; // queued items pick this up when the operator reaches them
+
+            if (IsLiveMode) ApplyEditedSongToLiveProjection(songId, fresh);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to apply edited song {SongId} to the service schedule", songId);
+        }
+    }
+
+    private List<SongScheduleItem> SongItems(int songId) =>
+        ScheduleItems.Select(vm => vm.Item).OfType<SongScheduleItem>().Where(s => s.SongId == songId).ToList();
+
+    private void ApplyEditedSongToLiveProjection(int songId, Song fresh)
+    {
+        // On screen now → swap slides in place, keeping position + this item's theme/verse order.
+        if (CurrentLiveSong(songId) is { } current)
+        {
+            var slides = _songService.GenerateSlides(fresh, current.ThemeId, current.VerseOrderOverride);
+            if (slides.Count > 0)
+                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId), slides, fresh.Title);
+        }
+
+        // Queued as the next item → refresh the stage view's UP NEXT preview.
+        if (IsNextLiveSong(songId))
+            _ = RefreshNextItemPreviewAsync();
+    }
+
+    private SongScheduleItem? CurrentLiveSong(int songId) =>
+        CurrentLiveIndex >= 0 && CurrentLiveIndex < ScheduleItems.Count
+        && ScheduleItems[CurrentLiveIndex].Item is SongScheduleItem s && s.SongId == songId ? s : null;
+
+    private bool IsNextLiveSong(int songId)
+    {
+        var nextIdx = CurrentLiveIndex + 1;
+        return nextIdx < ScheduleItems.Count
+            && ScheduleItems[nextIdx].Item is SongScheduleItem s && s.SongId == songId;
+    }
+
+    private async Task RefreshNextItemPreviewAsync() =>
+        _projectionService.SetNextScheduleItemPreview(await GetNextItemFirstSlideAsync());
 
     // ── Auto-advance timer ────────────────────────────────────────────────────
 
@@ -998,6 +1056,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _projectionService.SlideChanged                  -= OnSlideChangedForAutoAdvance;
         _projectionService.NextScheduleItemRequested     -= OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested -= OnPrevItemRequested;
+        _songNotifier.SongSaved                          -= OnSongLibrarySaved;
         foreach (var vm in ScheduleItems)
             UnsubscribeItemEvents(vm);
     }
