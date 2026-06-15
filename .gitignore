@@ -68,3 +68,9 @@ desktop.ini
 
 ## Local Bible test files
 Bibles/
+
+## Internal dev docs — kept locally, never published
+/CLAUDE.md
+/AGENTS.md
+/SESSION_STATUS.md
+/VIDEOPSALM_REFERENCE.md
