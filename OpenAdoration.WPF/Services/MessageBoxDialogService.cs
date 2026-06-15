@@ -15,4 +15,8 @@ public sealed class MessageBoxDialogService : IDialogService
 
         return result == MessageBoxResult.Yes;
     }
+
+    public void Inform(string message, string title = "OpenAdoration") =>
+        System.Windows.MessageBox.Show(
+            message, title, MessageBoxButton.OK, MessageBoxImage.Information);
 }

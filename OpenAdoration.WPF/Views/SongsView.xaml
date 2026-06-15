@@ -47,7 +47,7 @@
                                 Command="{Binding ImportSongCommand}"
                                 Padding="10,6"
                                 Margin="0,0,6,0"
-                                ToolTip="Import OpenLyrics XML file" />
+                                ToolTip="Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd, plain text)" />
                         <Button Grid.Column="2"
                                 Content="+ New"
                                 Style="{StaticResource PrimaryButton}"
@@ -187,13 +187,21 @@
 
                                             <!-- Title + action buttons -->
                                             <Grid Grid.Row="0">
-                                                <TextBlock Text="{Binding Title}"
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Title}"
+                                                           ToolTip="{Binding Title}"
                                                            Foreground="{StaticResource TextPrimaryBrush}"
                                                            FontSize="13"
                                                            FontWeight="SemiBold"
                                                            VerticalAlignment="Center"
+                                                           Margin="0,0,6,0"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <StackPanel Orientation="Horizontal"
+                                                <StackPanel Grid.Column="1"
+                                                            Orientation="Horizontal"
                                                             HorizontalAlignment="Right">
                                                     <Button Content="▶"
                                                             Style="{StaticResource IconButton}"

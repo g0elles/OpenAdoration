@@ -173,22 +173,33 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         IsBusy = true;
         ClearError();
 
+        int imported;
         try
         {
-            var song = SongFormatDispatcher.Import(dialog.FileName);
-            await _songService.CreateAsync(song);
-            _logger.LogInformation("Imported song '{Title}' from {File}", song.Title, dialog.FileName);
-            await LoadAsync();
+            var songs = SongFormatDispatcher.ImportMany(dialog.FileName);
+            foreach (var song in songs)
+                await _songService.CreateAsync(song);
+            imported = songs.Count;
+            _logger.LogInformation("Imported {Count} song(s) from {File}", imported, dialog.FileName);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to import song from {File}", dialog.FileName);
-            SetError("Import failed. Supported formats: OpenLyrics XML, OpenSong, plain text.");
+            _dialogService.Inform(
+                "Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), plain text.",
+                "Import Songs");
+            return;
         }
         finally
         {
             IsBusy = false;
         }
+
+        // Reached only on success — IsBusy already reset by finally, so LoadAsync can run (G4).
+        await LoadAsync();
+        _dialogService.Inform(
+            imported == 1 ? "Imported 1 song." : $"Imported {imported} songs.",
+            "Import Songs");
     }
 
     [RelayCommand]

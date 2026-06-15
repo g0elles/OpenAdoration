@@ -1,26 +1,44 @@
 using System.IO;
 using System.Xml;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Helpers.SongImport.VideoPsalm;
 
 namespace OpenAdoration.WPF.Helpers.SongImport;
 
 /// <summary>
 /// Auto-detects a song file's format and dispatches to the matching parser:
 /// <list type="bullet">
-///   <item>OpenLyrics XML  -- root &lt;song&gt; in the openlyrics.info namespace</item>
-///   <item>OpenSong XML    -- root &lt;song&gt; with no namespace</item>
-///   <item>Plain text      -- everything else (.txt or non-XML content)</item>
+///   <item>OpenLyrics XML     -- root &lt;song&gt; in the openlyrics.info namespace</item>
+///   <item>OpenSong XML       -- root &lt;song&gt; with no namespace</item>
+///   <item>VideoPsalm (.vpagd) -- ZIP agenda yielding one or more songs</item>
+///   <item>Plain text         -- everything else (.txt or non-XML content)</item>
 /// </list>
 /// </summary>
 public static class SongFormatDispatcher
 {
     public const string FileDialogFilter =
-        "Song files|*.xml;*.txt;*.openlyrics;*.opensong" +
+        "Song files|*.xml;*.txt;*.openlyrics;*.opensong;*.vpagd" +
         "|OpenLyrics / OpenSong XML (*.xml)|*.xml;*.openlyrics;*.opensong" +
+        "|VideoPsalm agenda (*.vpagd)|*.vpagd" +
         "|Plain text (*.txt)|*.txt" +
         "|All files|*.*";
 
+    private const string VideoPsalmExtension = ".vpagd";
     private const long MaxFileSizeBytes = 20L * 1024 * 1024; // 20 MB
+
+    /// <summary>
+    /// Imports every song in <paramref name="filePath"/>. Single-song formats return a
+    /// one-element list; a VideoPsalm agenda returns one song per <c>Song_{n}.json</c> entry.
+    /// </summary>
+    public static IReadOnlyList<Song> ImportMany(string filePath)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException("File not found.", filePath);
+
+        return IsVideoPsalm(filePath)
+            ? VideoPsalmParser.Parse(filePath)
+            : new[] { Import(filePath) };
+    }
 
     public static Song Import(string filePath)
     {
@@ -40,6 +58,9 @@ public static class SongFormatDispatcher
                                                           : PlainTextParser.Parse(filePath)
         };
     }
+
+    private static bool IsVideoPsalm(string filePath) =>
+        Path.GetExtension(filePath).Equals(VideoPsalmExtension, StringComparison.OrdinalIgnoreCase);
 
     private static Song ImportXml(string filePath) =>
         IsOpenLyrics(filePath) ? OpenLyricsParser.Parse(filePath) : OpenSongParser.Parse(filePath);
