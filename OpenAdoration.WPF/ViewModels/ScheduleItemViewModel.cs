@@ -42,7 +42,26 @@ public partial class ScheduleItemViewModel : ObservableObject
 
     // Per-service section order; empty = use the song's own VerseOrder.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasVerseOrderHint))]
+    [NotifyPropertyChangedFor(nameof(IsVerseOrderReduced))]
+    [NotifyPropertyChangedFor(nameof(VerseOrderHint))]
     private string _verseOrderOverride = string.Empty;
+
+    // ── Verse-order override feedback ─────────────────────────────────────────
+    // Surfaces how many sections an override actually resolves to, so a token that
+    // collapses a multi-verse song to one slide (e.g. "V1") is obvious instead of
+    // looking like a dead Next button during projection.
+    private Song? OverrideSong => (Item as SongScheduleItem)?.Song;
+    private int TotalSectionCount => OverrideSong?.Sections.Count ?? 0;
+    private int ResolvedSectionCount => OverrideSong?.GetOrderedSections(VerseOrderOverride).Count ?? 0;
+
+    public bool HasVerseOrderHint =>
+        IsSongItem && TotalSectionCount > 0 && !string.IsNullOrWhiteSpace(VerseOrderOverride);
+
+    public bool IsVerseOrderReduced => HasVerseOrderHint && ResolvedSectionCount < TotalSectionCount;
+
+    public string VerseOrderHint =>
+        HasVerseOrderHint ? $"Shows {ResolvedSectionCount} of {TotalSectionCount} sections" : string.Empty;
 
     public event EventHandler? MoveUpRequested;
     public event EventHandler? MoveDownRequested;

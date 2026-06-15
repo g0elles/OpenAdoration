@@ -510,13 +510,31 @@
                                                    FontSize="13" />
                                         <!-- Per-service verse order override (song items only) -->
                                         <TextBox Style="{StaticResource FieldTextBox}"
-                                                 Tag="Order override (e.g. V1 C V2 C)"
+                                                 Tag="Order override — blank = all verses (e.g. V1 C V2 C)"
                                                  Text="{Binding VerseOrderOverride, UpdateSourceTrigger=LostFocus}"
                                                  FontSize="11"
                                                  Margin="0,4,8,0"
                                                  HorizontalAlignment="Left"
                                                  MinWidth="220"
                                                  Visibility="{Binding IsSongItem, Converter={StaticResource BoolToVis}}" />
+                                        <!-- Live feedback: how many sections the override resolves to -->
+                                        <TextBlock Text="{Binding VerseOrderHint}"
+                                                   FontSize="10"
+                                                   Margin="0,2,8,0"
+                                                   HorizontalAlignment="Left"
+                                                   Visibility="{Binding HasVerseOrderHint, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsVerseOrderReduced}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </StackPanel>
 
                                     <!-- Auto-advance control: [−] [⏱ Ns / Manual] [+] -->
