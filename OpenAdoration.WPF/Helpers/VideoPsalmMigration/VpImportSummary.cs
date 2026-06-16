@@ -15,5 +15,6 @@ public sealed record VpImportSummary
     public int MediaReused { get; init; }
     public int MediaMissing { get; init; }
     public int ItemsSkipped { get; init; }
+    public int ThemesCreated { get; init; }
     public int TotalItems { get; init; }
 }

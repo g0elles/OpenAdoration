@@ -13,8 +13,10 @@ public sealed class VideoPsalmAgendaParserTests : IDisposable
     private static readonly (string Name, string Content)[] FullAgenda =
     [
         ("Version.json", "2"),
-        ("RootStyle.json", "{Body:{FontSize:100}}"),
-        ("Song_0.json", "{Guid:\"song-guid-1\",Verses:[{\nText:\"Line one\"}],\nText:\"Mi Canción\"}"),
+        ("RootStyle.json", "{Body:{FontName:\"Candara\",FontStyle:{Fill:{Color:\"FFFFFFFF\"}}},Background:{Image:\"bg-root.png\"}}"),
+        ("SongBookStyle.json", "{Header:{Template:\"scratch text\"}}"),
+        ("BibleStyle.json", "{Header:{Template:\"[BibleBookName] [BibleChapterID]:[BibleVerseID]\"},Footer:{Template:\"[BibleDescription]\"},Background:{Image:\"bg-bible.jpg\"}}"),
+        ("Song_0.json", "{Guid:\"song-guid-1\",Style:{Background:{Video:\"song-bg.wmv\"}},Verses:[{\nText:\"Line one\"}],\nText:\"Mi Canción\"}"),
         ("SongBook_0.json", "{Text:\"SONG\",Guid:\"book\"}"),
         ("BibleVerses_0.json", "{Verses:[{\nText:\"v1\"},{ID:2,\nText:\"v2\"},{ID:3,\nText:\"v3\"}]}"),
         ("BibleChapter_0.json", "{ID:7,Verses:[]}"),
@@ -106,6 +108,33 @@ public sealed class VideoPsalmAgendaParserTests : IDisposable
         Assert.Equal("Images/frb.jpeg", items[2].MediaEntryName);
         Assert.Equal("My Image", items[2].MediaCaption);
         Assert.Equal("Users/x/Temp/vid.MOV", items[3].MediaEntryName);
+    }
+
+    [Fact]
+    public void Parse_Song_ResolvesStyle_RootFontWithItemVideoBackground()
+    {
+        Build(FullAgenda);
+
+        var style = VideoPsalmAgendaParser.Parse(_path).Items[0].Style;
+
+        Assert.NotNull(style);
+        Assert.Equal("Candara", style!.FontFamily);   // inherited from RootStyle
+        Assert.Equal("#FFFFFF", style.FontColor);      // ARGB FFFFFFFF, alpha dropped
+        Assert.Equal("song-bg.wmv", style.BackgroundVideo); // item Style wins
+        Assert.Null(style.BackgroundImage);            // video replaces the root image as a unit
+    }
+
+    [Fact]
+    public void Parse_Scripture_ResolvesStyle_BibleTemplatesAndImageBackground()
+    {
+        Build(FullAgenda);
+
+        var style = VideoPsalmAgendaParser.Parse(_path).Items[1].Style;
+
+        Assert.NotNull(style);
+        Assert.Equal("[BibleBookName] [BibleChapterID]:[BibleVerseID]", style!.HeaderTemplate);
+        Assert.Equal("[BibleDescription]", style.FooterTemplate);
+        Assert.Equal("bg-bible.jpg", style.BackgroundImage); // BibleStyle replaces root image
     }
 
     [Fact]

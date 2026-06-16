@@ -278,6 +278,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             $"• Scripture references: {s.ScriptureReferences} (verse text omitted — it's licensed; install a Bible version to display it)",
             $"• Media: {s.MediaImported} new, {s.MediaReused} reused"
         };
+        if (s.ThemesCreated > 0) lines.Add($"• Themes reconstructed: {s.ThemesCreated}");
         if (s.MediaMissing > 0) lines.Add($"• Media skipped (bytes not found): {s.MediaMissing}");
         if (s.ItemsSkipped > 0) lines.Add($"• Other items skipped: {s.ItemsSkipped}");
         return string.Join(Environment.NewLine, lines);

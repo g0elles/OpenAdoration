@@ -44,6 +44,12 @@ public sealed record VpAgendaItem
     /// <summary>Set for <see cref="VpItemType.Scripture"/>.</summary>
     public VpScriptureRef? Scripture { get; init; }
 
+    /// <summary>
+    /// Effective VideoPsalm style for Song/Scripture items (root ← type ← item cascade), mapped to
+    /// an OA <c>Theme</c> on import. Null for media items (their bytes fill the screen).
+    /// </summary>
+    public VpStyle? Style { get; init; }
+
     /// <summary>Full ZIP entry name of the matched media bytes (Image/Video); null if not found.</summary>
     public string? MediaEntryName { get; init; }
 

@@ -12,8 +12,9 @@ namespace OpenAdoration.WPF.Helpers.VideoPsalmMigration;
 /// Builds a <see cref="WorshipService"/> from a VideoPsalm <c>.vpagd</c> agenda in true
 /// (zip) order: songs (dedup by <see cref="Song.SourceGuid"/>), scripture as <b>references
 /// only</b> (verse text never harvested — licensed), media (dedup by content hash, bytes
-/// extracted to the media store). Re-importing the same archive is detected and skipped.
-/// See ROADMAP.md M12.3.
+/// extracted to the media store). Song/scripture items also get a reconstructed
+/// <see cref="Theme"/> (font, color, background, scripture templates) deduped within the import.
+/// Re-importing the same archive is detected and skipped. See ROADMAP.md M12.3/M12.4.
 /// </summary>
 public sealed class VideoPsalmServiceImporter
 {
@@ -30,16 +31,18 @@ public sealed class VideoPsalmServiceImporter
     private readonly IMediaService _media;
     private readonly IWorshipServiceService _services;
     private readonly IBibleService _bible;
+    private readonly IThemeService _themes;
     private readonly ILogger<VideoPsalmServiceImporter> _logger;
 
     public VideoPsalmServiceImporter(
         ISongService songs, IMediaService media, IWorshipServiceService services,
-        IBibleService bible, ILogger<VideoPsalmServiceImporter> logger)
+        IBibleService bible, IThemeService themes, ILogger<VideoPsalmServiceImporter> logger)
     {
         _songs = songs;
         _media = media;
         _services = services;
         _bible = bible;
+        _themes = themes;
         _logger = logger;
     }
 
@@ -63,74 +66,123 @@ public sealed class VideoPsalmServiceImporter
             SourceArchivePath = ArchiveOriginal(filePath)
         }, ct);
 
-        var versionsByAbbreviation = await BuildVersionLookupAsync(ct);
-        var counters = new Counters();
+        var ctx = new ImportContext
+        {
+            FilePath = filePath,
+            ServiceName = service.Name,
+            Versions = await BuildVersionLookupAsync(ct)
+        };
 
         foreach (var item in agenda.Items)
         {
             ct.ThrowIfCancellationRequested();
-            await ImportItemAsync(service.Id, filePath, item, versionsByAbbreviation, counters, ct);
+            await ImportItemAsync(service.Id, item, ctx, ct);
         }
 
         _logger.LogInformation("Imported VideoPsalm service '{Name}' ({Items} items)", service.Name, agenda.Items.Count);
-        return counters.ToSummary(service.Name, agenda.Items.Count);
+        return ctx.Counters.ToSummary(service.Name, agenda.Items.Count);
     }
 
-    private async Task ImportItemAsync(
-        int serviceId, string filePath, VpAgendaItem item,
-        IReadOnlyDictionary<string, int> versions, Counters counters, CancellationToken ct)
+    private async Task ImportItemAsync(int serviceId, VpAgendaItem item, ImportContext ctx, CancellationToken ct)
     {
         var autoAdvance = item.Properties.AutoAdvanceSeconds;
         switch (item.Type)
         {
-            case VpItemType.Song: await ImportSongAsync(serviceId, item, autoAdvance, counters, ct); break;
-            case VpItemType.Scripture: await ImportScriptureAsync(serviceId, item, versions, autoAdvance, counters, ct); break;
+            case VpItemType.Song: await ImportSongAsync(serviceId, item, autoAdvance, ctx, ct); break;
+            case VpItemType.Scripture: await ImportScriptureAsync(serviceId, item, autoAdvance, ctx, ct); break;
             case VpItemType.Image:
-            case VpItemType.Video: await ImportMediaAsync(serviceId, filePath, item, autoAdvance, counters, ct); break;
+            case VpItemType.Video: await ImportMediaAsync(serviceId, item, autoAdvance, ctx, ct); break;
         }
     }
 
-    private async Task ImportSongAsync(
-        int serviceId, VpAgendaItem item, int? autoAdvance, Counters counters, CancellationToken ct)
+    private async Task ImportSongAsync(int serviceId, VpAgendaItem item, int? autoAdvance, ImportContext ctx, CancellationToken ct)
     {
-        if (item.Song is null) { counters.ItemsSkipped++; return; }
+        if (item.Song is null) { ctx.Counters.ItemsSkipped++; return; }
 
         var existing = item.Song.SourceGuid is { } guid ? await _songs.GetBySourceGuidAsync(guid, ct) : null;
         int songId;
-        if (existing is not null) { songId = existing.Id; counters.SongsReused++; }
-        else { songId = (await _songs.CreateAsync(item.Song, ct)).Id; counters.SongsImported++; }
+        if (existing is not null) { songId = existing.Id; ctx.Counters.SongsReused++; }
+        else { songId = (await _songs.CreateAsync(item.Song, ct)).Id; ctx.Counters.SongsImported++; }
 
-        await _services.AddSongItemAsync(serviceId, songId, autoAdvanceSeconds: autoAdvance, ct: ct);
+        // Song templates in VP are operator scratch text, not tokens — skip them; keep font + background.
+        var themeId = await ResolveThemeAsync(item.Style, includeTemplates: false, "Songs", ctx, ct);
+        await _services.AddSongItemAsync(serviceId, songId, themeId, autoAdvance, ct);
     }
 
-    private async Task ImportScriptureAsync(
-        int serviceId, VpAgendaItem item, IReadOnlyDictionary<string, int> versions,
-        int? autoAdvance, Counters counters, CancellationToken ct)
+    private async Task ImportScriptureAsync(int serviceId, VpAgendaItem item, int? autoAdvance, ImportContext ctx, CancellationToken ct)
     {
         var s = item.Scripture!;
-        int? versionId = versions.TryGetValue(s.VersionAbbreviation.ToUpperInvariant(), out var id) ? id : null;
+        int? versionId = ctx.Versions.TryGetValue(s.VersionAbbreviation.ToUpperInvariant(), out var id) ? id : null;
 
         // Reference only — verse text is licensed and intentionally not stored; it resolves
         // at projection time from whatever version the church has legally installed.
+        var themeId = await ResolveThemeAsync(item.Style, includeTemplates: true, "Scripture", ctx, ct);
         await _services.AddBibleItemAsync(
-            serviceId, s.BookName, s.Chapter, s.VerseStart, s.VerseEnd, versionId, autoAdvanceSeconds: autoAdvance, ct: ct);
-        counters.ScriptureReferences++;
+            serviceId, s.BookName, s.Chapter, s.VerseStart, s.VerseEnd, versionId, themeId, autoAdvance, ct);
+        ctx.Counters.ScriptureReferences++;
     }
 
-    private async Task ImportMediaAsync(
-        int serviceId, string filePath, VpAgendaItem item, int? autoAdvance, Counters counters, CancellationToken ct)
+    private async Task ImportMediaAsync(int serviceId, VpAgendaItem item, int? autoAdvance, ImportContext ctx, CancellationToken ct)
     {
-        if (item.MediaEntryName is null) { counters.MediaMissing++; return; }
+        if (item.MediaEntryName is null) { ctx.Counters.MediaMissing++; return; }
 
-        var resolved = await ResolveMediaAsync(filePath, item.MediaEntryName, ct);
-        if (resolved is null) { counters.MediaMissing++; return; }
+        var resolved = await ResolveMediaAsync(ctx.FilePath, item.MediaEntryName, ct);
+        if (resolved is null) { ctx.Counters.MediaMissing++; return; }
 
-        if (resolved.Value.Reused) counters.MediaReused++; else counters.MediaImported++;
+        if (resolved.Value.Reused) ctx.Counters.MediaReused++; else ctx.Counters.MediaImported++;
         await _services.AddMediaItemAsync(serviceId, resolved.Value.MediaId, autoAdvanceSeconds: autoAdvance, ct: ct);
     }
 
-    private async Task<(int MediaId, bool Reused)?> ResolveMediaAsync(
-        string filePath, string entryName, CancellationToken ct)
+    // ── Themes ────────────────────────────────────────────────────────────────
+
+    private async Task<int?> ResolveThemeAsync(VpStyle? style, bool includeTemplates, string label, ImportContext ctx, CancellationToken ct)
+    {
+        if (style is null) return null;
+
+        var header = includeTemplates ? style.HeaderTemplate : null;
+        var footer = includeTemplates ? style.FooterTemplate : null;
+        var signature = string.Join("|", label, style.FontFamily, style.FontColor, header, footer, style.BackgroundImage, style.BackgroundVideo);
+        if (ctx.ThemeCache.TryGetValue(signature, out var cached)) return cached;
+
+        var defaults = new Theme();
+        var videoPath = ExtractBackground(ctx, style.BackgroundVideo);
+        var imagePath = videoPath is null ? ExtractBackground(ctx, style.BackgroundImage) : null;
+
+        var theme = await _themes.CreateAsync(new Theme
+        {
+            Name = $"{ctx.ServiceName} · VideoPsalm {label}",
+            FontFamily = style.FontFamily ?? defaults.FontFamily,
+            FontColor = style.FontColor ?? defaults.FontColor,
+            HeaderTemplate = header,
+            FooterTemplate = footer,
+            BackgroundImagePath = imagePath,
+            BackgroundVideoPath = videoPath
+        }, ct);
+
+        ctx.Counters.ThemesCreated++;
+        ctx.ThemeCache[signature] = theme.Id;
+        return theme.Id;
+    }
+
+    /// <summary>Extracts a style background (image/video) by basename to the media store; cached per import.</summary>
+    private static string? ExtractBackground(ImportContext ctx, string? basename)
+    {
+        if (basename is null) return null;
+        if (ctx.BackgroundCache.TryGetValue(basename, out var existing)) return existing;
+
+        using var archive = ZipFile.OpenRead(ctx.FilePath);
+        var entry = archive.Entries.FirstOrDefault(e =>
+            string.Equals(Path.GetFileName(e.FullName), basename, StringComparison.OrdinalIgnoreCase));
+        if (entry is null) return null;
+
+        var path = ExtractToStore(entry);
+        ctx.BackgroundCache[basename] = path;
+        return path;
+    }
+
+    // ── Media ───────────────────────────────────────────────────────────────
+
+    private async Task<(int MediaId, bool Reused)?> ResolveMediaAsync(string filePath, string entryName, CancellationToken ct)
     {
         using var archive = ZipFile.OpenRead(filePath);
         var entry = archive.GetEntry(entryName);
@@ -204,10 +256,21 @@ public sealed class VideoPsalmServiceImporter
         return destPath;
     }
 
+    /// <summary>Mutable per-import state (sequential — no concurrency).</summary>
+    private sealed class ImportContext
+    {
+        public required string FilePath { get; init; }
+        public required string ServiceName { get; init; }
+        public required IReadOnlyDictionary<string, int> Versions { get; init; }
+        public Counters Counters { get; } = new();
+        public Dictionary<string, int> ThemeCache { get; } = new();
+        public Dictionary<string, string> BackgroundCache { get; } = new();
+    }
+
     private sealed class Counters
     {
         public int SongsImported, SongsReused, ScriptureReferences;
-        public int MediaImported, MediaReused, MediaMissing, ItemsSkipped;
+        public int MediaImported, MediaReused, MediaMissing, ItemsSkipped, ThemesCreated;
 
         public VpImportSummary ToSummary(string serviceName, int totalItems) => new()
         {
@@ -219,6 +282,7 @@ public sealed class VideoPsalmServiceImporter
             MediaReused = MediaReused,
             MediaMissing = MediaMissing,
             ItemsSkipped = ItemsSkipped,
+            ThemesCreated = ThemesCreated,
             TotalItems = totalItems
         };
     }

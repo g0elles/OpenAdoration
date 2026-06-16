@@ -20,11 +20,12 @@ public static partial class VideoPsalmAgendaParser
 
         var properties = ParseProperties(archive);
         var mediaByBasename = BuildMediaIndex(archive);
+        var styles = ParseStyleBases(archive);
 
         var items = new List<VpAgendaItem>();
         foreach (var entry in archive.Entries)
         {
-            var item = TryBuildItem(archive, entry, items.Count, properties, mediaByBasename);
+            var item = TryBuildItem(archive, entry, items.Count, properties, mediaByBasename, styles);
             if (item is not null) items.Add(item);
         }
 
@@ -36,7 +37,8 @@ public static partial class VideoPsalmAgendaParser
 
     private static VpAgendaItem? TryBuildItem(
         ZipArchive archive, ZipArchiveEntry entry, int index,
-        IReadOnlyList<VpItemProperties> properties, IReadOnlyDictionary<string, string> media)
+        IReadOnlyList<VpItemProperties> properties, IReadOnlyDictionary<string, string> media,
+        VpStyleBases styles)
     {
         var match = AnchorRegex().Match(entry.Name);
         if (!match.Success) return null;
@@ -46,22 +48,27 @@ public static partial class VideoPsalmAgendaParser
 
         return match.Groups["kind"].Value switch
         {
-            "Song"        => BuildSong(entry, index, props),
-            "BibleVerses" => BuildScripture(archive, n, index, props),
+            "Song"        => BuildSong(entry, index, props, styles.SongBase),
+            "BibleVerses" => BuildScripture(archive, n, index, props, styles.ScriptureBase),
             "Image"       => BuildMedia(entry, VpItemType.Image, index, props, media),
             "Video"       => BuildMedia(entry, VpItemType.Video, index, props, media),
             _             => null
         };
     }
 
-    private static VpAgendaItem BuildSong(ZipArchiveEntry entry, int index, VpItemProperties props)
+    private static VpAgendaItem BuildSong(ZipArchiveEntry entry, int index, VpItemProperties props, VpStyle songBase)
     {
         var root = ReadDict(entry);
         var song = root is null ? null : VideoPsalmParser.MapSong(root);
-        return new VpAgendaItem { Index = index, Type = VpItemType.Song, Properties = props, Song = song };
+        var itemStyle = VpStyleReader.Read(root is null ? null : AsDict(root.GetValueOrDefault("Style")));
+        return new VpAgendaItem
+        {
+            Index = index, Type = VpItemType.Song, Properties = props,
+            Song = song, Style = songBase.Merge(itemStyle)
+        };
     }
 
-    private static VpAgendaItem BuildScripture(ZipArchive archive, string n, int index, VpItemProperties props)
+    private static VpAgendaItem BuildScripture(ZipArchive archive, string n, int index, VpItemProperties props, VpStyle scriptureBase)
     {
         var book = ReadDict(archive.GetEntry($"BibleBook_{n}.json"));
         var chapter = ReadDict(archive.GetEntry($"BibleChapter_{n}.json"));
@@ -81,7 +88,11 @@ public static partial class VideoPsalmAgendaParser
             VerseStart:          start,
             VerseEnd:            end);
 
-        return new VpAgendaItem { Index = index, Type = VpItemType.Scripture, Properties = props, Scripture = scripture };
+        return new VpAgendaItem
+        {
+            Index = index, Type = VpItemType.Scripture, Properties = props,
+            Scripture = scripture, Style = scriptureBase
+        };
     }
 
     private static VpAgendaItem BuildMedia(
@@ -116,6 +127,20 @@ public static partial class VideoPsalmAgendaParser
             end = prev = num;
         }
         return start == 0 ? (1, 1) : (start, end);
+    }
+
+    /// <summary>
+    /// Pre-merged style bases per content type: <c>RootStyle ← &lt;Type&gt;Style</c>. A per-item
+    /// <c>Style</c> (songs only) merges on top later. See VIDEOPSALM_REFERENCE.md §8b.
+    /// </summary>
+    private sealed record VpStyleBases(VpStyle SongBase, VpStyle ScriptureBase);
+
+    private static VpStyleBases ParseStyleBases(ZipArchive archive)
+    {
+        var root = VpStyleReader.Read(ReadDict(archive.GetEntry("RootStyle.json")));
+        var songType = VpStyleReader.Read(ReadDict(archive.GetEntry("SongBookStyle.json")));
+        var bibleType = VpStyleReader.Read(ReadDict(archive.GetEntry("BibleStyle.json")));
+        return new VpStyleBases(root.Merge(songType), root.Merge(bibleType));
     }
 
     private static IReadOnlyList<VpItemProperties> ParseProperties(ZipArchive archive)
