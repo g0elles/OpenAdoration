@@ -32,6 +32,12 @@ public sealed class WorshipServiceService : IWorshipServiceService
         return service;
     }
 
+    public async Task<WorshipService?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceGuid);
+        return await _repository.GetBySourceGuidAsync(sourceGuid, ct);
+    }
+
     public async Task<WorshipService> CreateAsync(WorshipService service, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(service);

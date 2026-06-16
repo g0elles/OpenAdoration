@@ -26,10 +26,15 @@
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
-                    <Button Content="+ New Service"
-                            Style="{StaticResource PrimaryButton}"
-                            Command="{Binding ShowCreateFormCommand}"
-                            HorizontalAlignment="Right" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Import VideoPsalm…"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ImportVideoPsalmServiceCommand}"
+                                Margin="0,0,8,0" />
+                        <Button Content="+ New Service"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ShowCreateFormCommand}" />
+                    </StackPanel>
                 </Grid>
             </Border>
 

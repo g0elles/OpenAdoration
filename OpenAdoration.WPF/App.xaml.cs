@@ -169,6 +169,7 @@ public partial class App : WpfApp
         services.AddTransient<AddEditSongViewModel>();
         services.AddTransient<BibleViewModel>();
         services.AddTransient<ServiceScheduleViewModel>();
+        services.AddTransient<OpenAdoration.WPF.Helpers.VideoPsalmMigration.VideoPsalmServiceImporter>();
         services.AddTransient<MediaViewModel>();
         services.AddTransient<ThemeViewModel>();
         services.AddTransient<AddEditThemeViewModel>();

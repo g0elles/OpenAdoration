@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Helpers.VideoPsalmMigration;
 using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -20,6 +21,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private readonly IDialogService              _dialogService;
     private readonly IAppSettingsService         _appSettings;
     private readonly ISongLibraryNotifier        _songNotifier;
+    private readonly VideoPsalmServiceImporter   _vpImporter;
     private readonly ILogger<ServiceScheduleViewModel> _logger;
 
     // ── Service list ─────────────────────────────────────────────────────────
@@ -119,6 +121,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IDialogService              dialogService,
         IAppSettingsService         appSettings,
         ISongLibraryNotifier        songNotifier,
+        VideoPsalmServiceImporter   vpImporter,
         ILogger<ServiceScheduleViewModel> logger)
     {
         _serviceService    = serviceService;
@@ -129,6 +132,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _appSettings       = appSettings;
         _songNotifier      = songNotifier;
+        _vpImporter        = vpImporter;
         _logger            = logger;
 
         _projectionService.ProjectionStateChanged        += OnProjectionStateChanged;
@@ -226,6 +230,57 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             _logger.LogError(ex, "Failed to create service");
             SetError("Could not create service.");
         }
+    }
+
+    [RelayCommand]
+    private async Task ImportVideoPsalmServiceAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Import VideoPsalm service",
+            Filter = "VideoPsalm agenda (*.vpagd)|*.vpagd",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+
+        VpImportSummary summary;
+        try
+        {
+            summary = await _vpImporter.ImportAsync(dialog.FileName);
+            _logger.LogInformation("Imported VideoPsalm agenda from {File}", dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import VideoPsalm agenda from {File}", dialog.FileName);
+            _dialogService.Inform("Could not import this VideoPsalm agenda. It may be corrupt or an unsupported file.", "Import Service");
+            return;
+        }
+        finally { IsBusy = false; }
+
+        await LoadAsync();
+        _dialogService.Inform(FormatSummary(summary), "Import Service");
+    }
+
+    private static string FormatSummary(VpImportSummary s)
+    {
+        if (s.AlreadyImported)
+            return $"\"{s.ServiceName}\" was already imported — nothing was added.";
+
+        var lines = new List<string>
+        {
+            $"Imported \"{s.ServiceName}\" ({s.TotalItems} items):",
+            $"• Songs: {s.SongsImported} new, {s.SongsReused} reused",
+            $"• Scripture references: {s.ScriptureReferences} (verse text omitted — it's licensed; install a Bible version to display it)",
+            $"• Media: {s.MediaImported} new, {s.MediaReused} reused"
+        };
+        if (s.MediaMissing > 0) lines.Add($"• Media skipped (bytes not found): {s.MediaMissing}");
+        if (s.ItemsSkipped > 0) lines.Add($"• Other items skipped: {s.ItemsSkipped}");
+        return string.Join(Environment.NewLine, lines);
     }
 
     [RelayCommand]
