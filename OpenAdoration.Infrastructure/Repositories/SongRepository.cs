@@ -25,6 +25,18 @@ public sealed class SongRepository : ISongRepository
             .FirstOrDefaultAsync(s => s.Id == id, ct);
     }
 
+    public async Task<Song?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceGuid);
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.Songs
+            .AsNoTracking()
+            .Include(s => s.Sections.OrderBy(ss => ss.Order))
+            .FirstOrDefaultAsync(s => s.SourceGuid == sourceGuid, ct);
+    }
+
     public async Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

@@ -24,6 +24,17 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
             .FirstOrDefaultAsync(ws => ws.Id == id, ct);
     }
 
+    public async Task<WorshipService?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceGuid);
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.WorshipServices
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ws => ws.SourceGuid == sourceGuid, ct);
+    }
+
     public async Task<IReadOnlyList<WorshipService>> GetAllAsync(CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

@@ -21,5 +21,11 @@ public sealed class MediaFileConfiguration : IEntityTypeConfiguration<MediaFile>
         builder.Property(mf => mf.Type)
             .IsRequired()
             .HasConversion<string>();
+
+        builder.Property(mf => mf.ContentHash)
+            .HasMaxLength(64);
+
+        // Dedup lookup for media extracted from multiple import sources
+        builder.HasIndex(mf => mf.ContentHash);
     }
 }

@@ -33,6 +33,17 @@ public sealed class MediaRepository : IMediaRepository
             .FirstOrDefaultAsync(mf => mf.Id == id, ct);
     }
 
+    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.MediaFiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(mf => mf.ContentHash == contentHash, ct);
+    }
+
     public async Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(file);

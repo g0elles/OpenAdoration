@@ -542,7 +542,7 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 ### 12.2 — Parsers
 - `VideoPsalmAgendaParser` → ordered `VpAgenda` model (items in ZIP order + their `AgendaItemProperties`, media refs, styles).
-- `VideoPsalmBibleParser` → `(version, books, verses)` from VideoPsalm Bible-JSON (nested Testaments→Books→Chapters→Verses), reusing `VpJsonReader`. **Detect AES (method 99) → clear "DRM-protected, cannot import" message; never attempt to decrypt.**
+- `VideoPsalmBibleDetector` → **DRM detector only.** Every VideoPsalm `.vpc` is AES-encrypted (method 99) uniformly — there is *no* unencrypted VideoPsalm Bible to parse — so OA never imports VP Bible text; it only detects the encryption (`IsDrmProtected`) so the "Import Bible…" UI can refuse with a clear message. Never decrypt. (Legal Bibles arrive via the existing OSIS/USFX/JSON/sqlite importers, not VideoPsalm.)
 - Unit-tested against synthetic files (existing test infra builds `.vpagd` zips at runtime).
 
 ### 12.3 — Core import (content + structure)

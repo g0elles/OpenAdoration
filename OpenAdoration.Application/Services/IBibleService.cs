@@ -11,6 +11,15 @@ public interface IBibleService
     Task<BibleVerse?> GetVerseAsync(int versionId, string book, int chapter, int verse, CancellationToken ct = default);
     Task<IReadOnlyList<BibleVerse>> SearchAsync(int versionId, string term, BibleSearchMode mode = BibleSearchMode.Keyword, int maxResults = 100, CancellationToken ct = default);
     Task ImportVersionAsync(BibleVersion version, IReadOnlyList<BibleBook> books, IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Idempotent enrichment sink: find-or-create the version by abbreviation, ensure its
+    /// book rows, and insert only verses not already stored. Lets a centralized version
+    /// (e.g. NVI-S) grow as fuller legal sources are imported, with no rework for content
+    /// that already references it.
+    /// </summary>
+    Task UpsertVersionVersesAsync(BibleVersion version, IReadOnlyList<BibleBook> books, IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default);
+
     Task DeleteVersionAsync(int versionId, CancellationToken ct = default);
 
     /// <summary>

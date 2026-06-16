@@ -63,6 +63,10 @@ public sealed class BibleImportSanityCheckTests
             IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default)
             => Task.CompletedTask;
 
+        public Task UpsertVersionVersesAsync(BibleVersion version, IReadOnlyList<BibleBook> books,
+            IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default)
+            => Task.CompletedTask;
+
         public Task<IReadOnlyList<BibleVersion>> GetVersionsAsync(CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<BibleVersion>>([]);
         public Task<BibleVersion?> GetVersionByIdAsync(int id, CancellationToken ct = default)
