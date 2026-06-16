@@ -752,6 +752,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.Selected                   += OnItemSelected;
         vm.AutoAdvanceChangeRequested += OnAutoAdvanceChangeRequested;
         vm.VerseOrderOverrideChangeRequested += OnVerseOrderOverrideChangeRequested;
+        vm.BibleVersionChangeRequested += OnBibleVersionChangeRequested;
     }
 
     private void UnsubscribeItemEvents(ScheduleItemViewModel vm)
@@ -762,6 +763,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.Selected                   -= OnItemSelected;
         vm.AutoAdvanceChangeRequested -= OnAutoAdvanceChangeRequested;
         vm.VerseOrderOverrideChangeRequested -= OnVerseOrderOverrideChangeRequested;
+        vm.BibleVersionChangeRequested -= OnBibleVersionChangeRequested;
     }
 
     private async void OnItemMoveUp(object? sender, EventArgs e)
@@ -1144,6 +1146,20 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist verse order override for item {ItemId}", vm.Item.Id);
+        }
+    }
+
+    private async void OnBibleVersionChangeRequested(object? sender, int? versionId)
+    {
+        if (sender is not ScheduleItemViewModel vm) return;
+        try
+        {
+            // Entity is already synced by the item VM; just persist the in-place replacement.
+            await _serviceService.SetItemBibleVersionAsync(vm.Item.Id, versionId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist Bible version for item {ItemId}", vm.Item.Id);
         }
     }
 

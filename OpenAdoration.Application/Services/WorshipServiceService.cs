@@ -194,4 +194,18 @@ public sealed class WorshipServiceService : IWorshipServiceService
             throw;
         }
     }
+
+    public async Task SetItemBibleVersionAsync(int itemId, int? bibleVersionId, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Setting Bible version for item {ItemId}", itemId);
+        try
+        {
+            await _repository.SetItemBibleVersionAsync(itemId, bibleVersionId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set Bible version for item {ItemId}", itemId);
+            throw;
+        }
+    }
 }
