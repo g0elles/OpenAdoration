@@ -274,7 +274,8 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task SetItemBibleVersionAsync(int itemId, int? bibleVersionId, CancellationToken ct = default)
+    public async Task UpdateBibleItemAsync(
+        int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -284,6 +285,10 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         if (item is not BibleScheduleItem bibleItem)
             throw new InvalidOperationException($"ScheduleItem {itemId} is not a Bible item.");
 
+        bibleItem.Book = book;
+        bibleItem.Chapter = chapter;
+        bibleItem.VerseStart = verseStart;
+        bibleItem.VerseEnd = verseEnd;
         bibleItem.BibleVersionId = bibleVersionId;
         await context.SaveChangesAsync(ct);
     }
