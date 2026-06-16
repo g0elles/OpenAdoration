@@ -524,6 +524,79 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 ---
 
+## Milestone 12 — VideoPsalm Migration
+
+**Why:** the launch church runs **VideoPsalm** and wants *all* their data moved into OpenAdoration — songs, scripture, media, and the full service structure — across **many `.vpagd` service files** (one per service type, growing over time). The goal is a faithful, lossless, centralized migration, not a one-off paste.
+
+### Format facts (reverse-engineered 2026-06-15)
+- **`.vpagd` = a ZIP** of relaxed-JSON files (unquoted keys + literal newlines — illegal standard JSON; parsed by `VpJsonReader`). Song import already shipped (`VideoPsalmParser`).
+- **Agenda order = the ZIP central-directory order** (NOT alphabetical, NOT the per-type `_{n}` index). `AgendaItemProperties.json` is a parallel array (per-item `AutoAdvance`/`Interval`/`HiddenSlides`/`VerseOrderIndex`). Cross-validated: songs carry `HiddenSlides:[]`; the image was the lone `FlowType:2`.
+- **Scripture in a `.vpagd` = reference + the full text of only the *used* verses** (never the whole Bible). Book `ID` is 0-indexed canonical (`+1` = OA `BookNumber`); chapter `ID` = chapter number; first verse omits its `ID` (=1).
+- **Media bytes are embedded** (`Images/`, `Videos/`, `Users/.../`); `FileName` is a foreign absolute path — match by **basename** to the ZIP entry. iPhone HEVC `.MOV` plays via the FFME engine.
+- **DRM blocker (do not circumvent):** VideoPsalm's *complete* Bibles live in `…\Public\Documents\VideoPsalm\Bibles\*.vpc` — each a ZIP holding one ~4.5 MB JSON = the whole Bible — but the entry is **AES-encrypted (ZIP method 99)**. *Every* module is encrypted uniformly, **even public-domain ASV** — it's structural DRM, not per-copyright. The full NVI therefore **cannot be lawfully extracted** from the `.vpc`; the agenda export is the only plaintext VideoPsalm produces. Cracking it is out of scope for a public OSS tool.
+
+### 12.1 — Foundations (one EF migration)
+- `Song.SourceGuid` (cross-file song identity/dedup — VideoPsalm `Guid`), `MediaFile.ContentHash` (cross-file media dedup), `WorshipService.SourceGuid` + `SourceArchivePath` (service identity + the retained original `.vpagd`).
+- **Application:** `IBibleService.UpsertVersionVersesAsync(versionIdentity, books, verses, progress, ct)` — idempotent find-or-create version by abbreviation, ensure book rows, insert only missing verses (batched 1000 + `ChangeTracker.Clear()`). The single sink every scripture source feeds.
+- Dedup lookups: song-by-`SourceGuid`, media-by-`ContentHash`, service-by-`SourceGuid`.
+
+### 12.2 — Parsers
+- `VideoPsalmAgendaParser` → ordered `VpAgenda` model (items in ZIP order + their `AgendaItemProperties`, media refs, styles).
+- `VideoPsalmBibleParser` → `(version, books, verses)` from VideoPsalm Bible-JSON (nested Testaments→Books→Chapters→Verses), reusing `VpJsonReader`. **Detect AES (method 99) → clear "DRM-protected, cannot import" message; never attempt to decrypt.**
+- Unit-tested against synthetic files (existing test infra builds `.vpagd` zips at runtime).
+
+### 12.3 — Core import (content + structure)
+Orchestrator builds a `WorshipService` in true order: songs (dedup by `SourceGuid`, else create), scripture (**reference only** — text resolves from installed versions at projection time; nothing harvested from the agenda), media (hash-dedup + byte extract → Media store, HEVC via FFME), order + `AutoAdvance`. Archive the original `.vpagd` (`SourceArchivePath`); skip/refresh if its `SourceGuid` is already imported. Summary dialog; single-file **"Import VideoPsalm service…"** button in `ServiceScheduleView`.
+
+### 12.4 — Themes (faithful look)
+Reconstruct OA `Theme`s from VP styles (background image/video + body font/size/color/alignment + header/footer templates), dedup by style signature, assign per item. *Exact white-fill/gold-stroke text needs new `Theme.FontStrokeColor`/`FontStrokeWidth` + projection rendering — optional sub-task; approximate (no stroke) otherwise.*
+
+### 12.5 — Batch + centralized, enrichable Bible
+- **Batch folder import** of many `.vpagd` with cross-file dedup + aggregate summary.
+- **Centralized scripture, source-agnostic:** one `BibleVersion` per abbreviation (e.g. `NVI-S`), enriched by any **legal** source through `UpsertVersionVersesAsync` — a CC BY-SA / public-domain download, or OA's existing OSIS/USFX/JSON importers (never the agenda, never the DRM'd `.vpc`). Because items store *references* resolved at projection time, importing the version later completes already-imported services with **zero rework**.
+- **"Import Bible…" entry point** that accepts VideoPsalm Bible files (with AES detection) — the drop-in hook for adding a legally-obtained full version whenever the church has one.
+
+### 12.6 — Bibles are the church's responsibility; OA just informs
+OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted text, embeds no API keys, and acquires no licenses on anyone's behalf. Our only obligation is to tell the operator clearly where text can and can't come from. We do **not** scrape verse text out of `.vpagd` agendas and we do **not** crack the `.vpc` DRM.
+
+- **From a `.vpagd` we import only what's legal — Bible verse text is omitted.** Songs, media, schedule order, themes come in; scripture items come in as **references only** (book/chapter/verse). Verse text renders from whatever Bible version the church has legally imported into OA; a reference with no matching installed version shows the reference plus a "version not installed" note. The import summary **tells the operator plainly** that Bible text was omitted because it's licensed/protected and must come from a version they install.
+- **`.vpc` Bibles are DRM-protected (AES, ZIP method 99) — never imported, never cracked.** "Import Bible…" detects the encryption and shows a plain message: *this VideoPsalm Bible is encrypted and can't be imported; obtain the version from a legal source.*
+- **Legal sourcing is the church's call.** OA imports what they legally hold. Two paths OA actively supports: **public-domain** (Reina-Valera 1909, Sagradas Escrituras 1569 — imported today) and **CC BY-SA modern Spanish** (e.g. Nueva Biblia Viva from Open.Bible — attribution to Biblica required; kept as separate CC-licensed data, not mingled into the MIT code). Licensed versions (NVI, etc.) are the church's to obtain (direct Biblica permission or their own api.bible account) — **not OA's job**; OA just states this clearly.
+- **api.bible connector is NOT core — it ships as a plugin (see M13).** A church that wants a licensed version installs the bring-your-own-key api.bible plugin from OA's GitHub; it feeds `UpsertVersionVersesAsync` under *their own* account/terms. Keeping it out of core means the DRM/telemetry/redistribution concerns never touch the MIT codebase. **YouVersion Platform and any OA-as-licensee model are ruled out** (no shared keys, no redistribution, mandated telemetry/DRM).
+
+**OA features implied:** per-version **copyright/attribution** footer token; CC BY-SA Bible data packaged separately from MIT code; clear "version not installed / format is protected" notices. *(Tracked: adding AI/ML features anywhere forfeits Biblica Express Licensing eligibility — only relevant if a church goes the api.bible route.)*
+
+**Milestone 12 done when:** the operator imports a folder of `.vpagd` files and gets faithful services (correct order, songs/scripture/media, themed), shared content is deduped across files, the central scripture version is enrichable from a legal full Bible later with no rework, and copyrighted versions can display their required attribution.
+
+---
+
+## Milestone 13 — Plugins (extensible add-ons via GitHub)
+
+**Why:** core OA stays MIT and ships **zero** third-party-licensed connectors. Optional capabilities that carry licensing, telemetry, or DRM strings (first one: the **api.bible Bible connector**) ship as **separate plugins** released on OA's GitHub. A church downloads a plugin and adds it inside OA — so those concerns never touch the core codebase and never burden installs that don't opt in.
+
+### 13.1 — Plugin contract (Application layer)
+- `IPlugin` (id, name, version, lifecycle) + capability interfaces. First capability: `IBibleSourcePlugin` — fetches `(version, books, verses)` and feeds the existing `IBibleService.UpsertVersionVersesAsync` sink. No plugin gets DB or filesystem access beyond the capability surface it's handed.
+- Contract lives in a small `OpenAdoration.Plugins.Abstractions` package so a plugin repo references *only* that, not the whole app.
+
+### 13.2 — Discovery & loading
+- A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`.
+- Dropped in / installed to `%LOCALAPPDATA%\OpenAdoration\plugins\<id>\`; discovered at startup, loaded in a **collectible `AssemblyLoadContext`** so a plugin can be added/removed without restarting where practical.
+- Version gate: skip + warn if `minOaVersion` exceeds the running app.
+
+### 13.3 — Settings UX
+- Settings → **Plugins**: list installed (name/version/enabled), **Add plugin…** (pick a downloaded `.oaplugin`), enable/disable, remove. Link out to the GitHub plugin catalog.
+- Plugin-provided settings (e.g. the api.bible key field) render in a section the plugin contributes.
+
+### 13.4 — First plugin: api.bible connector (separate repo)
+- Bring-your-own-key: the church pastes *its own* api.bible key, picks versions, syncs into the local DB via `IBibleSourcePlugin` → `UpsertVersionVersesAsync` (≥30-day refresh). The church is the licensee and accepts api.bible's terms; OA core ships no key and no copyrighted text.
+- Built and released in its own repo so the licensed-source code never lands in the MIT core.
+
+**Security ceiling:** plugins run **in-process at full trust** — only install OA-published plugins (the trusted default catalog). *(ponytail: no sandboxing; revisit only if untrusted third parties start publishing plugins.)*
+
+**Milestone 13 done when:** a church downloads the api.bible plugin from OA's GitHub, adds it via Settings → Plugins, pastes its own key, and syncs a Bible version into the local DB — with zero api.bible (or any licensed-source) code in the core repo.
+
+---
+
 ## Out of scope (and why)
 
 | Feature | Status / reason |
@@ -555,6 +628,12 @@ Reliability    →    Content &       →    Presentation    →    i18n
 & Releases          Imports              Richness             (multi-language)
 (backup/restore,    (song formats,       (transitions, overlays,  (resx, language
  auto-update)        decks, ref-jump)     dual scripture, video)    setting, Spanish)
+
+Milestone 12         Milestone 13
+VideoPsalm      →    Plugins
+Migration            (GitHub add-ons,
+(legal-only import,   api.bible connector
+ references only)     as 1st plugin)
 ```
 
 Each milestone leaves the app in a better, shippable state than before it. No milestone introduces new features on top of unverified ones.
@@ -582,3 +661,5 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **9 — Content & Imports** | More song formats, image/PDF decks, Bible ref-jump | Large |
 | **10 — Presentation Richness** | Transition library, overlays, dual scripture, clean output, video transport controls | Large |
 | **11 — Internationalization** | Multi-language UI (.resx infra, language setting, Spanish translation) | Medium |
+| **12 — VideoPsalm Migration** | Full-agenda import (songs/scripture/media/schedule/themes), references-only scripture (verse text omitted as licensed), centralized enrichable Bible, batch + dedup | Large |
+| **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); api.bible bring-your-own-key Bible connector as the first plugin | Medium |
