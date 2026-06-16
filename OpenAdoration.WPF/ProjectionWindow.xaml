@@ -1,6 +1,7 @@
 <Window x:Class="OpenAdoration.WPF.ProjectionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         Title="OpenAdoration — Projection"
         Background="Black"
         WindowStyle="None"
@@ -18,14 +19,15 @@
                Stretch="UniformToFill"
                Visibility="Collapsed" />
 
-        <!-- Theme background video — ambient loop, always muted -->
-        <MediaElement x:Name="ThemeBackgroundVideo"
-                      LoadedBehavior="Manual"
-                      Stretch="UniformToFill"
-                      Visibility="Collapsed"
-                      IsMuted="True"
-                      MediaEnded="OnThemeVideoEnded"
-                      MediaFailed="OnThemeVideoFailed" />
+        <!-- Theme background video — ambient loop, always muted (FFME: any codec) -->
+        <ffme:MediaElement x:Name="ThemeBackgroundVideo"
+                           LoadedBehavior="Play"
+                           UnloadedBehavior="Manual"
+                           Stretch="UniformToFill"
+                           Visibility="Collapsed"
+                           IsMuted="True"
+                           MediaEnded="OnThemeVideoEnded"
+                           MediaFailed="OnThemeVideoFailed" />
 
         <!-- Foreground content layers — opacity-animated on slide change for a fade transition.
              Theme background layers stay outside so they don't flicker between slides. -->
@@ -38,16 +40,19 @@
                HorizontalAlignment="Center"
                Visibility="Collapsed" />
 
-        <!-- Media video layer — for SlideType.Media with video files, plays with audio -->
-        <MediaElement x:Name="ContentVideo"
-                      LoadedBehavior="Manual"
-                      Stretch="Uniform"
-                      VerticalAlignment="Center"
-                      HorizontalAlignment="Center"
-                      Visibility="Collapsed"
-                      MediaOpened="OnContentVideoOpened"
-                      MediaEnded="OnContentVideoEnded"
-                      MediaFailed="OnContentVideoFailed" />
+        <!-- Media video layer — for SlideType.Media with video files, plays with audio (FFME: any codec) -->
+        <ffme:MediaElement x:Name="ContentVideo"
+                           LoadedBehavior="Play"
+                           UnloadedBehavior="Manual"
+                           Stretch="Uniform"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Visibility="Collapsed"
+                           MediaOpened="OnContentVideoOpened"
+                           MediaEnded="OnContentVideoEnded"
+                           MediaFailed="OnContentVideoFailed"
+                           PositionChanged="OnContentVideoPositionChanged"
+                           MediaStateChanged="OnContentVideoStateChanged" />
 
         <!-- 3-zone text layer: Header / Body / Footer -->
         <Grid x:Name="TextZoneGrid" Visibility="Collapsed">

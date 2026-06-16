@@ -100,6 +100,10 @@ public partial class App : WpfApp
         _logger = _host.Services.GetRequiredService<ILogger<App>>();
         _logger.LogInformation("OpenAdoration starting up");
 
+        // Load the FFmpeg media engine so the projector can decode any codec (incl. HEVC).
+        // Non-fatal: if FFmpeg is missing the app still runs; only video playback is affected.
+        Helpers.MediaEngine.Initialize(_logger);
+
         try
         {
             await _host.Services.InitialiseDatabaseAsync();

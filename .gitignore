@@ -19,6 +19,9 @@
 *.iobj
 *.pch
 
+## FFmpeg LGPL binaries (fetched by installer/fetch-ffmpeg.ps1 — not source, ~33 MB)
+OpenAdoration.WPF/ffmpeg/
+
 ## Installer output (built artifacts — not source)
 installer/out/
 *.msi

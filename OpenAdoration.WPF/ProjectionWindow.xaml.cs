@@ -9,6 +9,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Unosquare.FFME.Common;
 
 namespace OpenAdoration.WPF;
 
@@ -289,9 +290,9 @@ public partial class ProjectionWindow : Window
                 ThemeBackgroundImage.Source     = null;
                 ThemeBackgroundImage.Visibility = Visibility.Collapsed;
 
-                ThemeBackgroundVideo.Source     = new Uri(_activeTheme.BackgroundVideoPath, UriKind.Absolute);
+                // FFME opens + plays automatically because LoadedBehavior="Play".
+                _ = ThemeBackgroundVideo.Open(new Uri(_activeTheme.BackgroundVideoPath, UriKind.Absolute));
                 ThemeBackgroundVideo.Visibility = Visibility.Visible;
-                ThemeBackgroundVideo.Play();
             }
             catch (Exception ex)
             {
@@ -348,149 +349,95 @@ public partial class ProjectionWindow : Window
 
     private void StopThemeVideo()
     {
-        ThemeBackgroundVideo.Stop();
-        ThemeBackgroundVideo.Source     = null;
+        _ = ThemeBackgroundVideo.Close();
         ThemeBackgroundVideo.Visibility = Visibility.Collapsed;
     }
 
     private void StopContentVideo()
     {
-        StopMediaPositionTimer();
-        _contentVideoPlaying = false;
-        ContentVideo.Stop();
-        ContentVideo.Source     = null;
+        _ = ContentVideo.Close();
         ContentVideo.Visibility = Visibility.Collapsed;
     }
 
-    // -- Media transport (M10.5) -----------------------------------------------
+    // -- Media transport (M10.5, FFME) -----------------------------------------
 
-    // True while the projected content video is playing (vs. paused). Drives the
-    // play/pause toggle and the state reported back to the operator UI.
-    private bool _contentVideoPlaying;
-    private System.Windows.Threading.DispatcherTimer? _mediaPositionTimer;
-
-    private void OnMediaCommandRequested(object? sender, MediaCommand command)
+    private async void OnMediaCommandRequested(object? sender, MediaCommand command)
     {
-        _ = Dispatcher.InvokeAsync(() =>
+        if (ContentVideo.Source is null) return;
+        switch (command)
         {
-            if (ContentVideo.Source is null) return;
-            switch (command)
-            {
-                case MediaCommand.Play:            PlayContentVideo();  break;
-                case MediaCommand.Pause:           PauseContentVideo(); break;
-                case MediaCommand.TogglePlayPause:
-                    if (_contentVideoPlaying) PauseContentVideo(); else PlayContentVideo();
-                    break;
-                case MediaCommand.Restart:
-                    ContentVideo.Position = TimeSpan.Zero;
-                    PlayContentVideo();
-                    break;
-            }
-            ReportMediaTransport();
-        });
-    }
-
-    private void OnMediaSeekRequested(object? sender, TimeSpan delta)
-    {
-        _ = Dispatcher.InvokeAsync(() =>
-        {
-            if (ContentVideo.Source is null) return;
-
-            var duration = ContentVideo.NaturalDuration.HasTimeSpan
-                ? ContentVideo.NaturalDuration.TimeSpan
-                : TimeSpan.Zero;
-
-            var target = ContentVideo.Position + delta;
-            if (target < TimeSpan.Zero) target = TimeSpan.Zero;
-            if (duration > TimeSpan.Zero && target > duration) target = duration;
-
-            ContentVideo.Position = target;
-            ReportMediaTransport();
-        });
-    }
-
-    private void PlayContentVideo()
-    {
-        ContentVideo.Play();
-        _contentVideoPlaying = true;
-        StartMediaPositionTimer();
-    }
-
-    private void PauseContentVideo()
-    {
-        ContentVideo.Pause();
-        _contentVideoPlaying = false;
-    }
-
-    // Loops the projected content video and keeps the operator's progress bar accurate.
-    private void OnContentVideoEnded(object sender, RoutedEventArgs e)
-    {
-        ContentVideo.Position = TimeSpan.Zero;
-        if (_contentVideoPlaying) ContentVideo.Play();
+            case MediaCommand.Play:            await ContentVideo.Play();  break;
+            case MediaCommand.Pause:           await ContentVideo.Pause(); break;
+            case MediaCommand.TogglePlayPause:
+                if (ContentVideo.IsPlaying) await ContentVideo.Pause(); else await ContentVideo.Play();
+                break;
+            case MediaCommand.Restart:
+                await ContentVideo.Seek(TimeSpan.Zero);
+                await ContentVideo.Play();
+                break;
+        }
         ReportMediaTransport();
     }
 
-    private void OnContentVideoOpened(object sender, RoutedEventArgs e) => ReportMediaTransport();
-
-    private void StartMediaPositionTimer()
+    private async void OnMediaSeekRequested(object? sender, TimeSpan delta)
     {
-        if (_mediaPositionTimer is not null) return;
-        _mediaPositionTimer = new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(250)
-        };
-        _mediaPositionTimer.Tick += OnMediaPositionTick;
-        _mediaPositionTimer.Start();
+        if (ContentVideo.Source is null) return;
+
+        var duration = ContentVideo.NaturalDuration ?? TimeSpan.Zero;
+        var target   = ContentVideo.Position + delta;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (duration > TimeSpan.Zero && target > duration) target = duration;
+
+        await ContentVideo.Seek(target);
+        ReportMediaTransport();
     }
 
-    private void StopMediaPositionTimer()
+    // Loops the projected content video when it reaches the end.
+    private async void OnContentVideoEnded(object? sender, EventArgs e)
     {
-        if (_mediaPositionTimer is null) return;
-        _mediaPositionTimer.Stop();
-        _mediaPositionTimer.Tick -= OnMediaPositionTick;
-        _mediaPositionTimer = null;
+        await ContentVideo.Seek(TimeSpan.Zero);
+        await ContentVideo.Play();
     }
 
-    private void OnMediaPositionTick(object? sender, EventArgs e) => ReportMediaTransport();
+    private void OnContentVideoOpened(object? sender, MediaOpenedEventArgs e) => ReportMediaTransport();
+    private void OnContentVideoPositionChanged(object? sender, PositionChangedEventArgs e) => ReportMediaTransport();
+    private void OnContentVideoStateChanged(object? sender, MediaStateChangedEventArgs e) => ReportMediaTransport();
 
     private void ReportMediaTransport()
     {
-        var duration = ContentVideo.NaturalDuration.HasTimeSpan
-            ? ContentVideo.NaturalDuration.TimeSpan
-            : TimeSpan.Zero;
-
+        var duration = ContentVideo.NaturalDuration ?? TimeSpan.Zero;
         _projectionService.ReportMediaTransport(
-            new MediaTransportState(_contentVideoPlaying, ContentVideo.Position, duration));
+            new MediaTransportState(ContentVideo.IsPlaying, ContentVideo.Position, duration));
     }
 
     // Loops the video background by seeking back to the start when it finishes.
-    private void OnThemeVideoEnded(object sender, RoutedEventArgs e)
+    private async void OnThemeVideoEnded(object? sender, EventArgs e)
     {
-        ThemeBackgroundVideo.Position = TimeSpan.Zero;
-        ThemeBackgroundVideo.Play();
+        await ThemeBackgroundVideo.Seek(TimeSpan.Zero);
+        await ThemeBackgroundVideo.Play();
     }
 
     // WPF MediaElement decodes via Windows Media Foundation; an unsupported codec/container
     // fails here (otherwise silently). Logging e.ErrorException captures the real cause
     // (e.g. HRESULT 0xC00D5212 "no decoder"), and we degrade gracefully instead of going black.
-    private void OnContentVideoFailed(object sender, System.Windows.ExceptionRoutedEventArgs e)
+    private void OnContentVideoFailed(object? sender, MediaFailedEventArgs e)
     {
         _logger.LogError(e.ErrorException,
-            "Projection video failed to play -- likely an unsupported codec/container. Showing blank. File: '{FileName}'",
+            "Projection video failed to play -- decode error. Showing blank. File: '{FileName}'",
             VideoSourceName(ContentVideo));
         ShowBlankOverlay();
     }
 
-    private void OnThemeVideoFailed(object sender, System.Windows.ExceptionRoutedEventArgs e)
+    private void OnThemeVideoFailed(object? sender, MediaFailedEventArgs e)
     {
         _logger.LogWarning(e.ErrorException,
-            "Theme background video failed to play -- likely an unsupported codec/container. Falling back to image/color. File: '{FileName}'",
+            "Theme background video failed to play -- decode error. Falling back to image/color. File: '{FileName}'",
             VideoSourceName(ThemeBackgroundVideo));
         StopThemeVideo();
         ApplyThemeImage();
     }
 
-    private static string VideoSourceName(System.Windows.Controls.MediaElement element) =>
+    private static string VideoSourceName(Unosquare.FFME.MediaElement element) =>
         element.Source is null ? "(none)" : Path.GetFileName(element.Source.LocalPath);
 
     private static System.Windows.TextAlignment ParseTextAlignment(string? s) => s switch
@@ -628,11 +575,10 @@ public partial class ProjectionWindow : Window
         try
         {
             HideAllLayers();
-            ContentVideo.Source     = new Uri(path, UriKind.Absolute);
+            // FFME opens + plays automatically because LoadedBehavior="Play"; transport
+            // state flows back via PositionChanged / MediaStateChanged.
+            _ = ContentVideo.Open(new Uri(path, UriKind.Absolute));
             ContentVideo.Visibility = Visibility.Visible;
-            ContentVideo.Play();
-            _contentVideoPlaying = true;
-            StartMediaPositionTimer();
         }
         catch (Exception ex)
         {
@@ -762,7 +708,6 @@ public partial class ProjectionWindow : Window
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
         _projectionService.MediaCommandRequested  -= OnMediaCommandRequested;
         _projectionService.MediaSeekRequested     -= OnMediaSeekRequested;
-        StopMediaPositionTimer();
         base.OnClosed(e);
     }
 }

@@ -34,34 +34,40 @@ public partial class StageView : System.Windows.Controls.UserControl
         SyncVideo(NextVideoMedia, _vm.NextPreview);
     }
 
-    private static void SyncVideo(System.Windows.Controls.MediaElement element, SlidePreview preview)
+    // FFME opens + plays via LoadedBehavior="Play"; Open/Close are async and set/clear Source.
+    private static async void SyncVideo(Unosquare.FFME.MediaElement element, SlidePreview preview)
     {
-        if (preview.IsVideoMedia && !string.IsNullOrEmpty(preview.MediaPath))
+        try
         {
-            var uri = new Uri(preview.MediaPath, UriKind.Absolute);
-            if (element.Source != uri)
+            if (preview.IsVideoMedia && !string.IsNullOrEmpty(preview.MediaPath))
             {
-                element.Source = uri;
-                element.Play();
+                var uri = new Uri(preview.MediaPath, UriKind.Absolute);
+                if (element.Source != uri) await element.Open(uri);
+            }
+            else if (element.Source is not null)
+            {
+                await element.Close();
             }
         }
-        else if (element.Source is not null)
+        catch
         {
-            element.Stop();
-            element.Source = null;
+            // Preview is non-critical; an open/decode failure must not crash the stage view
+            // (the projector path logs its own failures).
         }
     }
 
-    private void OnCurrentVideoEnded(object sender, RoutedEventArgs e)
-    {
-        CurrentVideoMedia.Position = TimeSpan.Zero;
-        CurrentVideoMedia.Play();
-    }
+    private async void OnCurrentVideoEnded(object? sender, EventArgs e) => await LoopAsync(CurrentVideoMedia);
 
-    private void OnNextVideoEnded(object sender, RoutedEventArgs e)
+    private async void OnNextVideoEnded(object? sender, EventArgs e) => await LoopAsync(NextVideoMedia);
+
+    private static async Task LoopAsync(Unosquare.FFME.MediaElement element)
     {
-        NextVideoMedia.Position = TimeSpan.Zero;
-        NextVideoMedia.Play();
+        try
+        {
+            await element.Seek(TimeSpan.Zero);
+            await element.Play();
+        }
+        catch { /* preview loop is best-effort */ }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

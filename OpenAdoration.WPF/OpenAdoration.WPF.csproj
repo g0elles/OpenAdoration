@@ -26,9 +26,25 @@
     <Resource Include="Assets\openadoration.ico" />
   </ItemGroup>
 
+  <!-- FFmpeg LGPL shared libraries (fetched by installer/fetch-ffmpeg.ps1, NOT in git).
+       Copied next to the exe so the FFME media engine loads them at runtime. -->
+  <ItemGroup>
+    <Content Include="$(MSBuildProjectDirectory)\ffmpeg\**\*.*"
+             Condition="Exists('$(MSBuildProjectDirectory)\ffmpeg')"
+             Link="ffmpeg\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <!-- Keep these loose in an ffmpeg\ folder next to the exe — FFME loads them by path at
+           runtime. Without this, single-file publish (IncludeNativeLibrariesForSelfExtract)
+           swallows the native DLLs into the exe and FFME can't find them. -->
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="5.0.0" />
+    <PackageReference Include="FFME.Windows" Version="4.4.350" />
     <!-- Required so dotnet-ef can locate the design-time services via the startup project -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
       <PrivateAssets>all</PrivateAssets>

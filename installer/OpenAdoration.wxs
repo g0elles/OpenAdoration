@@ -32,7 +32,10 @@
 
     <!-- Install layout -->
     <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLFOLDER" Name="OpenAdoration" />
+      <Directory Id="INSTALLFOLDER" Name="OpenAdoration">
+        <!-- FFmpeg shared libraries the FFME media engine loads at runtime (next to the exe) -->
+        <Directory Id="FfmpegFolder" Name="ffmpeg" />
+      </Directory>
     </StandardDirectory>
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="AppMenuFolder" Name="OpenAdoration" />
@@ -70,9 +73,17 @@
                      KeyPath="yes" />
     </Component>
 
+    <!-- FFmpeg LGPL binaries (staged by installer/fetch-ffmpeg.ps1, copied into the publish
+         dir by the csproj). Harvested into the ffmpeg subfolder so playback works on machines
+         without system codecs. -->
+    <ComponentGroup Id="FfmpegComponents" Directory="FfmpegFolder">
+      <Files Include="$(var.PublishDir)\ffmpeg\**" />
+    </ComponentGroup>
+
     <Feature Id="Main" Title="OpenAdoration" Level="1">
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="Shortcuts" />
+      <ComponentGroupRef Id="FfmpegComponents" />
     </Feature>
 
   </Package>
