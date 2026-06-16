@@ -274,6 +274,20 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         await context.SaveChangesAsync(ct);
     }
 
+    public async Task SetItemBibleVersionAsync(int itemId, int? bibleVersionId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var item = await context.ScheduleItems.FindAsync([itemId], ct)
+            ?? throw new InvalidOperationException($"ScheduleItem with ID {itemId} was not found.");
+
+        if (item is not BibleScheduleItem bibleItem)
+            throw new InvalidOperationException($"ScheduleItem {itemId} is not a Bible item.");
+
+        bibleItem.BibleVersionId = bibleVersionId;
+        await context.SaveChangesAsync(ct);
+    }
+
     public async Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

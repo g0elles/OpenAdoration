@@ -47,6 +47,22 @@ public partial class ScheduleItemViewModel : ObservableObject
     /// </summary>
     public bool NeedsBibleVersion => Item is BibleScheduleItem { BibleVersionId: null };
 
+    /// <summary>
+    /// Operator's chosen replacement version for a reference-only Bible item. Setting it persists
+    /// the version on this item in place (same position, book/chapter/verse range) and clears the
+    /// "no installed Bible" warning. Bound to the inline picker shown when <see cref="NeedsBibleVersion"/>.
+    /// </summary>
+    [ObservableProperty] private BibleVersion? _selectedBibleVersion;
+
+    partial void OnSelectedBibleVersionChanged(BibleVersion? value)
+    {
+        if (value is null || Item is not BibleScheduleItem bibleItem) return;
+        bibleItem.BibleVersionId = value.Id;
+        bibleItem.BibleVersion = value;
+        OnPropertyChanged(nameof(NeedsBibleVersion));
+        BibleVersionChangeRequested?.Invoke(this, value.Id);
+    }
+
     // Per-service section order; empty = use the song's own VerseOrder.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasVerseOrderHint))]
@@ -76,6 +92,7 @@ public partial class ScheduleItemViewModel : ObservableObject
     public event EventHandler? Selected;
     public event EventHandler<int?>? AutoAdvanceChangeRequested;
     public event EventHandler<string?>? VerseOrderOverrideChangeRequested;
+    public event EventHandler<int?>? BibleVersionChangeRequested;
 
     public ScheduleItemViewModel(ScheduleItem item)
     {

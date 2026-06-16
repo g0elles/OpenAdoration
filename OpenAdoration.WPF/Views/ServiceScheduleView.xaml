@@ -545,13 +545,27 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <!-- Scripture with no installed Bible version (e.g. VideoPsalm reference-only import) -->
-                                        <TextBlock Text="⚠ No installed Bible — replace with a version you have"
+                                        <TextBlock Text="⚠ No installed Bible — pick a version you have"
                                                    Foreground="{StaticResource WarningBrush}"
                                                    FontSize="10"
                                                    FontWeight="SemiBold"
                                                    Margin="0,2,8,0"
                                                    HorizontalAlignment="Left"
                                                    Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}" />
+                                        <!-- In-place replacement: set this item's version, keeping its position -->
+                                        <ComboBox Style="{StaticResource FieldComboBox}"
+                                                  Margin="0,4,8,0"
+                                                  MinWidth="220"
+                                                  HorizontalAlignment="Left"
+                                                  ItemsSource="{Binding DataContext.BibleVersions, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                  SelectedItem="{Binding SelectedBibleVersion, Mode=TwoWay}"
+                                                  Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
                                     </StackPanel>
 
                                     <!-- Auto-advance control: [−] [⏱ Ns / Manual] [+] -->
