@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -264,6 +265,63 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
         await LoadAsync();
         _dialogService.Inform(FormatSummary(summary), "Import Service");
+    }
+
+    [RelayCommand]
+    private async Task ImportVideoPsalmFolderAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Import a folder of VideoPsalm services" };
+        if (dialog.ShowDialog() != true) return;
+
+        var files = Directory.GetFiles(dialog.FolderName, "*.vpagd", SearchOption.AllDirectories);
+        if (files.Length == 0)
+        {
+            _dialogService.Inform("No VideoPsalm agendas (*.vpagd) were found in that folder.", "Import Folder");
+            return;
+        }
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+
+        VpBatchSummary batch;
+        try
+        {
+            batch = await _vpImporter.ImportManyAsync(files);
+            _logger.LogInformation("Batch-imported {Count} VideoPsalm agendas from {Folder}", files.Length, dialog.FolderName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Batch VideoPsalm import failed for {Folder}", dialog.FolderName);
+            _dialogService.Inform("Could not import this folder.", "Import Folder");
+            return;
+        }
+        finally { IsBusy = false; }
+
+        await LoadAsync();
+        _dialogService.Inform(FormatBatchSummary(batch), "Import Folder");
+    }
+
+    private static string FormatBatchSummary(VpBatchSummary batch)
+    {
+        var added = batch.Imported.Where(s => !s.AlreadyImported).ToList();
+        var skipped = batch.Imported.Count - added.Count;
+
+        var lines = new List<string>
+        {
+            $"Imported {added.Count} service(s)" + (skipped > 0 ? $", {skipped} already present" : "") + ":",
+            $"• Songs: {added.Sum(s => s.SongsImported)} new, {added.Sum(s => s.SongsReused)} reused",
+            $"• Scripture references: {added.Sum(s => s.ScriptureReferences)} (verse text omitted — it's licensed; install a Bible version to display it)",
+            $"• Media: {added.Sum(s => s.MediaImported)} new, {added.Sum(s => s.MediaReused)} reused"
+        };
+        var themes = added.Sum(s => s.ThemesCreated);
+        if (themes > 0) lines.Add($"• Themes reconstructed: {themes}");
+        if (batch.Failed.Count > 0)
+        {
+            lines.Add($"• Failed: {batch.Failed.Count}");
+            lines.AddRange(batch.Failed.Select(f => $"   – {f}"));
+        }
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static string FormatSummary(VpImportSummary s)

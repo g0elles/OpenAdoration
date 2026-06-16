@@ -18,3 +18,8 @@ public sealed record VpImportSummary
     public int ThemesCreated { get; init; }
     public int TotalItems { get; init; }
 }
+
+/// <summary>Outcome of a folder (batch) import: per-file successes plus "name: error" failures.</summary>
+public sealed record VpBatchSummary(
+    IReadOnlyList<VpImportSummary> Imported,
+    IReadOnlyList<string> Failed);

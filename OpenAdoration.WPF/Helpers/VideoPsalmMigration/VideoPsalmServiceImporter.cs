@@ -83,6 +83,28 @@ public sealed class VideoPsalmServiceImporter
         return ctx.Counters.ToSummary(service.Name, agenda.Items.Count);
     }
 
+    /// <summary>
+    /// Imports many agendas (a folder). Cross-file dedup is automatic — song/media/service
+    /// lookups hit the DB, so content shared across files is reused. One bad file is recorded
+    /// and skipped, not fatal to the rest.
+    /// </summary>
+    public async Task<VpBatchSummary> ImportManyAsync(IReadOnlyList<string> filePaths, CancellationToken ct = default)
+    {
+        var imported = new List<VpImportSummary>();
+        var failed = new List<string>();
+        foreach (var path in filePaths)
+        {
+            ct.ThrowIfCancellationRequested();
+            try { imported.Add(await ImportAsync(path, ct)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to import VideoPsalm agenda {File}", path);
+                failed.Add($"{Path.GetFileName(path)}: {ex.Message}");
+            }
+        }
+        return new VpBatchSummary(imported, failed);
+    }
+
     private async Task ImportItemAsync(int serviceId, VpAgendaItem item, ImportContext ctx, CancellationToken ct)
     {
         var autoAdvance = item.Properties.AutoAdvanceSeconds;

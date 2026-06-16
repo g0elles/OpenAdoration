@@ -31,6 +31,10 @@
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ImportVideoPsalmServiceCommand}"
                                 Margin="0,0,8,0" />
+                        <Button Content="Import folder…"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ImportVideoPsalmFolderCommand}"
+                                Margin="0,0,8,0" />
                         <Button Content="+ New Service"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding ShowCreateFormCommand}" />
