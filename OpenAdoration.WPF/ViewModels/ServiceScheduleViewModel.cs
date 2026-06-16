@@ -70,6 +70,14 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private int _versePickerAnchor;
     private int _versePickerEnd;
 
+    // Non-null while the Bible panel is re-picking a passage to replace a flagged item in place
+    // (vs adding a new one). Drives the confirm-button label.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BibleConfirmButtonText))]
+    private ScheduleItemViewModel? _replacingBibleItem;
+
+    public string BibleConfirmButtonText => ReplacingBibleItem is null ? "Add" : "Replace";
+
     public bool   CanConfirmAddBible       => _versePickerAnchor > 0;
     public string BiblePickerSelectionLabel
     {
@@ -382,6 +390,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             IsLiveMode      = false;
             CurrentLiveIndex = -1;
             RebuildScheduleItems(loaded);
+            await FlagUnresolvedBibleItemsAsync();
         }
         catch (Exception ex)
         {
@@ -482,6 +491,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private async Task ShowAddBiblePanelAsync()
     {
+        ReplacingBibleItem            = null; // default to add mode; replace flow sets it after opening
         IsAddingSong                  = false;
         IsAddingMedia                 = false;
         SelectedAddBibleBook          = null;
@@ -578,6 +588,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private void CancelAddBible()
     {
         IsAddingBible      = false;
+        ReplacingBibleItem = null;
         _versePickerAnchor = 0;
         _versePickerEnd    = 0;
         RefreshVersePickerHighlight();
@@ -687,21 +698,32 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         ClearError();
         try
         {
-            await _serviceService.AddBibleItemAsync(
-                OpenedService.Id,
-                SelectedAddBibleBook.Name,
-                chapter, verseStart, verseEnd,
-                SelectedAddBibleVersion.Id,
-                autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
-            _logger.LogInformation("Added Bible {Book} {Ch}:{Vs}-{Ve} to service {ServiceId}",
-                SelectedAddBibleBook.Name, chapter, verseStart, verseEnd, OpenedService.Id);
+            if (ReplacingBibleItem is { } target)
+            {
+                await _serviceService.UpdateBibleItemAsync(
+                    target.Item.Id, SelectedAddBibleBook.Name, chapter, verseStart, verseEnd, SelectedAddBibleVersion.Id);
+                _logger.LogInformation("Replaced Bible item {ItemId} with {Book} {Ch}:{Vs}-{Ve}",
+                    target.Item.Id, SelectedAddBibleBook.Name, chapter, verseStart, verseEnd);
+                ReplacingBibleItem = null;
+            }
+            else
+            {
+                await _serviceService.AddBibleItemAsync(
+                    OpenedService.Id,
+                    SelectedAddBibleBook.Name,
+                    chapter, verseStart, verseEnd,
+                    SelectedAddBibleVersion.Id,
+                    autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
+                _logger.LogInformation("Added Bible {Book} {Ch}:{Vs}-{Ve} to service {ServiceId}",
+                    SelectedAddBibleBook.Name, chapter, verseStart, verseEnd, OpenedService.Id);
+            }
             IsAddingBible = false;
             await RefreshScheduleItemsAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to add Bible item to service");
-            SetError("Could not add Bible passage.");
+            _logger.LogError(ex, "Failed to save Bible item to service");
+            SetError("Could not save Bible passage.");
         }
     }
 
@@ -716,6 +738,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             if (loaded is null) return;
             OpenedService = loaded;
             RebuildScheduleItems(loaded);
+            await FlagUnresolvedBibleItemsAsync();
         }
         catch (Exception ex)
         {
@@ -744,6 +767,31 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         RefreshLiveHighlight();
     }
 
+    // Flag Bible items whose verse text can't be resolved against an installed version, so the
+    // operator can re-pick the passage. Covers both no-version and book-name mismatch (e.g.
+    // VideoPsalm references stored under a name OA's installed Bibles don't use).
+    private async Task FlagUnresolvedBibleItemsAsync()
+    {
+        foreach (var vm in ScheduleItems)
+            if (vm.Item is BibleScheduleItem b)
+                vm.NeedsBibleVersion = !await BibleItemResolvesAsync(b);
+    }
+
+    private async Task<bool> BibleItemResolvesAsync(BibleScheduleItem item)
+    {
+        if (item.BibleVersionId is null) return false;
+        try
+        {
+            var verses = await _bibleService.GetVersesAsync(item.BibleVersionId.Value, item.Book, item.Chapter);
+            return verses.Any(v => v.Verse >= item.VerseStart && v.Verse <= item.VerseEnd);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Resolve check failed for Bible item {ItemId}", item.Id);
+            return false;
+        }
+    }
+
     private void SubscribeItemEvents(ScheduleItemViewModel vm)
     {
         vm.MoveUpRequested            += OnItemMoveUp;
@@ -752,7 +800,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.Selected                   += OnItemSelected;
         vm.AutoAdvanceChangeRequested += OnAutoAdvanceChangeRequested;
         vm.VerseOrderOverrideChangeRequested += OnVerseOrderOverrideChangeRequested;
-        vm.BibleVersionChangeRequested += OnBibleVersionChangeRequested;
+        vm.ReplaceBibleRequested += OnReplaceBibleRequested;
     }
 
     private void UnsubscribeItemEvents(ScheduleItemViewModel vm)
@@ -763,7 +811,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         vm.Selected                   -= OnItemSelected;
         vm.AutoAdvanceChangeRequested -= OnAutoAdvanceChangeRequested;
         vm.VerseOrderOverrideChangeRequested -= OnVerseOrderOverrideChangeRequested;
-        vm.BibleVersionChangeRequested -= OnBibleVersionChangeRequested;
+        vm.ReplaceBibleRequested -= OnReplaceBibleRequested;
     }
 
     private async void OnItemMoveUp(object? sender, EventArgs e)
@@ -1149,18 +1197,14 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         }
     }
 
-    private async void OnBibleVersionChangeRequested(object? sender, int? versionId)
+    // Open the Bible selection panel to re-pick the passage for a flagged item, replacing it in
+    // place. Re-selecting from installed data resolves the book-name mismatch (e.g. a VideoPsalm
+    // reference stored as "Josué" → the installed Bible's matching book).
+    private async void OnReplaceBibleRequested(object? sender, EventArgs e)
     {
         if (sender is not ScheduleItemViewModel vm) return;
-        try
-        {
-            // Entity is already synced by the item VM; just persist the in-place replacement.
-            await _serviceService.SetItemBibleVersionAsync(vm.Item.Id, versionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to persist Bible version for item {ItemId}", vm.Item.Id);
-        }
+        await ShowAddBiblePanelAsync();
+        ReplacingBibleItem = vm;
     }
 
     private void OnProjectionStateChanged(object? sender, bool isProjecting)

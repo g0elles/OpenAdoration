@@ -195,16 +195,17 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
-    public async Task SetItemBibleVersionAsync(int itemId, int? bibleVersionId, CancellationToken ct = default)
+    public async Task UpdateBibleItemAsync(
+        int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default)
     {
-        _logger.LogDebug("Setting Bible version for item {ItemId}", itemId);
+        _logger.LogDebug("Updating Bible item {ItemId} to {Book} {Chapter}:{VerseStart}-{VerseEnd}", itemId, book, chapter, verseStart, verseEnd);
         try
         {
-            await _repository.SetItemBibleVersionAsync(itemId, bibleVersionId, ct);
+            await _repository.UpdateBibleItemAsync(itemId, book, chapter, verseStart, verseEnd, bibleVersionId, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to set Bible version for item {ItemId}", itemId);
+            _logger.LogError(ex, "Failed to update Bible item {ItemId}", itemId);
             throw;
         }
     }

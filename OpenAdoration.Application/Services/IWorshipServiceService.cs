@@ -19,6 +19,6 @@ public interface IWorshipServiceService
     Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
     Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default);
 
-    /// <summary>Point an existing Bible schedule item at an installed version (or null), keeping its position.</summary>
-    Task SetItemBibleVersionAsync(int itemId, int? bibleVersionId, CancellationToken ct = default);
+    /// <summary>Re-point an existing Bible schedule item at a new passage/version in place, keeping its position.</summary>
+    Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default);
 }

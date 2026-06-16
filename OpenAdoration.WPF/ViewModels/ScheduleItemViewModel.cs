@@ -45,23 +45,15 @@ public partial class ScheduleItemViewModel : ObservableObject
     /// reference only — verse text is licensed). The operator must point it at a Bible they
     /// have, or it projects as a bare reference. Drives the builder's "no Bible" warning.
     /// </summary>
-    public bool NeedsBibleVersion => Item is BibleScheduleItem { BibleVersionId: null };
-
     /// <summary>
-    /// Operator's chosen replacement version for a reference-only Bible item. Setting it persists
-    /// the version on this item in place (same position, book/chapter/verse range) and clears the
-    /// "no installed Bible" warning. Bound to the inline picker shown when <see cref="NeedsBibleVersion"/>.
+    /// A Bible item whose verse text doesn't resolve against an installed version — either no
+    /// version is installed, or (e.g. VideoPsalm references) the stored book name doesn't match
+    /// OA's book names. Set by the parent after a resolve check; drives the row's "fix" prompt.
     /// </summary>
-    [ObservableProperty] private BibleVersion? _selectedBibleVersion;
+    [ObservableProperty] private bool _needsBibleVersion;
 
-    partial void OnSelectedBibleVersionChanged(BibleVersion? value)
-    {
-        if (value is null || Item is not BibleScheduleItem bibleItem) return;
-        bibleItem.BibleVersionId = value.Id;
-        bibleItem.BibleVersion = value;
-        OnPropertyChanged(nameof(NeedsBibleVersion));
-        BibleVersionChangeRequested?.Invoke(this, value.Id);
-    }
+    [RelayCommand]
+    private void ReplaceBible() => ReplaceBibleRequested?.Invoke(this, EventArgs.Empty);
 
     // Per-service section order; empty = use the song's own VerseOrder.
     [ObservableProperty]
@@ -92,7 +84,7 @@ public partial class ScheduleItemViewModel : ObservableObject
     public event EventHandler? Selected;
     public event EventHandler<int?>? AutoAdvanceChangeRequested;
     public event EventHandler<string?>? VerseOrderOverrideChangeRequested;
-    public event EventHandler<int?>? BibleVersionChangeRequested;
+    public event EventHandler? ReplaceBibleRequested;
 
     public ScheduleItemViewModel(ScheduleItem item)
     {
