@@ -597,6 +597,29 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 
 ---
 
+## Milestone 14 — Content-level theming (theme cascade)
+
+**Why:** OA today attaches a theme only at the **schedule-item** level (`ScheduleItem.ThemeId`); a song or Bible passage projected **standalone** always uses the single app-wide default. VideoPsalm instead themes by **content**: every song, songbook, and Bible version carries its own style, resolved through a most-specific-wins cascade (Base → all-songbooks → one-songbook → one-song, plus per-content-type defaults like `RootStyle`/`BibleStyle`). M12.4 has to flatten that into a throwaway per-item theme. To migrate faithfully **and** make themes useful outside a service, OA needs the theme to live on the content, not just the agenda line.
+
+### 14.1 — Content-level theme assignment
+- Add nullable `ThemeId` where styling belongs to the content: `Song.ThemeId`; a per-**content-type** default theme (Songs / Scripture / Media); keep the existing app-wide default as the root. *(Bible-version-level theme can come later if a church needs different looks per version — YAGNI until asked.)*
+- One EF migration; all `ThemeId`s nullable so existing data is untouched (null = inherit from the level above).
+
+### 14.2 — Resolution cascade
+- Single resolver, most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → app default`.
+- Used **everywhere** projection renders, so standalone song/Bible projection honors it too (not just live service items).
+
+### 14.3 — UI
+- Theme picker in the song editor (inherit / pick).
+- "Default themes" section (Settings or the Themes page): set the per-content-type defaults; the app default stays the existing "Set default".
+
+### 14.4 — Fold M12.4 into the cascade
+- VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
+
+**Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
+
+---
+
 ## Out of scope (and why)
 
 | Feature | Status / reason |
@@ -629,11 +652,11 @@ Reliability    →    Content &       →    Presentation    →    i18n
 (backup/restore,    (song formats,       (transitions, overlays,  (resx, language
  auto-update)        decks, ref-jump)     dual scripture, video)    setting, Spanish)
 
-Milestone 12         Milestone 13
-VideoPsalm      →    Plugins
-Migration            (GitHub add-ons,
-(legal-only import,   api.bible connector
- references only)     as 1st plugin)
+Milestone 12         Milestone 13         Milestone 14
+VideoPsalm      →    Plugins         →    Content-level
+Migration            (GitHub add-ons,      theming
+(legal-only import,   api.bible connector  (theme cascade;
+ references only)     as 1st plugin)        folds in M12.4)
 ```
 
 Each milestone leaves the app in a better, shippable state than before it. No milestone introduces new features on top of unverified ones.
@@ -663,3 +686,4 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **11 — Internationalization** | Multi-language UI (.resx infra, language setting, Spanish translation) | Medium |
 | **12 — VideoPsalm Migration** | Full-agenda import (songs/scripture/media/schedule/themes), references-only scripture (verse text omitted as licensed), centralized enrichable Bible, batch + dedup | Large |
 | **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); api.bible bring-your-own-key Bible connector as the first plugin | Medium |
+| **14 — Content-level theming** | Theme on content (Song + per-type defaults) resolved by one cascade everywhere; standalone projection themed; folds in M12.4's per-item themes | Medium |
