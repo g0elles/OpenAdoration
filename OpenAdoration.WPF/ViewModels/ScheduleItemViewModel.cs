@@ -40,6 +40,13 @@ public partial class ScheduleItemViewModel : ObservableObject
     /// <summary>True only for song items — gates the verse-order override field in the builder.</summary>
     public bool IsSongItem => Item is SongScheduleItem;
 
+    /// <summary>
+    /// A scripture item whose version isn't installed (e.g. imported from VideoPsalm as a
+    /// reference only — verse text is licensed). The operator must point it at a Bible they
+    /// have, or it projects as a bare reference. Drives the builder's "no Bible" warning.
+    /// </summary>
+    public bool NeedsBibleVersion => Item is BibleScheduleItem { BibleVersionId: null };
+
     // Per-service section order; empty = use the song's own VerseOrder.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasVerseOrderHint))]

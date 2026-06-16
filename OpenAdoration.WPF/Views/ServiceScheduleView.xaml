@@ -544,6 +544,14 @@
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
+                                        <!-- Scripture with no installed Bible version (e.g. VideoPsalm reference-only import) -->
+                                        <TextBlock Text="⚠ No installed Bible — replace with a version you have"
+                                                   Foreground="{StaticResource WarningBrush}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,2,8,0"
+                                                   HorizontalAlignment="Left"
+                                                   Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
 
                                     <!-- Auto-advance control: [−] [⏱ Ns / Manual] [+] -->
@@ -987,12 +995,17 @@
                                                                FontSize="13"
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center" />
-                                                    <TextBlock Grid.Column="2"
-                                                               Text="{Binding DisplayTitle}"
-                                                               Foreground="{StaticResource TextPrimaryBrush}"
-                                                               FontSize="12"
-                                                               TextTrimming="CharacterEllipsis"
-                                                               VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DisplayTitle}"
+                                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   FontSize="12"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="⚠ No installed Bible"
+                                                                   Foreground="{StaticResource WarningBrush}"
+                                                                   FontSize="10"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                             <ControlTemplate.Triggers>
