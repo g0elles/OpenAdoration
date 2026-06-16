@@ -25,7 +25,13 @@ public sealed class SongConfiguration : IEntityTypeConfiguration<Song>
             .HasForeignKey(ss => ss.SongId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(s => s.SourceGuid)
+            .HasMaxLength(64);
+
         // Speed up title search and list ordering
         builder.HasIndex(s => s.Title);
+
+        // Dedup lookup for cross-agenda imports
+        builder.HasIndex(s => s.SourceGuid);
     }
 }

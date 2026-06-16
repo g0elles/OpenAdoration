@@ -12,6 +12,13 @@ public class Song : BaseEntity
     public string? CcliNumber { get; set; }
 
     /// <summary>
+    /// Stable cross-file identity from the import source (VideoPsalm song <c>Guid</c>).
+    /// Used to dedup the same song imported from multiple <c>.vpagd</c> agendas.
+    /// Null for songs created in-app.
+    /// </summary>
+    public string? SourceGuid { get; set; }
+
+    /// <summary>
     /// Space-separated section token sequence, e.g. "V1 C V2 C B C".
     /// When null/empty the definition order (Sections.Order) is used.
     /// Tokens: V{n}=Verse, C{n}=Chorus, P{n}=PreChorus, B{n}=Bridge, I=Intro, O=Outro, T=Tag.

@@ -36,9 +36,18 @@ public static partial class VideoPsalmParser
     private static Song? ReadSong(ZipArchiveEntry entry)
     {
         using var reader = new StreamReader(entry.Open());
-        var root = VpJsonReader.Parse(reader.ReadToEnd()) as Dictionary<string, object?>;
-        if (root is null) return null;
+        return VpJsonReader.Parse(reader.ReadToEnd()) is Dictionary<string, object?> root
+            ? MapSong(root)
+            : null;
+    }
 
+    /// <summary>
+    /// Maps one parsed VideoPsalm song object to a <see cref="Song"/>. Returns null when the
+    /// object has no usable verse text. Shared by song-only and full-agenda import; captures
+    /// the VideoPsalm <c>Guid</c> as <see cref="Song.SourceGuid"/> for cross-file dedup.
+    /// </summary>
+    internal static Song? MapSong(IReadOnlyDictionary<string, object?> root)
+    {
         var sections = BuildSections(GetArray(root, "Verses"));
         if (sections.Count == 0) return null;
 
@@ -48,6 +57,7 @@ public static partial class VideoPsalmParser
             Author     = NullIfBlank(GetString(root, "Author")),
             Copyright  = NullIfBlank(GetString(root, "Copyright")),
             CcliNumber = NullIfBlank(GetString(root, "CCLINo")),
+            SourceGuid = NullIfBlank(GetString(root, "Guid")),
             Sections   = sections
         };
     }

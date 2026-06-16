@@ -28,6 +28,12 @@ public sealed class MediaService : IMediaService
         return await _repository.GetByIdAsync(id, ct);
     }
 
+    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
+        return await _repository.GetByContentHashAsync(contentHash, ct);
+    }
+
     public async Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(file);

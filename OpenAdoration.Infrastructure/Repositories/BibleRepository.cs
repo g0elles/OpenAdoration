@@ -251,6 +251,123 @@ public sealed class BibleRepository : IBibleRepository
         }
     }
 
+    public async Task UpsertVersionVersesAsync(
+        BibleVersion version,
+        IReadOnlyList<BibleBook> books,
+        IReadOnlyList<BibleVerse> verses,
+        IProgress<int>? progress = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        ArgumentNullException.ThrowIfNull(books);
+        ArgumentNullException.ThrowIfNull(verses);
+
+        if (string.IsNullOrWhiteSpace(version.Abbreviation))
+            throw new ArgumentException("Bible version abbreviation is required.", nameof(version));
+
+        version.Abbreviation = version.Abbreviation.Trim().ToUpperInvariant();
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        await using var transaction = await context.Database.BeginTransactionAsync(ct);
+
+        try
+        {
+            var versionId = await EnsureVersionAsync(context, version, ct);
+            await EnsureBooksAsync(context, versionId, books, ct);
+            await InsertMissingVersesAsync(context, versionId, verses, progress, ct);
+            await TopUpFtsAsync(context, versionId, ct);
+
+            await transaction.CommitAsync(ct);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
+    private static async Task<int> EnsureVersionAsync(AppDbContext context, BibleVersion version, CancellationToken ct)
+    {
+        var existing = await context.BibleVersions
+            .FirstOrDefaultAsync(bv => EF.Functions.Like(bv.Abbreviation, version.Abbreviation), ct);
+
+        if (existing is not null) return existing.Id;
+
+        version.Id = 0;
+        context.BibleVersions.Add(version);
+        await context.SaveChangesAsync(ct);
+        return version.Id;
+    }
+
+    private static async Task EnsureBooksAsync(
+        AppDbContext context, int versionId, IReadOnlyList<BibleBook> books, CancellationToken ct)
+    {
+        var existingNames = (await context.BibleBooks
+            .Where(b => b.BibleVersionId == versionId)
+            .Select(b => b.Name)
+            .ToListAsync(ct)).ToHashSet();
+
+        var newBooks = books.Where(b => !existingNames.Contains(b.Name)).ToList();
+        if (newBooks.Count == 0) return;
+
+        foreach (var book in newBooks)
+        {
+            book.Id = 0;
+            book.BibleVersionId = versionId;
+        }
+
+        context.BibleBooks.AddRange(newBooks);
+        await context.SaveChangesAsync(ct);
+        context.ChangeTracker.Clear();
+    }
+
+    private static async Task InsertMissingVersesAsync(
+        AppDbContext context, int versionId, IReadOnlyList<BibleVerse> verses,
+        IProgress<int>? progress, CancellationToken ct)
+    {
+        var existingKeys = (await context.BibleVerses
+            .Where(v => v.BibleVersionId == versionId)
+            .Select(v => new { v.Book, v.Chapter, v.Verse })
+            .ToListAsync(ct))
+            .Select(k => (k.Book, k.Chapter, k.Verse))
+            .ToHashSet();
+
+        var missing = verses
+            .Where(v => existingKeys.Add((v.Book, v.Chapter, v.Verse)))
+            .ToList();
+
+        var saved = 0;
+        foreach (var batch in missing.Chunk(VerseBatchSize))
+        {
+            ct.ThrowIfCancellationRequested();
+
+            foreach (var v in batch)
+            {
+                v.Id = 0;
+                v.BibleVersionId = versionId;
+            }
+
+            context.BibleVerses.AddRange(batch);
+            await context.SaveChangesAsync(ct);
+            context.ChangeTracker.Clear();
+
+            saved += batch.Length;
+            progress?.Report(saved);
+        }
+    }
+
+    // Idempotent: indexes only verses of this version that are not already in the FTS table,
+    // so re-running enrichment never double-indexes prior content.
+    private static async Task TopUpFtsAsync(AppDbContext context, int versionId, CancellationToken ct) =>
+        await context.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO BibleVersesFts(rowid, Text, BibleVersionId)
+            SELECT Id, Text, BibleVersionId FROM BibleVerses
+            WHERE  BibleVersionId = {versionId}
+              AND  Id NOT IN (SELECT rowid FROM BibleVersesFts WHERE BibleVersionId = {versionId})
+            """,
+            ct);
+
     public async Task DeleteVersionAsync(int versionId, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

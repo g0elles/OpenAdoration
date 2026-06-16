@@ -22,6 +22,15 @@ public sealed class WorshipServiceConfiguration : IEntityTypeConfiguration<Worsh
             .HasForeignKey(si => si.ServiceId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(ws => ws.SourceGuid)
+            .HasMaxLength(64);
+
+        builder.Property(ws => ws.SourceArchivePath)
+            .HasMaxLength(1024);
+
         builder.HasIndex(ws => ws.Date);
+
+        // Dedup lookup so re-importing the same agenda is detected
+        builder.HasIndex(ws => ws.SourceGuid);
     }
 }

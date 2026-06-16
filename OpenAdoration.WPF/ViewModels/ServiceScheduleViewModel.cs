@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Helpers.VideoPsalmMigration;
 using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -20,6 +22,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private readonly IDialogService              _dialogService;
     private readonly IAppSettingsService         _appSettings;
     private readonly ISongLibraryNotifier        _songNotifier;
+    private readonly VideoPsalmServiceImporter   _vpImporter;
     private readonly ILogger<ServiceScheduleViewModel> _logger;
 
     // ── Service list ─────────────────────────────────────────────────────────
@@ -119,6 +122,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IDialogService              dialogService,
         IAppSettingsService         appSettings,
         ISongLibraryNotifier        songNotifier,
+        VideoPsalmServiceImporter   vpImporter,
         ILogger<ServiceScheduleViewModel> logger)
     {
         _serviceService    = serviceService;
@@ -129,6 +133,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _appSettings       = appSettings;
         _songNotifier      = songNotifier;
+        _vpImporter        = vpImporter;
         _logger            = logger;
 
         _projectionService.ProjectionStateChanged        += OnProjectionStateChanged;
@@ -226,6 +231,115 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             _logger.LogError(ex, "Failed to create service");
             SetError("Could not create service.");
         }
+    }
+
+    [RelayCommand]
+    private async Task ImportVideoPsalmServiceAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Import VideoPsalm service",
+            Filter = "VideoPsalm agenda (*.vpagd)|*.vpagd",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+
+        VpImportSummary summary;
+        try
+        {
+            summary = await _vpImporter.ImportAsync(dialog.FileName);
+            _logger.LogInformation("Imported VideoPsalm agenda from {File}", dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import VideoPsalm agenda from {File}", dialog.FileName);
+            _dialogService.Inform("Could not import this VideoPsalm agenda. It may be corrupt or an unsupported file.", "Import Service");
+            return;
+        }
+        finally { IsBusy = false; }
+
+        await LoadAsync();
+        _dialogService.Inform(FormatSummary(summary), "Import Service");
+    }
+
+    [RelayCommand]
+    private async Task ImportVideoPsalmFolderAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Import a folder of VideoPsalm services" };
+        if (dialog.ShowDialog() != true) return;
+
+        var files = Directory.GetFiles(dialog.FolderName, "*.vpagd", SearchOption.AllDirectories);
+        if (files.Length == 0)
+        {
+            _dialogService.Inform("No VideoPsalm agendas (*.vpagd) were found in that folder.", "Import Folder");
+            return;
+        }
+
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+
+        VpBatchSummary batch;
+        try
+        {
+            batch = await _vpImporter.ImportManyAsync(files);
+            _logger.LogInformation("Batch-imported {Count} VideoPsalm agendas from {Folder}", files.Length, dialog.FolderName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Batch VideoPsalm import failed for {Folder}", dialog.FolderName);
+            _dialogService.Inform("Could not import this folder.", "Import Folder");
+            return;
+        }
+        finally { IsBusy = false; }
+
+        await LoadAsync();
+        _dialogService.Inform(FormatBatchSummary(batch), "Import Folder");
+    }
+
+    private static string FormatBatchSummary(VpBatchSummary batch)
+    {
+        var added = batch.Imported.Where(s => !s.AlreadyImported).ToList();
+        var skipped = batch.Imported.Count - added.Count;
+
+        var lines = new List<string>
+        {
+            $"Imported {added.Count} service(s)" + (skipped > 0 ? $", {skipped} already present" : "") + ":",
+            $"• Songs: {added.Sum(s => s.SongsImported)} new, {added.Sum(s => s.SongsReused)} reused",
+            $"• Scripture references: {added.Sum(s => s.ScriptureReferences)} (verse text omitted — it's licensed; install a Bible version to display it)",
+            $"• Media: {added.Sum(s => s.MediaImported)} new, {added.Sum(s => s.MediaReused)} reused"
+        };
+        var themes = added.Sum(s => s.ThemesCreated);
+        if (themes > 0) lines.Add($"• Themes reconstructed: {themes}");
+        if (batch.Failed.Count > 0)
+        {
+            lines.Add($"• Failed: {batch.Failed.Count}");
+            lines.AddRange(batch.Failed.Select(f => $"   – {f}"));
+        }
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string FormatSummary(VpImportSummary s)
+    {
+        if (s.AlreadyImported)
+            return $"\"{s.ServiceName}\" was already imported — nothing was added.";
+
+        var lines = new List<string>
+        {
+            $"Imported \"{s.ServiceName}\" ({s.TotalItems} items):",
+            $"• Songs: {s.SongsImported} new, {s.SongsReused} reused",
+            $"• Scripture references: {s.ScriptureReferences} (verse text omitted — it's licensed; install a Bible version to display it)",
+            $"• Media: {s.MediaImported} new, {s.MediaReused} reused"
+        };
+        if (s.ThemesCreated > 0) lines.Add($"• Themes reconstructed: {s.ThemesCreated}");
+        if (s.MediaMissing > 0) lines.Add($"• Media skipped (bytes not found): {s.MediaMissing}");
+        if (s.ItemsSkipped > 0) lines.Add($"• Other items skipped: {s.ItemsSkipped}");
+        return string.Join(Environment.NewLine, lines);
     }
 
     [RelayCommand]

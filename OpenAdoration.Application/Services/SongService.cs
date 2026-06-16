@@ -26,6 +26,12 @@ public sealed class SongService : ISongService
         return song;
     }
 
+    public async Task<Song?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceGuid);
+        return await _repository.GetBySourceGuidAsync(sourceGuid, ct);
+    }
+
     public async Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default)
     {
         var songs = await _repository.GetAllAsync(ct);

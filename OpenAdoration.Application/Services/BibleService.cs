@@ -137,6 +137,38 @@ public sealed class BibleService : IBibleService
                 abbreviation, orphans.Count, string.Join(", ", orphans));
     }
 
+    public async Task UpsertVersionVersesAsync(
+        BibleVersion version,
+        IReadOnlyList<BibleBook> books,
+        IReadOnlyList<BibleVerse> verses,
+        IProgress<int>? progress = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        _logger.LogInformation(
+            "Upserting Bible version {Abbreviation}: {Books} book(s), {Verses} verse(s) offered",
+            version.Abbreviation, books.Count, verses.Count);
+
+        WarnOnBooksWithoutVerses(version.Abbreviation, books, verses);
+
+        try
+        {
+            await _repository.UpsertVersionVersesAsync(version, books, verses, progress, ct);
+            _logger.LogInformation("Bible upsert completed: {Abbreviation}", version.Abbreviation);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Bible upsert cancelled: {Abbreviation}", version.Abbreviation);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bible upsert failed: {Abbreviation}", version.Abbreviation);
+            throw;
+        }
+    }
+
     public async Task DeleteVersionAsync(int versionId, CancellationToken ct = default)
     {
         _logger.LogInformation("Deleting Bible version {VersionId}", versionId);
