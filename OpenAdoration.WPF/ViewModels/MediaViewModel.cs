@@ -94,7 +94,22 @@ public partial class MediaViewModel : BaseViewModel
         };
 
         if (dlg.ShowDialog() != true) return;
+        await ImportPathsAsync(dlg.FileNames);
+    }
 
+    [RelayCommand]
+    private async Task ImportFolderAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Import Media Folder" };
+        if (dlg.ShowDialog() != true) return;
+
+        // Top-level only; the per-file loop filters out non-media by extension/signature.
+        var paths = Directory.EnumerateFiles(dlg.FolderName, "*", SearchOption.TopDirectoryOnly).ToList();
+        await ImportPathsAsync(paths);
+    }
+
+    private async Task ImportPathsAsync(IReadOnlyList<string> paths)
+    {
         IsBusy = true;
         ClearError();
         try
@@ -102,7 +117,7 @@ public partial class MediaViewModel : BaseViewModel
             Directory.CreateDirectory(MediaStore);
 
             var skipped = 0;
-            foreach (var sourcePath in dlg.FileNames)
+            foreach (var sourcePath in paths)
             {
                 var ext = Path.GetExtension(sourcePath);
                 if (!AllowedExtensions.Contains(ext))
