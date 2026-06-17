@@ -7,6 +7,31 @@
 
 ---
 
+## v2.0 progress snapshot — real state (verified against code 2026-06-17)
+
+Milestones were **not** done in order — church priorities pulled M12 (VideoPsalm),
+M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
+
+| Item | Verdict |
+|---|---|
+| M8.1 Backup/Restore (`.oabak`) | ❌ Not started — **next up** |
+| M8.2 Auto-update (`IUpdateService`) | ❌ Not started (releases are published, but **no in-app updater consumes them yet**) |
+| M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions) |
+| M9.1 More song importers | ❌ Not started (only OpenLyrics/OpenSong/PlainText/VideoPsalm) |
+| M9.2 Image-folder / PDF / pptx decks | ❌ Not started |
+| M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`) |
+| M10.1 Transition library | 🔶 Partial — Fade + Cut only (no Slide/Zoom) |
+| M10.2 Persistent lower-thirds | ❌ Not started (only the auto-dismiss announcement banner) |
+| M10.3 Dual-version scripture | ❌ Not started |
+| M10.4 Clean livestream output | ❌ Not started (stretch) |
+| M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
+| M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
+| M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
+| M13 Plugins | ❌ Planned (after M8.1) |
+| M14 Content-level theming | ❌ Not started |
+
+---
+
 ## Guiding principle
 
 A church operator opens this app 15 minutes before a service and uses it under pressure, in front of a congregation. Every feature must answer: **"does this make the operator's job easier or safer?"** If a feature isn't stable enough to trust live, it doesn't ship.
@@ -458,8 +483,9 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 - **PDF → image slides** — render pages to images via a BCL-friendly renderer (e.g. `Docnet.Core`/PDFium), store as a media set. *(Medium.)*
 - **PowerPoint (`.pptx`)** — render slides to images. *(Hard; needs a converter — scope as stretch, may require LibreOffice headless or a library. Defer if no clean dependency.)*
 
-### 9.3 — Bible quick-reference jump
+### 9.3 — Bible quick-reference jump ✅ DONE
 - A reference box ("John 3:16", "Jn 3:16-18") that parses book/chapter/verse and jumps/projects instantly, alongside the existing browser. Book-name matching reuses `OsisBookCatalog` + localized names.
+- **Built** (during the VP-parity batch): `BibleViewModel.ParseReference` + `BibleReferenceParser.TryParse`/`GetSuggestions` — reference mode parses and navigates to book/chapter + verse range, with keyword/phrase fallback when the input isn't a reference.
 
 **Milestone 9 done when:** an operator imports songs from at least one other app, projects a folder of images, and jumps to any verse by typing a reference.
 
@@ -469,8 +495,8 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 **Why:** stronger visuals and livestream support without compromising the operator's live reliability.
 
-### 10.1 — Transition library
-- Extend the single Fade into a small, named set: **Cut** (instant), **Fade** (done), **Slide/Push**, **Zoom**. WPF animations on the existing `ContentLayers`; pick per-theme or global; `0 ms`/Cut always available as the safe default.
+### 10.1 — Transition library 🔶 PARTIAL
+- Extend the single Fade into a small, named set: **Cut** (instant) ✅, **Fade** ✅ (done), **Slide/Push** ❌, **Zoom** ❌. WPF animations on the existing `ContentLayers`; pick per-theme or global; `0 ms`/Cut always available as the safe default.
 
 ### 10.2 — Lower-thirds / persistent overlays
 - Beyond the announcement banner: named overlays (speaker, sermon title, scripture ref) that **persist across slide changes** until cleared, rendered by `ProjectionWindow` + Stage View. Managed from a small overlays panel. Builds on the existing `AnnouncementChanged` overlay plumbing.
@@ -481,8 +507,8 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 ### 10.4 — Clean output for livestream *(stretch)*
 - A second **clean** output (slide content only, no operator overlays) for OBS capture; optional **NDI** sender if a clean managed/native path exists. Start with a clean borderless output window before committing to NDI (native SDK).
 
-### 10.5 — Media transport controls *(operator-requested)*
-**Problem:** projected video currently auto-plays with **no controls** — the operator cannot pause, restart, or scrub. This is a live-reliability gap (can't hold a frame, can't replay a clip).
+### 10.5 — Media transport controls *(operator-requested)* ✅ DONE (v1.1.0)
+**Problem (solved):** projected video used to auto-play with **no controls**. Shipped: restart / −10s / play-pause / +10s / progress / time on the operator bar, driven through the `IProjectionService` media sub-API → `ProjectionWindow` (FFME). Stage preview position kept in sync.
 
 - **Application:** extend `IProjectionService` with media transport: `PlayMedia()`, `PauseMedia()`, `RestartMedia()`, `SeekMedia(TimeSpan delta)`, plus state (`IsMediaPlaying`, `MediaPosition`, `MediaDuration`) and a `MediaPositionChanged` event. No-ops unless the current slide is video.
 - **Infrastructure/WPF:** `ProjectionWindow` already hosts the playing `MediaElement` (`LoadedBehavior=Manual`) — wire these to `Play()/Pause()/Position`. The Stage View preview `MediaElement` mirrors position via the existing `SyncVideo()` path.
@@ -524,7 +550,7 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 ---
 
-## Milestone 12 — VideoPsalm Migration
+## Milestone 12 — VideoPsalm Migration ✅ DONE (2026-06-16)
 
 **Why:** the launch church runs **VideoPsalm** and wants *all* their data moved into OpenAdoration — songs, scripture, media, and the full service structure — across **many `.vpagd` service files** (one per service type, growing over time). The goal is a faithful, lossless, centralized migration, not a one-off paste.
 
