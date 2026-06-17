@@ -39,4 +39,10 @@ public sealed class AppSettings
     /// operating system language when supported, otherwise English.
     /// </summary>
     public string? UiCulture { get; set; }
+
+    /// <summary>
+    /// When true, check GitHub for a newer release at startup. Opt-in (default false);
+    /// the only outbound network call the app makes.
+    /// </summary>
+    public bool CheckForUpdatesOnStartup { get; set; }
 }

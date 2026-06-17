@@ -130,6 +130,10 @@
   <data name="Settings_CreateBackup" xml:space="preserve"><value>Crear copia…</value></data>
   <data name="Settings_RestoreBackup" xml:space="preserve"><value>Restaurar copia…</value></data>
   <data name="Settings_BackupHelp" xml:space="preserve"><value>Exporta toda tu biblioteca (cánticos, Biblias, temas, servicios, multimedia) a un archivo .oabak, o restáurala en otra computadora. Restaurar reemplaza la biblioteca actual y reinicia la aplicación.</value></data>
+  <data name="Settings_UpdatesSection" xml:space="preserve"><value>ACTUALIZACIONES</value></data>
+  <data name="Settings_CheckUpdates" xml:space="preserve"><value>Buscar actualizaciones…</value></data>
+  <data name="Settings_CheckUpdatesStartup" xml:space="preserve"><value>Buscar actualizaciones al iniciar</value></data>
+  <data name="Settings_UpdatesHelp" xml:space="preserve"><value>Busca una versión más reciente en GitHub. Es la única vez que la aplicación se conecta a internet, es opcional y no se envían datos.</value></data>
   <data name="Settings_LanguageSection" xml:space="preserve"><value>IDIOMA</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Idioma de la aplicación</value></data>
   <data name="Settings_LanguageHelp" xml:space="preserve"><value>Cambia el idioma de la interfaz de la aplicación.</value></data>

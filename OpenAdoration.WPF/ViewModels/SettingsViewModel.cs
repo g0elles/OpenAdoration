@@ -13,6 +13,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IProjectionService _projectionService;
     private readonly ILocalizationService _localization;
     private readonly IBackupService _backup;
+    private readonly IUpdateService _update;
     private readonly IDialogService _dialog;
     private readonly ILogger<SettingsViewModel> _logger;
 
@@ -22,6 +23,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
     [ObservableProperty] private int _announcementDurationSeconds = 25;
     [ObservableProperty] private int _slideTransitionMilliseconds = 300;
+    [ObservableProperty] private bool _checkForUpdatesOnStartup;
 
     public IReadOnlyList<LanguageOption> AvailableLanguages => _localization.AvailableLanguages;
 
@@ -41,6 +43,7 @@ public partial class SettingsViewModel : BaseViewModel
         IProjectionService projectionService,
         ILocalizationService localization,
         IBackupService backup,
+        IUpdateService update,
         IDialogService dialog,
         PluginsViewModel plugins,
         ILogger<SettingsViewModel> logger)
@@ -49,6 +52,7 @@ public partial class SettingsViewModel : BaseViewModel
         _projectionService = projectionService;
         _localization      = localization;
         _backup            = backup;
+        _update            = update;
         _dialog            = dialog;
         Plugins            = plugins;
         _logger            = logger;
@@ -69,6 +73,7 @@ public partial class SettingsViewModel : BaseViewModel
             DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
             AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
             SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
+            CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
         }
@@ -95,7 +100,8 @@ public partial class SettingsViewModel : BaseViewModel
                 DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
-                UiCulture                   = SelectedLanguage?.Code
+                UiCulture                   = SelectedLanguage?.Code,
+                CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup
             };
 
             await _settings.SaveAsync(updated);
@@ -179,6 +185,40 @@ public partial class SettingsViewModel : BaseViewModel
         }
         finally { IsBusy = false; }
     }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var info = await _update.CheckAsync();
+            if (info is null)
+            {
+                _dialog.Inform("You're running the latest version.", "Check for Updates");
+                return;
+            }
+
+            var sizeMb = info.MsiSizeBytes / 1024d / 1024d;
+            if (!_dialog.Confirm(
+                    $"Version {info.Version} is available ({sizeMb:0.#} MB). Download and install now? " +
+                    "The app will close to finish.", "Update Available"))
+                return;
+
+            await _update.DownloadAndApplyAsync(info);
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update failed");
+            SetError("Could not complete the update.");
+        }
+        finally { IsBusy = false; }
+    }
+
+    partial void OnCheckForUpdatesOnStartupChanged(bool value) => IsSaved = false;
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)
     {

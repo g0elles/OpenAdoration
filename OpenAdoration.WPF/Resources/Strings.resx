@@ -130,6 +130,10 @@
   <data name="Settings_CreateBackup" xml:space="preserve"><value>Create Backup…</value></data>
   <data name="Settings_RestoreBackup" xml:space="preserve"><value>Restore Backup…</value></data>
   <data name="Settings_BackupHelp" xml:space="preserve"><value>Export your whole library (songs, Bibles, themes, services, media) to one .oabak file, or restore it on another machine. Restoring replaces the current library and restarts the app.</value></data>
+  <data name="Settings_UpdatesSection" xml:space="preserve"><value>UPDATES</value></data>
+  <data name="Settings_CheckUpdates" xml:space="preserve"><value>Check for updates…</value></data>
+  <data name="Settings_CheckUpdatesStartup" xml:space="preserve"><value>Check for updates at startup</value></data>
+  <data name="Settings_UpdatesHelp" xml:space="preserve"><value>Checks GitHub for a newer version. This is the only time the app connects to the internet, it is optional, and no data is sent.</value></data>
   <data name="Settings_LanguageSection" xml:space="preserve"><value>LANGUAGE</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Application language</value></data>
   <data name="Settings_LanguageHelp" xml:space="preserve"><value>Changes the language of the application interface.</value></data>

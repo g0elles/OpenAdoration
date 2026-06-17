@@ -8,6 +8,7 @@ using OpenAdoration.Infrastructure.Backup;
 using OpenAdoration.Infrastructure.Persistence;
 using OpenAdoration.Infrastructure.Repositories;
 using OpenAdoration.Infrastructure.Settings;
+using OpenAdoration.Infrastructure.Update;
 
 namespace OpenAdoration.Infrastructure.Extensions;
 
@@ -57,6 +58,7 @@ public static class InfrastructureServiceExtensions
         var mediaDir = Path.Combine(Path.GetDirectoryName(dbPath)!, "Media");
         services.AddSingleton(new AppPaths(dbPath, mediaDir, settingsPath));
         services.AddScoped<IBackupService, ZipBackupService>();
+        services.AddSingleton<IUpdateService, GitHubUpdateService>();
 
         return services;
     }
