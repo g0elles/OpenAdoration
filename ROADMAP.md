@@ -461,12 +461,13 @@ Accessible from a `?` button in the toolbar.
 - **Offline-first note:** this is the **only** outbound network feature; it is opt-in, update-only, and sends no data. Document the tension explicitly.
 - **Done when:** a published GitHub release with a higher version is detected, downloaded, and the installer launches.
 
-### 8.3 — Release infrastructure
+### 8.3 — Release infrastructure ✅ DONE
 - `CHANGELOG.md` (Keep a Changelog + SemVer); update on every release.
-- `docs/RELEASE.md` — the tag → `installer/build.ps1 -Version x.y.z` → upload MSI to a GitHub release flow that 8.2 consumes.
+- `docs/RELEASE.md` — the tag → MSI → GitHub release flow that 8.2 will consume.
 - Single source of version truth (`Version` in the WPF csproj) flowed into the MSI and the update check.
+- **CI/CD (2026-06-17):** GitHub Actions — `ci.yml` (build+test on push/PR), `release.yml` (tag `vX.Y.Z` → build MSI via `installer/build.ps1` → publish release; guards csproj `<Version>` == tag), `codeql.yml` (C# scanning), grouped `dependabot.yml`. `master` is branch-protected (PR + `build-test`/`analyze` required).
 
-**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it.
+**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it. **(8.1 ✅, 8.3 ✅; 8.2 auto-update still pending.)**
 
 ---
 
