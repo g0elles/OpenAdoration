@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Infrastructure.Extensions;
 using OpenAdoration.Infrastructure.Logging;
+using OpenAdoration.WPF.Plugins;
 using OpenAdoration.WPF.Services;
 using OpenAdoration.WPF.ViewModels;
 
@@ -128,6 +130,9 @@ public partial class App : WpfApp
         // frame renders in the correct language (the service applies it in its ctor).
         _host.Services.GetRequiredService<ILocalizationService>();
 
+        // Discover + load installed plugins (each isolated; failures are logged, not fatal).
+        _host.Services.GetRequiredService<PluginManager>().LoadAll();
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
@@ -182,6 +187,11 @@ public partial class App : WpfApp
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
+        services.AddSingleton(sp => new PluginManager(
+            Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0),
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetRequiredService<ILogger<PluginManager>>()));
+        services.AddTransient<PluginBibleImporter>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();

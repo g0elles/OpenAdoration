@@ -56,6 +56,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OpenAdoration.Application\OpenAdoration.Application.csproj" />
     <ProjectReference Include="..\OpenAdoration.Infrastructure\OpenAdoration.Infrastructure.csproj" />
+    <ProjectReference Include="..\OpenAdoration.Plugins.Abstractions\OpenAdoration.Plugins.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

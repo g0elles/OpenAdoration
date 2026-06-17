@@ -609,10 +609,11 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Contract lives in a small `OpenAdoration.Plugins.Abstractions` package so a plugin repo references *only* that, not the whole app.
 - **Built:** `OpenAdoration.Plugins.Abstractions` (net10.0, only deps `Microsoft.Extensions.Logging.Abstractions`): `IPlugin`, `IPluginHost` (settings + logger, nothing else), `IBibleSourcePlugin`, plugin-side DTOs (`PluginBibleData`/`PluginBibleBook`/`PluginBibleVerse`/`PluginBibleVersionInfo`/`PluginTestament`) so plugins never reference Domain, `PluginCapabilities`. Plus `OpenAdoration.Plugins.Sample` (`EchoBibleSourcePlugin`) — the loader fixture for 13.2. Test: `PluginContractTests`. Mapping DTO→Domain stays in WPF (`PluginBibleImporter`, 13.2).
 
-### 13.2 — Discovery & loading
-- A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`.
-- Dropped in / installed to `%LOCALAPPDATA%\OpenAdoration\plugins\<id>\`; discovered at startup, loaded in a **collectible `AssemblyLoadContext`** so a plugin can be added/removed without restarting where practical.
+### 13.2 — Discovery & loading ✅ DONE (2026-06-17)
+- A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`, `entryAssembly`, optional `settings`.
+- Installed to `%LOCALAPPDATA%\OpenAdoration\plugins\<id>\`; discovered + loaded at startup in a **collectible `PluginLoadContext`** (shares Abstractions from the default context so `IPlugin` types match across the boundary).
 - Version gate: skip + warn if `minOaVersion` exceeds the running app.
+- **Built (WPF/Plugins):** `PluginManifest`, `PluginLoadContext`, `PluginHost`, `LoadedPlugin`, `PluginManager` (`LoadAll`/`LoadFrom`, gate, per-plugin plaintext `settings.json`), `PluginBibleImporter` (maps plugin DTOs → Domain → `UpsertVersionVersesAsync`). Assemblies load via `LoadFromStream` (no on-disk lock, so a plugin can be removed). Registered in `App` DI; `LoadAll()` at startup. Tests: `PluginManagerTests` (load/gate/no-manifest) + `PluginBibleImporterTests` (mapping). **Remove = delete dir + restart (no live unload).**
 
 ### 13.3 — Settings UX
 - Settings → **Plugins**: list installed (name/version/enabled), **Add plugin…** (pick a downloaded `.oaplugin`), enable/disable, remove. Link out to the GitHub plugin catalog.
