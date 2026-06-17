@@ -24,7 +24,7 @@ public sealed class BibleImportSanityCheckTests
         var books  = new[] { Book("Judges") };                 // browser lists "Judges"
         var verses = new[] { Verse("Judg", 8, 1, "...") };      // verses stored under "Judg"
 
-        await service.ImportVersionAsync(Version(), books, verses);
+        await service.UpsertVersionVersesAsync(Version(), books, verses);
 
         var warning = Assert.Single(logger.Warnings, w => w.Contains("no matching verses"));
         Assert.Contains("Judges", warning);
@@ -39,7 +39,7 @@ public sealed class BibleImportSanityCheckTests
         var books  = new[] { Book("Judges") };
         var verses = new[] { Verse("Judges", 8, 1, "...") };
 
-        await service.ImportVersionAsync(Version(), books, verses);
+        await service.UpsertVersionVersesAsync(Version(), books, verses);
 
         Assert.DoesNotContain(logger.Warnings, w => w.Contains("no matching verses"));
     }
@@ -59,10 +59,6 @@ public sealed class BibleImportSanityCheckTests
 
     private sealed class NoOpBibleRepository : IBibleRepository
     {
-        public Task ImportVersionAsync(BibleVersion version, IReadOnlyList<BibleBook> books,
-            IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default)
-            => Task.CompletedTask;
-
         public Task UpsertVersionVersesAsync(BibleVersion version, IReadOnlyList<BibleBook> books,
             IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default)
             => Task.CompletedTask;

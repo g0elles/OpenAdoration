@@ -93,9 +93,14 @@ public sealed class BibleImportService : IBibleImportService
             await using var scope       = _scopeFactory.CreateAsyncScope();
             var             bibleService = scope.ServiceProvider.GetRequiredService<IBibleService>();
 
-            await bibleService.ImportVersionAsync(version, books, verses, progress, ct);
+            // Enrich-in-place: a version is keyed by abbreviation and only missing verses are
+            // inserted, so re-importing a fuller Bible tops up prior content instead of erroring.
+            // The last progress value is the count actually inserted (0 when nothing was new).
+            var inserted = 0;
+            IProgress<int> tracked = new DispatcherProgress(count => { inserted = count; progress.Report(count); });
+            await bibleService.UpsertVersionVersesAsync(version, books, verses, tracked, ct);
 
-            var completed = new BibleImportCompletedArgs(version.Name, verses.Count);
+            var completed = new BibleImportCompletedArgs(version.Name, inserted);
             InvokeOnUi(() =>
             {
                 IsImporting   = false;

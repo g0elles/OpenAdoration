@@ -81,41 +81,6 @@ public sealed class BibleService : IBibleService
         return results;
     }
 
-    public async Task ImportVersionAsync(
-        BibleVersion version,
-        IReadOnlyList<BibleBook> books,
-        IReadOnlyList<BibleVerse> verses,
-        IProgress<int>? progress = null,
-        CancellationToken ct = default)
-    {
-        ArgumentNullException.ThrowIfNull(version);
-
-        _logger.LogInformation(
-            "Starting Bible import: {Name} ({Abbreviation}) -- {Books} book(s), {Verses} verse(s)",
-            version.Name, version.Abbreviation, books.Count, verses.Count);
-
-        WarnOnBooksWithoutVerses(version.Abbreviation, books, verses);
-
-        try
-        {
-            await _repository.ImportVersionAsync(version, books, verses, progress, ct);
-
-            _logger.LogInformation(
-                "Bible import completed: {Name} ({Abbreviation})",
-                version.Name, version.Abbreviation);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogWarning("Bible import cancelled by user: {Abbreviation}", version.Abbreviation);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Bible import failed: {Abbreviation}", version.Abbreviation);
-            throw;
-        }
-    }
-
     /// <summary>
     /// Logs a warning for any book whose <see cref="BibleBook.Name"/> has no verse with a
     /// matching <see cref="BibleVerse.Book"/>. Such a book is listed in the browser but its
