@@ -10,7 +10,7 @@ jobs:
   build-test:
     runs-on: windows-latest  # WPF + UseWindowsForms target net10.0-windows
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-dotnet@v4
         with:
