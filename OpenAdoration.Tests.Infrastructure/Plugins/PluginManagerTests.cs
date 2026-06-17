@@ -1,4 +1,5 @@
 using System.IO;
+using System.IO.Compression;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenAdoration.Plugins.Abstractions;
 using OpenAdoration.WPF.Plugins;
@@ -76,5 +77,48 @@ public sealed class PluginManagerTests : IDisposable
         var loaded = Manager(new Version(1, 1, 0)).LoadFrom(_root);
 
         Assert.Empty(loaded);
+    }
+
+    [Fact]
+    public void InstallThenRemove_RoundTrips()
+    {
+        var oaplugin = BuildOaplugin("sample.echo");
+        var installRoot = Path.Combine(_root, "installed");
+        var manager = new PluginManager(new Version(1, 1, 0), NullLoggerFactory.Instance, NullLogger<PluginManager>.Instance, installRoot);
+
+        var loaded = manager.Install(oaplugin);
+        Assert.Equal("sample.echo", loaded.Manifest.Id);
+        Assert.Single(manager.Loaded);
+        Assert.True(Directory.Exists(Path.Combine(installRoot, "sample.echo")));
+
+        manager.Remove("sample.echo");
+        Assert.Empty(manager.Loaded);
+        Assert.False(Directory.Exists(Path.Combine(installRoot, "sample.echo")));
+    }
+
+    [Fact]
+    public void UpdateSettings_PersistsAndIsReadBack()
+    {
+        var installRoot = Path.Combine(_root, "installed");
+        var manager = new PluginManager(new Version(1, 1, 0), NullLoggerFactory.Instance, NullLogger<PluginManager>.Instance, installRoot);
+        manager.Install(BuildOaplugin("sample.echo"));
+
+        manager.UpdateSettings("sample.echo", new Dictionary<string, string> { ["apiKey"] = "secret123" });
+
+        Assert.Equal("secret123", manager.GetSettings("sample.echo")["apiKey"]);
+    }
+
+    private string BuildOaplugin(string id)
+    {
+        Directory.CreateDirectory(_root);
+        var path = Path.Combine(_root, id + ".oaplugin");
+        using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
+        using (var w = new StreamWriter(zip.CreateEntry("manifest.json").Open()))
+            w.Write($$"""
+                {"id":"{{id}}","name":"Sample Echo","version":"1.0.0","capability":"bible-source","minOaVersion":"1.0.0","entryAssembly":"OpenAdoration.Plugins.Sample.dll"}
+                """);
+        zip.CreateEntryFromFile(
+            Path.Combine(AppContext.BaseDirectory, "OpenAdoration.Plugins.Sample.dll"), "OpenAdoration.Plugins.Sample.dll");
+        return path;
     }
 }

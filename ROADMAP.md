@@ -27,7 +27,7 @@ M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
 | M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
-| M13 Plugins | ❌ Planned (after M8.1) |
+| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX); 13.4 api.bible connector is a separate repo |
 | M14 Content-level theming | ❌ Not started |
 
 ---
@@ -615,9 +615,11 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Version gate: skip + warn if `minOaVersion` exceeds the running app.
 - **Built (WPF/Plugins):** `PluginManifest`, `PluginLoadContext`, `PluginHost`, `LoadedPlugin`, `PluginManager` (`LoadAll`/`LoadFrom`, gate, per-plugin plaintext `settings.json`), `PluginBibleImporter` (maps plugin DTOs → Domain → `UpsertVersionVersesAsync`). Assemblies load via `LoadFromStream` (no on-disk lock, so a plugin can be removed). Registered in `App` DI; `LoadAll()` at startup. Tests: `PluginManagerTests` (load/gate/no-manifest) + `PluginBibleImporterTests` (mapping). **Remove = delete dir + restart (no live unload).**
 
-### 13.3 — Settings UX
-- Settings → **Plugins**: list installed (name/version/enabled), **Add plugin…** (pick a downloaded `.oaplugin`), enable/disable, remove. Link out to the GitHub plugin catalog.
-- Plugin-provided settings (e.g. the api.bible key field) render in a section the plugin contributes.
+### 13.3 — Settings UX ✅ DONE (2026-06-17)
+- Settings → **Plugins**: list installed (name/version/capability), **Add plugin…** (pick a `.oaplugin`), remove. Link out to the GitHub plugin catalog.
+- Plugin-provided settings (e.g. the api.bible key field) render from the manifest's `settings`.
+- **Built:** `🧩 Plugins` nav page (`PluginsViewModel` + `PluginsView`, scope-per-nav); `PluginManager.Install` (guarded extract + live load), `Remove` (delete + restart to unload), `GetSettings`/`UpdateSettings` (re-inits the plugin so a new key is live). For a Bible-source plugin: **Fetch versions** → list → **Import** via `PluginBibleImporter`. Settings root is injectable for tests. `+2` tests (install/remove round-trip, settings persist). 55/55.
+- **Deferred (ponytail):** enable/disable toggle — `remove` covers "stop using it"; add a disabled-marker + restart only if a church wants to keep a plugin installed-but-inactive. Secret fields render as plain text (keys are stored plaintext in v1 anyway).
 
 ### 13.4 — First plugin: api.bible connector (separate repo)
 - Bring-your-own-key: the church pastes *its own* api.bible key, picks versions, syncs into the local DB via `IBibleSourcePlugin` → `UpsertVersionVersesAsync` (≥30-day refresh). The church is the licensee and accepts api.bible's terms; OA core ships no key and no copyrighted text.

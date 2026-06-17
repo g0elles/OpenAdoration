@@ -203,6 +203,7 @@ public partial class App : WpfApp
         services.AddTransient<AddEditThemeViewModel>();
         services.AddTransient<StageViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<PluginsViewModel>();
     }
 
     private static void RegisterWindows(IServiceCollection services)

@@ -80,6 +80,9 @@
                                 Content="{loc:Loc Nav_Stage}"
                                 Command="{Binding NavigateToStageCommand}" />
                         <Button Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Plugins}"
+                                Command="{Binding NavigateToPluginsCommand}" />
+                        <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Settings}"
                                 Command="{Binding NavigateToSettingsCommand}" />
                     </StackPanel>
