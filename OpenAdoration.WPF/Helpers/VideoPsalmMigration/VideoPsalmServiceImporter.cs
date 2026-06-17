@@ -73,10 +73,21 @@ public sealed class VideoPsalmServiceImporter
             Versions = await BuildVersionLookupAsync(ct)
         };
 
-        foreach (var item in agenda.Items)
+        // SourceGuid is the "already imported" marker — so a mid-import failure must NOT leave
+        // a half-built service carrying it (a retry would falsely skip). Delete-and-rethrow on
+        // failure; the service cascade-deletes its items, so re-import starts clean.
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            await ImportItemAsync(service.Id, item, ctx, ct);
+            foreach (var item in agenda.Items)
+            {
+                ct.ThrowIfCancellationRequested();
+                await ImportItemAsync(service.Id, item, ctx, ct);
+            }
+        }
+        catch
+        {
+            await _services.DeleteAsync(service.Id, ct);
+            throw;
         }
 
         _logger.LogInformation("Imported VideoPsalm service '{Name}' ({Items} items)", service.Name, agenda.Items.Count);

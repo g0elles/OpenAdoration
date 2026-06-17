@@ -111,12 +111,13 @@ public sealed class SongRepository : ISongRepository
     }
 
     // Each word gets a trailing * for prefix matching so "cura" matches "curará", "curas", etc.
-    // Special FTS5 chars are stripped to prevent query syntax errors.
+    // Wrap the word in double quotes (FTS5 string literal) so punctuation/operators inside it
+    // are treated as content, not query syntax — `"grace,"*` won't throw. Embedded quotes are
+    // doubled per FTS5 escaping. Mirrors BibleRepository.BuildFtsTerm.
     private static string EscapeFtsTerm(string raw)
     {
         var words = raw.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return string.Join(" ", words.Select(w =>
-            w.Replace("\"", "").Replace("*", "").Replace("^", "") + "*"));
+        return string.Join(" ", words.Select(w => $"\"{w.Replace("\"", "\"\"")}\"*"));
     }
 
     public async Task<Song> AddAsync(Song song, CancellationToken ct = default)

@@ -339,7 +339,7 @@
                         <Button Content="Delete Version"
                                 Style="{StaticResource DangerButton}"
                                 Padding="10,6"
-                                IsEnabled="{Binding SelectedVersion, Converter={StaticResource BoolToVis}}"
+                                IsEnabled="{Binding CanDeleteVersion}"
                                 Command="{Binding DeleteVersionCommand}" />
                     </StackPanel>
 
@@ -350,11 +350,6 @@
                                       Style="{StaticResource AlignToggleButton}"
                                       Padding="12,6" Margin="0,0,12,0"
                                       ToolTip="Hold current slide on screen while you navigate to the next" />
-                        <Button Content="+ Schedule"
-                                Style="{StaticResource SecondaryButton}"
-                                Padding="12,6" Margin="0,0,12,0"
-                                Command="{Binding AddSelectedToScheduleCommand}"
-                                IsEnabled="{Binding HasSelection}" />
                         <Button Content="▶▶ Project"
                                 Style="{StaticResource PrimaryButton}"
                                 Padding="16,6"

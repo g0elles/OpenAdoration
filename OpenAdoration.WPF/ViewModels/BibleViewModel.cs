@@ -44,7 +44,10 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     // ── Versions ──────────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<BibleVersion> _versions = new();
-    [ObservableProperty] private BibleVersion? _selectedVersion;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanDeleteVersion))]
+    private BibleVersion? _selectedVersion;
+    public bool CanDeleteVersion => SelectedVersion is not null;
     public bool HasVersions   => Versions.Count > 0;
     public bool NoVersionsYet => Versions.Count == 0 && !IsBusy;
 
@@ -435,12 +438,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         var last = LastCheckedIndex();
         if (last < 0) return;
         CheckableVerses[last].IsChecked = false;
-    }
-
-    [RelayCommand]
-    private void AddSelectedToSchedule()
-    {
-        // Stub — M4: wire to IWorshipServiceService
     }
 
     // ── Keyword search ────────────────────────────────────────────────────
