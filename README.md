@@ -148,7 +148,7 @@ OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 
 ### Coming in v2.0
 
-Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks), Bible quick-reference jump, richer transitions, persistent overlays, dual-version scripture, and **video transport controls** (play/pause/seek). See [`ROADMAP.md`](ROADMAP.md) Milestones 8–10.
+Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks), Bible quick-reference jump, richer transitions, persistent overlays, and dual-version scripture. (Video transport controls shipped in v1.1.0.) See [`ROADMAP.md`](ROADMAP.md) Milestones 8–13.
 
 ---
 

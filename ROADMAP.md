@@ -28,7 +28,7 @@ A church operator opens this app 15 minutes before a service and uses it under p
 
 ## Current feature state (v1.0 — shipped)
 
-> Updated 2026-06-01. Every feature below is implemented end-to-end and builds clean (16/16 tests green).
+> Updated 2026-06-01. Every feature below is implemented end-to-end and builds clean (43/43 tests green).
 
 | Feature | Status | Notes |
 |---|---|---|

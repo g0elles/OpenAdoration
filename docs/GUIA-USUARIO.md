@@ -193,8 +193,8 @@ fondo.
    reproducen con audio.
 3. Usa **eliminar** para quitarlo de la biblioteca.
 
-> Nota: en la versión 1.0 los videos se reproducen automáticamente; los controles de
-> pausa/avance/retroceso del video llegan en la versión 2.0.
+> Nota: cuando proyectas un video, la barra de control muestra reiniciar, retroceder 10 s,
+> reproducir/pausar, avanzar 10 s, una barra de progreso y el tiempo (desde la versión 1.1).
 
 ---
 
