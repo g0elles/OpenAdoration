@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Reflection;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
@@ -37,7 +36,7 @@ public sealed class ZipBackupService : IBackupService
         var tempDb = Path.Combine(Path.GetTempPath(), $"oabak-{Guid.NewGuid():N}.db");
         try
         {
-            SnapshotDatabase(_paths.DbPath, tempDb);
+            SqliteSnapshot.Create(_paths.DbPath, tempDb);
 
             var manifest = new BackupManifest
             {
@@ -77,16 +76,6 @@ public sealed class ZipBackupService : IBackupService
             _logger.LogWarning(ex, "Restore failed: corrupt backup {Path}", sourcePath);
             return new RestoreResult(RestoreOutcome.Corrupt, MessageFor(RestoreOutcome.Corrupt));
         }
-    }
-
-    // Online backup API: a consistent copy even while the app holds the DB open (handles WAL).
-    private static void SnapshotDatabase(string dbPath, string destinationPath)
-    {
-        using var source = new SqliteConnection($"Data Source={dbPath}");
-        using var destination = new SqliteConnection($"Data Source={destinationPath}");
-        source.Open();
-        destination.Open();
-        source.BackupDatabase(destination);
     }
 
     private static string MessageFor(RestoreOutcome outcome) => outcome switch

@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Microsoft.Data.Sqlite;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Infrastructure.Backup;
 using Xunit;
@@ -71,5 +72,35 @@ public sealed class BackupArchiveTests : IDisposable
         Assert.Equal("{\"ChurchName\":\"Grace\"}", File.ReadAllText(destSettings));
         Assert.Equal("image-a", File.ReadAllText(Path.Combine(destMedia, "a.png")));
         Assert.Equal("video-b", File.ReadAllText(Path.Combine(destMedia, "sub", "b.mp4")));
+    }
+
+    [Fact]
+    public void Snapshot_CopiesData_AndDoesNotLeaveTheFileLocked()
+    {
+        var src = Path.Combine(_root, "src.db");
+        using (var c = new SqliteConnection($"Data Source={src}"))
+        {
+            c.Open();
+            using var cmd = c.CreateCommand();
+            cmd.CommandText = "CREATE TABLE T(x INTEGER); INSERT INTO T VALUES(42);";
+            cmd.ExecuteNonQuery();
+        }
+        SqliteConnection.ClearAllPools(); // release the setup connection's handle
+
+        var snapshot = Path.Combine(_root, "snap.db");
+        SqliteSnapshot.Create(src, snapshot);
+
+        using (var c = new SqliteConnection($"Data Source={snapshot};Pooling=False"))
+        {
+            c.Open();
+            using var cmd = c.CreateCommand();
+            cmd.CommandText = "SELECT x FROM T";
+            Assert.Equal(42L, (long)cmd.ExecuteScalar()!);
+        }
+
+        // The regression: with default pooling the snapshot connection kept this file open,
+        // so deleting it (as CreateAsync's finally does) threw IOException.
+        File.Delete(snapshot);
+        Assert.False(File.Exists(snapshot));
     }
 }
