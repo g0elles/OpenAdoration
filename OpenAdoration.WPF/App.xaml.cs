@@ -36,6 +36,10 @@ public partial class App : WpfApp
         // Logging must be configured before the host is built
         LoggingConfiguration.Configure(logDir);
 
+        // Apply a pending backup-restore (DB staged by IBackupService) before anything opens
+        // the database. The live DB can't be swapped while in use, so it's done here at startup.
+        ApplyPendingRestore(dbPath);
+
         // ── Global exception handlers (L10) ───────────────────────────────────
         // Catch unhandled exceptions on the WPF dispatcher, unobserved Task
         // exceptions, and CLR-level unhandled exceptions. Log them all so
@@ -157,6 +161,20 @@ public partial class App : WpfApp
         System.IO.IOException or
         UnauthorizedAccessException or
         OperationCanceledException; // covers TaskCanceledException
+
+    /// <summary>
+    /// Swaps in a database staged by a backup restore (written as <c>&lt;db&gt;.restore</c>),
+    /// then removes the staging file. No-op when nothing is pending.
+    /// </summary>
+    private static void ApplyPendingRestore(string dbPath)
+    {
+        var staged = dbPath + ".restore";
+        if (!File.Exists(staged)) return;
+
+        File.Copy(staged, dbPath, overwrite: true);
+        File.Delete(staged);
+        Log.Information("Applied pending database restore from {Staged}", staged);
+    }
 
     private static void RegisterViewModels(IServiceCollection services)
     {

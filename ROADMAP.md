@@ -14,7 +14,7 @@ M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
 
 | Item | Verdict |
 |---|---|
-| M8.1 Backup/Restore (`.oabak`) | ❌ Not started — **next up** |
+| M8.1 Backup/Restore (`.oabak`) | ✅ Done — `IBackupService`/`ZipBackupService`, Settings UI, staged DB swap on restart |
 | M8.2 Auto-update (`IUpdateService`) | ❌ Not started (releases are published, but **no in-app updater consumes them yet**) |
 | M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions) |
 | M9.1 More song importers | ❌ Not started (only OpenLyrics/OpenSong/PlainText/VideoPsalm) |
@@ -441,8 +441,11 @@ Accessible from a `?` button in the toolbar.
 
 **Why:** Now that there's an installer, the next safety nets are *not losing data* and *staying current* — both without violating offline-first (no cloud, no telemetry; the only network call is an opt-in update check).
 
-### 8.1 — Backup & Restore
+### 8.1 — Backup & Restore ✅ DONE (2026-06-17)
 **Goal:** the operator exports everything to a single portable file and can restore it on any machine.
+
+**Built:** `IBackupService`/`ZipBackupService` (online-backup DB snapshot + media + settings → `.oabak`; restore gates on the manifest migration being known to this app, stages the DB as `<db>.restore`, swapped in by `App.ApplyPendingRestore` on next launch). Settings → "Create Backup…"/"Restore Backup…" with confirm + restart prompt. Tests: `BackupArchiveTests` (gate + pack/unpack round-trip).
+
 
 - **Application:** `IBackupService { Task CreateAsync(string path, CancellationToken ct); Task<RestoreResult> RestoreAsync(string path, CancellationToken ct); }`. Define `BackupManifest` (app version, created-at UTC, current EF migration id) and `RestoreResult` (compatible / needs-newer-app / corrupt).
 - **Infrastructure:** `ZipBackupService` — bundles the SQLite DB (via SQLite Online Backup API or a connection-closed file copy), the media folder, and `settings.json` into one `.oabak` (zip) plus `manifest.json`. Restore validates the manifest migration id ≤ current before overwriting; never restore a backup from a newer schema.

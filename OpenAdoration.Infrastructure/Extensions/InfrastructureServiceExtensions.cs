@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Application.Services;
+using OpenAdoration.Infrastructure.Backup;
 using OpenAdoration.Infrastructure.Persistence;
 using OpenAdoration.Infrastructure.Repositories;
 using OpenAdoration.Infrastructure.Settings;
@@ -50,6 +52,11 @@ public static class InfrastructureServiceExtensions
 
         // Token resolution: singleton; reads church tokens from IAppSettingsService
         services.AddSingleton<ITokenResolver, TokenResolver>();
+
+        // Where user data lives (DB + media + settings), for file-level features like backup.
+        var mediaDir = Path.Combine(Path.GetDirectoryName(dbPath)!, "Media");
+        services.AddSingleton(new AppPaths(dbPath, mediaDir, settingsPath));
+        services.AddScoped<IBackupService, ZipBackupService>();
 
         return services;
     }
