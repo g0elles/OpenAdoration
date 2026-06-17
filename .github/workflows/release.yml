@@ -1,0 +1,55 @@
+name: Release
+
+# Tag vX.Y.Z to cut a release: builds the self-contained MSI and publishes a
+# GitHub release with it attached. The in-app auto-updater parses releases for
+# the OpenAdoration-<ver>-win-x64.msi asset, so the asset name must not change.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write  # create the release + upload the MSI asset
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install WiX v5
+        run: dotnet tool install --global wix --version 5.0.2
+
+      - name: Derive version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          $v = '${{ github.ref_name }}'.TrimStart('v')
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Verify csproj version matches the tag
+        shell: pwsh
+        run: |
+          $proj = ([xml](Get-Content OpenAdoration.WPF/OpenAdoration.WPF.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if ($proj -ne '${{ steps.ver.outputs.version }}') {
+            throw "csproj <Version> ($proj) != tag (${{ steps.ver.outputs.version }}). Bump the csproj before tagging."
+          }
+
+      # build.ps1 stages the FFmpeg LGPL binaries (fetch-ffmpeg.ps1), publishes the
+      # single-file exe, and builds the MSI into installer/out/.
+      - name: Build MSI
+        shell: pwsh
+        run: ./installer/build.ps1 -Version ${{ steps.ver.outputs.version }}
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}"
+          "installer/out/OpenAdoration-${{ steps.ver.outputs.version }}-win-x64.msi"
+          --title "OpenAdoration ${{ steps.ver.outputs.version }}"
+          --generate-notes
