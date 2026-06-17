@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Reference plugin: validates that the contract is implementable from a separate
+       assembly referencing ONLY Abstractions, and is the load fixture for M13.2.
+       Not shipped in the app; packaged as a .oaplugin for loader tests. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenAdoration.Plugins.Abstractions\OpenAdoration.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

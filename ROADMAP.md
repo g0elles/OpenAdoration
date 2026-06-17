@@ -604,9 +604,10 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 
 **Why:** core OA stays MIT and ships **zero** third-party-licensed connectors. Optional capabilities that carry licensing, telemetry, or DRM strings (first one: the **api.bible Bible connector**) ship as **separate plugins** released on OA's GitHub. A church downloads a plugin and adds it inside OA — so those concerns never touch the core codebase and never burden installs that don't opt in.
 
-### 13.1 — Plugin contract (Application layer)
+### 13.1 — Plugin contract ✅ DONE (2026-06-17)
 - `IPlugin` (id, name, version, lifecycle) + capability interfaces. First capability: `IBibleSourcePlugin` — fetches `(version, books, verses)` and feeds the existing `IBibleService.UpsertVersionVersesAsync` sink. No plugin gets DB or filesystem access beyond the capability surface it's handed.
 - Contract lives in a small `OpenAdoration.Plugins.Abstractions` package so a plugin repo references *only* that, not the whole app.
+- **Built:** `OpenAdoration.Plugins.Abstractions` (net10.0, only deps `Microsoft.Extensions.Logging.Abstractions`): `IPlugin`, `IPluginHost` (settings + logger, nothing else), `IBibleSourcePlugin`, plugin-side DTOs (`PluginBibleData`/`PluginBibleBook`/`PluginBibleVerse`/`PluginBibleVersionInfo`/`PluginTestament`) so plugins never reference Domain, `PluginCapabilities`. Plus `OpenAdoration.Plugins.Sample` (`EchoBibleSourcePlugin`) — the loader fixture for 13.2. Test: `PluginContractTests`. Mapping DTO→Domain stays in WPF (`PluginBibleImporter`, 13.2).
 
 ### 13.2 — Discovery & loading
 - A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`.
