@@ -12,6 +12,8 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IAppSettingsService _settings;
     private readonly IProjectionService _projectionService;
     private readonly ILocalizationService _localization;
+    private readonly IBackupService _backup;
+    private readonly IDialogService _dialog;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty] private string _churchName = string.Empty;
@@ -35,11 +37,15 @@ public partial class SettingsViewModel : BaseViewModel
         IAppSettingsService settings,
         IProjectionService projectionService,
         ILocalizationService localization,
+        IBackupService backup,
+        IDialogService dialog,
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
         _projectionService = projectionService;
         _localization      = localization;
+        _backup            = backup;
+        _dialog            = dialog;
         _logger            = logger;
     }
 
@@ -104,6 +110,69 @@ public partial class SettingsViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task CreateBackupAsync()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Create Backup",
+            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            FileName = $"OpenAdoration-backup-{DateTime.Now:yyyy-MM-dd}.oabak"
+        };
+        if (dialog.ShowDialog() != true || IsBusy) return;
+
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            await _backup.CreateAsync(dialog.FileName);
+            _dialog.Inform("Backup created successfully.", "Create Backup");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Backup failed");
+            SetError("Could not create the backup.");
+        }
+        finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private async Task RestoreBackupAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Restore Backup",
+            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog() != true || IsBusy) return;
+
+        if (!_dialog.Confirm(
+                "Restoring replaces your current library (songs, Bibles, themes, services, media) " +
+                "and closes the app to finish. Continue?", "Restore Backup"))
+            return;
+
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var result = await _backup.RestoreAsync(dialog.FileName);
+            if (result.Outcome == RestoreOutcome.Compatible)
+            {
+                _dialog.Inform(result.Message, "Restore Backup");
+                System.Windows.Application.Current.Shutdown();
+                return;
+            }
+            SetError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Restore failed");
+            SetError("Could not restore the backup.");
+        }
+        finally { IsBusy = false; }
     }
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)

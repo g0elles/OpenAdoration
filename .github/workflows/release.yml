@@ -1,8 +1,8 @@
 name: Release
 
 # Tag vX.Y.Z to cut a release: builds the self-contained MSI and publishes a
-# GitHub release with it attached. The in-app auto-updater parses releases for
-# the OpenAdoration-<ver>-win-x64.msi asset, so the asset name must not change.
+# GitHub release with it attached. Keep the OpenAdoration-<ver>-win-x64.msi asset
+# name stable — the planned in-app auto-updater (M8.2, not yet built) will parse it.
 on:
   push:
     tags: ['v*']
@@ -14,9 +14,9 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
