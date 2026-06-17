@@ -314,7 +314,7 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `GetBooksAsync(versionId)` | Books in a version, ordered by BookNumber |
 | `GetVersesAsync(versionId, book, chapter)` | All verses for a chapter |
 | `SearchAsync(versionId, term, maxResults)` | FTS5 full-text search |
-| `ImportVersionAsync(result)` | Bulk import — 1000-row batches + ChangeTracker.Clear() |
+| `UpsertVersionVersesAsync(version, books, verses)` | Enrichable import — find-or-create version by abbreviation, insert only missing verses; 1000-row batches + ChangeTracker.Clear() |
 | `DeleteVersionAsync(versionId)` | Remove a translation + all its data |
 | `GenerateSlide(verses, themeId?)` | Compose verse(s) into a `Slide` (pure) |
 
@@ -527,7 +527,7 @@ Parsers that carry localized book names in the file (Zefania, OSIS, USFX, BibleS
 ### Import Pattern (memory-safe)
 
 ```csharp
-// BibleRepository.ImportVersionAsync
+// BibleRepository.UpsertVersionVersesAsync → InsertMissingVersesAsync
 foreach (var batch in verses.Chunk(1000))
 {
     context.BibleVerses.AddRange(batch);
@@ -631,7 +631,7 @@ OpenAdoration.Infrastructure/
     ThemeConfiguration.cs            ← Seeds default theme with static timestamp (G3)
   Repositories/
     SongRepository.cs           ★     ← UpdateAsync: replace-all-sections pattern
-    BibleRepository.cs          ★     ← ImportVersionAsync: 1000-row batches + ChangeTracker.Clear()
+    BibleRepository.cs          ★     ← UpsertVersionVersesAsync: insert-only-missing, 1000-row batches + ChangeTracker.Clear()
     ThemeRepository.cs               ← DeleteAsync rejects default; ClearDefaultFlagAsync
     MediaRepository.cs, WorshipServiceRepository.cs
   Extensions/
@@ -688,7 +688,7 @@ OpenAdoration.Tests.Infrastructure/
   SongImport/
     SongParserTests.cs          ← OpenLyrics / OpenSong / plain-text tests via SongFormatDispatcher
     Fixtures/                   ← Minimal song fixtures
-  (16/16 tests total)
+  (43/43 tests total)
 
 ★ = highest-leverage files; start here when debugging
 ```
@@ -713,7 +713,7 @@ System.Windows.Media.Color       // NOT System.Drawing.Color
 `LoadAsync` opens with `if (IsBusy) return;`. Never set `IsBusy = true` from a caller that then calls `LoadAsync` — the load silently does nothing.
 
 ### G7 — Bible import batch pattern
-`BibleRepository.ImportVersionAsync` inserts in batches of 1000 + `ChangeTracker.Clear()`. Do not remove — a full Bible is ~31k verses.
+`BibleRepository.UpsertVersionVersesAsync` inserts in batches of 1000 + `ChangeTracker.Clear()`. Do not remove — a full Bible is ~31k verses.
 
 ### G8 — DataTemplate required for every navigated ViewModel
 `ContentControl` resolves views via `DataTemplate` in `App.xaml`. Missing template = blank content with no error.
@@ -775,9 +775,10 @@ Get-Content "$env:LOCALAPPDATA\OpenAdoration\logs\openadoration-$(Get-Date -Form
 ### Run tests
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# Expected: 16/16 pass — 10 Bible parser tests (Zefania, OSIS, USFX, thiagobodruk,
-#   OpenAdoration JSON, BibleSuperSearch JSON / ZIP / SQLite + ZIP guards)
-#   and 6 song import tests (OpenLyrics, OpenSong, plain text)
+# Expected: 43/43 pass — Bible parsers (Zefania, OSIS, USFX, thiagobodruk /
+#   OpenAdoration / BibleSuperSearch JSON / ZIP / SQLite + ZIP guards + sanity check),
+#   song import (OpenLyrics, OpenSong, plain text), VideoPsalm agenda + DRM detector,
+#   and localization resources
 ```
 
 ### Debug projection issues

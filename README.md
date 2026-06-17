@@ -77,9 +77,10 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full tag → build → GitHub-r
 
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# 16/16 — 10 Bible parser tests (Zefania, OSIS, USFX, thiagobodruk JSON,
-#   OpenAdoration JSON, BibleSuperSearch JSON / ZIP / SQLite + ZIP guards)
-#   and 6 song import tests (OpenLyrics, OpenSong, plain text)
+# 43/43 — Bible parsers (Zefania, OSIS, USFX, thiagobodruk / OpenAdoration /
+#   BibleSuperSearch JSON / ZIP / SQLite + ZIP guards + import sanity check),
+#   song import (OpenLyrics, OpenSong, plain text), VideoPsalm agenda + DRM
+#   detector, and localization resources
 ```
 
 ---

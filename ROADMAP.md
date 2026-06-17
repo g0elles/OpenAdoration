@@ -2,7 +2,7 @@
 
 > This roadmap reflects the **actual state of the codebase**.
 > **v1.0 shipped 2026-06-01** — Milestones 0–7 are complete (see the version log below).
-> **v2.0 is now in planning** — Milestones 8–10 (Reliability & Releases, Content & Imports, Presentation Richness).
+> **v2.0 is now in planning** — Milestones 8–13 (Reliability & Releases, Content & Imports, Presentation Richness, Internationalization, VideoPsalm Migration, Plugins).
 > Every milestone starts by verifying the feature truly works before adding anything new.
 
 ---
@@ -185,12 +185,12 @@ The Bible feature has five format importers (Zefania XML, OSIS XML, USFX XML, Th
 
 **2.2 — Schema validation with clear error messages**
 
-Five named `catch` blocks in `BibleViewModel.ImportVersionAsync` before the generic fallback:
+Named `catch` blocks in `BibleImportService.GetUserMessage` before the generic fallback:
 
 | Exception | Message shown |
 |---|---|
 | `FileNotFoundException` | The selected file could not be opened. |
-| `InvalidOperationException` | Repository's duplicate-abbreviation message verbatim |
+| `InvalidOperationException` | The exception's message shown verbatim |
 | `System.Xml.XmlException` | The file could not be read as XML. It may be corrupted or in an unsupported encoding. |
 | `System.Text.Json.JsonException` | The file could not be read as JSON. It may be corrupted or in an unsupported format. |
 | `InvalidDataException` | Invalid file format: {dispatcher message} |

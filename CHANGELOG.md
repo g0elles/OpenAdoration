@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — v2.0 (planning)
 
-Target themes (see `ROADMAP.md`, Milestones 8–10):
+Target themes (see `ROADMAP.md`, Milestones 8–13):
 
 ### Planned
 - **Reliability & Releases (M8):** local backup/restore to a portable `.oabak` file;
