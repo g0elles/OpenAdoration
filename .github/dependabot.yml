@@ -2,6 +2,9 @@ version: 2
 updates:
   - package-ecosystem: nuget
     directory: "/"
+    # Bumps land on dev (integration branch); only curated batches reach master via PR.
+    # Note: security updates still target the default branch regardless of this.
+    target-branch: "dev"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -17,6 +20,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: weekly
     groups:

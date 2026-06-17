@@ -27,7 +27,7 @@ M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
 | M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
-| M13 Plugins | ❌ Planned (after M8.1) |
+| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX); 13.4 api.bible connector is a separate repo |
 | M14 Content-level theming | ❌ Not started |
 
 ---
@@ -461,12 +461,13 @@ Accessible from a `?` button in the toolbar.
 - **Offline-first note:** this is the **only** outbound network feature; it is opt-in, update-only, and sends no data. Document the tension explicitly.
 - **Done when:** a published GitHub release with a higher version is detected, downloaded, and the installer launches.
 
-### 8.3 — Release infrastructure
+### 8.3 — Release infrastructure ✅ DONE
 - `CHANGELOG.md` (Keep a Changelog + SemVer); update on every release.
-- `docs/RELEASE.md` — the tag → `installer/build.ps1 -Version x.y.z` → upload MSI to a GitHub release flow that 8.2 consumes.
+- `docs/RELEASE.md` — the tag → MSI → GitHub release flow that 8.2 will consume.
 - Single source of version truth (`Version` in the WPF csproj) flowed into the MSI and the update check.
+- **CI/CD (2026-06-17):** GitHub Actions — `ci.yml` (build+test on push/PR), `release.yml` (tag `vX.Y.Z` → build MSI via `installer/build.ps1` → publish release; guards csproj `<Version>` == tag), `codeql.yml` (C# scanning), grouped `dependabot.yml`. `master` is branch-protected (PR + `build-test`/`analyze` required).
 
-**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it.
+**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it. **(8.1 ✅, 8.3 ✅; 8.2 auto-update still pending.)**
 
 ---
 
@@ -603,18 +604,22 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 
 **Why:** core OA stays MIT and ships **zero** third-party-licensed connectors. Optional capabilities that carry licensing, telemetry, or DRM strings (first one: the **api.bible Bible connector**) ship as **separate plugins** released on OA's GitHub. A church downloads a plugin and adds it inside OA — so those concerns never touch the core codebase and never burden installs that don't opt in.
 
-### 13.1 — Plugin contract (Application layer)
+### 13.1 — Plugin contract ✅ DONE (2026-06-17)
 - `IPlugin` (id, name, version, lifecycle) + capability interfaces. First capability: `IBibleSourcePlugin` — fetches `(version, books, verses)` and feeds the existing `IBibleService.UpsertVersionVersesAsync` sink. No plugin gets DB or filesystem access beyond the capability surface it's handed.
 - Contract lives in a small `OpenAdoration.Plugins.Abstractions` package so a plugin repo references *only* that, not the whole app.
+- **Built:** `OpenAdoration.Plugins.Abstractions` (net10.0, only deps `Microsoft.Extensions.Logging.Abstractions`): `IPlugin`, `IPluginHost` (settings + logger, nothing else), `IBibleSourcePlugin`, plugin-side DTOs (`PluginBibleData`/`PluginBibleBook`/`PluginBibleVerse`/`PluginBibleVersionInfo`/`PluginTestament`) so plugins never reference Domain, `PluginCapabilities`. Plus `OpenAdoration.Plugins.Sample` (`EchoBibleSourcePlugin`) — the loader fixture for 13.2. Test: `PluginContractTests`. Mapping DTO→Domain stays in WPF (`PluginBibleImporter`, 13.2).
 
-### 13.2 — Discovery & loading
-- A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`.
-- Dropped in / installed to `%LOCALAPPDATA%\OpenAdoration\plugins\<id>\`; discovered at startup, loaded in a **collectible `AssemblyLoadContext`** so a plugin can be added/removed without restarting where practical.
+### 13.2 — Discovery & loading ✅ DONE (2026-06-17)
+- A plugin = `.oaplugin` (a ZIP of `manifest.json` + the assembly + its deps). Manifest: `id`, `name`, `version`, `capability`, `minOaVersion`, `entryAssembly`, optional `settings`.
+- Installed to `%LOCALAPPDATA%\OpenAdoration\plugins\<id>\`; discovered + loaded at startup in a **collectible `PluginLoadContext`** (shares Abstractions from the default context so `IPlugin` types match across the boundary).
 - Version gate: skip + warn if `minOaVersion` exceeds the running app.
+- **Built (WPF/Plugins):** `PluginManifest`, `PluginLoadContext`, `PluginHost`, `LoadedPlugin`, `PluginManager` (`LoadAll`/`LoadFrom`, gate, per-plugin plaintext `settings.json`), `PluginBibleImporter` (maps plugin DTOs → Domain → `UpsertVersionVersesAsync`). Assemblies load via `LoadFromStream` (no on-disk lock, so a plugin can be removed). Registered in `App` DI; `LoadAll()` at startup. Tests: `PluginManagerTests` (load/gate/no-manifest) + `PluginBibleImporterTests` (mapping). **Remove = delete dir + restart (no live unload).**
 
-### 13.3 — Settings UX
-- Settings → **Plugins**: list installed (name/version/enabled), **Add plugin…** (pick a downloaded `.oaplugin`), enable/disable, remove. Link out to the GitHub plugin catalog.
-- Plugin-provided settings (e.g. the api.bible key field) render in a section the plugin contributes.
+### 13.3 — Settings UX ✅ DONE (2026-06-17)
+- Settings → **Plugins**: list installed (name/version/capability), **Add plugin…** (pick a `.oaplugin`), remove. Link out to the GitHub plugin catalog.
+- Plugin-provided settings (e.g. the api.bible key field) render from the manifest's `settings`.
+- **Built:** `🧩 Plugins` nav page (`PluginsViewModel` + `PluginsView`, scope-per-nav); `PluginManager.Install` (guarded extract + live load), `Remove` (delete + restart to unload), `GetSettings`/`UpdateSettings` (re-inits the plugin so a new key is live). For a Bible-source plugin: **Fetch versions** → list → **Import** via `PluginBibleImporter`. Settings root is injectable for tests. `+2` tests (install/remove round-trip, settings persist). 55/55.
+- **Deferred (ponytail):** enable/disable toggle — `remove` covers "stop using it"; add a disabled-marker + restart only if a church wants to keep a plugin installed-but-inactive. Secret fields render as plain text (keys are stored plaintext in v1 anyway).
 
 ### 13.4 — First plugin: api.bible connector (separate repo)
 - Bring-your-own-key: the church pastes *its own* api.bible key, picks versions, syncs into the local DB via `IBibleSourcePlugin` → `UpsertVersionVersesAsync` (≥30-day refresh). The church is the licensee and accepts api.bible's terms; OA core ships no key and no copyrighted text.

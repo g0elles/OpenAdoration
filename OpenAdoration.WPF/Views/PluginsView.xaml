@@ -1,0 +1,109 @@
+<UserControl x:Class="OpenAdoration.WPF.Views.PluginsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             Loaded="OnLoaded">
+
+    <Grid Background="{StaticResource SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+            <TextBlock Text="{loc:Loc Plugins_Title}" Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </Border>
+
+        <Grid Grid.Row="1" Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Installed list -->
+            <DockPanel Grid.Column="0" Margin="0,0,16,0">
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="{loc:Loc Plugins_Add}" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding AddPluginCommand}" />
+                    <Button Content="{loc:Loc Plugins_Remove}" Style="{StaticResource DangerButton}"
+                            Margin="8,0,0,0" Command="{Binding RemovePluginCommand}"
+                            IsEnabled="{Binding HasSelection}" />
+                </StackPanel>
+                <ListBox ItemsSource="{Binding InstalledPlugins}" SelectedItem="{Binding SelectedPlugin}"
+                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="4">
+                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="11">
+                                    <Run Text="v" /><Run Text="{Binding Version, Mode=OneWay}" />
+                                    <Run Text="  ·  " /><Run Text="{Binding Capability, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <!-- Selected plugin detail -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding SelectedPlugin.Name}" Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                    <!-- Settings -->
+                    <TextBlock Text="{loc:Loc Plugins_Settings}" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding Settings}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Style="{StaticResource FieldTextBox}" Width="340" HorizontalAlignment="Left"
+                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="{loc:Loc Plugins_Save}" Style="{StaticResource SecondaryButton}"
+                            HorizontalAlignment="Left" Command="{Binding SaveSettingsCommand}" Margin="0,0,0,20" />
+
+                    <!-- Bible-source sync -->
+                    <StackPanel Visibility="{Binding SelectedIsBibleSource, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{loc:Loc Plugins_Versions}" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button Content="{loc:Loc Plugins_FetchVersions}" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Left" Command="{Binding FetchVersionsCommand}" Margin="0,0,0,8" />
+                        <ListBox ItemsSource="{Binding AvailableVersions}" SelectedItem="{Binding SelectedVersion}"
+                                 MaxHeight="200" Width="340" HorizontalAlignment="Left"
+                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Foreground="{StaticResource TextPrimaryBrush}">
+                                        <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Content="{loc:Loc Plugins_Import}" Style="{StaticResource PrimaryButton}"
+                                HorizontalAlignment="Left" Margin="0,8,0,0"
+                                Command="{Binding ImportVersionCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Error banner -->
+        <Border Grid.Row="2" Background="#3E1A1A" BorderBrush="{StaticResource DangerBrush}"
+                BorderThickness="0,1,0,0" Padding="16,10"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                       FontSize="13" TextWrapping="Wrap" />
+        </Border>
+    </Grid>
+</UserControl>

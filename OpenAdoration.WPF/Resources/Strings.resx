@@ -67,7 +67,16 @@
   <data name="Nav_Media" xml:space="preserve"><value>🖼  Media</value></data>
   <data name="Nav_Themes" xml:space="preserve"><value>🎨  Themes</value></data>
   <data name="Nav_Stage" xml:space="preserve"><value>📺  Stage View</value></data>
+  <data name="Nav_Plugins" xml:space="preserve"><value>🧩  Plugins</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>⚙  Settings</value></data>
+  <data name="Plugins_Title" xml:space="preserve"><value>Plugins</value></data>
+  <data name="Plugins_Add" xml:space="preserve"><value>Add…</value></data>
+  <data name="Plugins_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Plugins_Settings" xml:space="preserve"><value>SETTINGS</value></data>
+  <data name="Plugins_Save" xml:space="preserve"><value>Save settings</value></data>
+  <data name="Plugins_Versions" xml:space="preserve"><value>BIBLE VERSIONS</value></data>
+  <data name="Plugins_FetchVersions" xml:space="preserve"><value>Fetch versions</value></data>
+  <data name="Plugins_Import" xml:space="preserve"><value>Import selected version</value></data>
 
   <data name="Menu_Help" xml:space="preserve"><value>Help</value></data>
   <data name="Menu_About" xml:space="preserve"><value>About OpenAdoration</value></data>

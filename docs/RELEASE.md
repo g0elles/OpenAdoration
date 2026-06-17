@@ -17,38 +17,40 @@ The version lives in `OpenAdoration.WPF/OpenAdoration.WPF.csproj`
 version before tagging. The MSI version is passed on the build command line and
 must match.
 
-## Steps
+## Steps (automated — preferred)
 
-1. **Bump the version** in `OpenAdoration.WPF.csproj` (e.g. `1.0.0` → `1.1.0`).
-2. **Update `CHANGELOG.md`** — move items from `[Unreleased]` into a new dated
-   `[x.y.z]` section; refresh the compare links at the bottom.
-3. **Run the tests:** `dotnet test OpenAdoration.Tests.Infrastructure` (must be green).
-4. **Build the installer:**
+Releases are built and published by the **`release.yml`** GitHub Actions workflow
+when a `vX.Y.Z` tag is pushed. The runner stages FFmpeg, runs `installer/build.ps1`,
+and creates the GitHub release with the MSI attached — no local build needed.
 
-   ```powershell
-   pwsh installer/build.ps1 -Version 1.1.0
-   ```
-
-   Produces `installer/out/OpenAdoration-1.1.0-win-x64.msi` (self-contained,
-   no .NET prerequisite). This script publishes the single-file exe first, then
-   builds the MSI.
-5. **Smoke-test** the MSI on a clean Windows VM/machine: install, launch, project a
-   song, uninstall.
-6. **Tag and push:**
+1. **Bump the version** in `OpenAdoration.WPF.csproj` (`<Version>`/`<FileVersion>`/
+   `<AssemblyVersion>`). The workflow **fails fast if `<Version>` ≠ the tag**, so this
+   must match before tagging.
+2. **Update `CHANGELOG.md`** — move `[Unreleased]` items into a dated `[x.y.z]` section.
+3. **Merge to `master`** (via PR — `master` is branch-protected; CI must pass).
+4. **Tag and push:**
 
    ```powershell
    git tag v1.1.0
    git push origin v1.1.0
    ```
-7. **Create the GitHub release** and attach the MSI:
 
-   ```powershell
-   gh release create v1.1.0 installer/out/OpenAdoration-1.1.0-win-x64.msi `
-       --title "OpenAdoration 1.1.0" --notes-file CHANGELOG-1.1.0.md
-   ```
+   `release.yml` builds `OpenAdoration-1.1.0-win-x64.msi` and publishes the release
+   with auto-generated notes. The MSI **asset name** keeps the
+   `OpenAdoration-<version>-win-x64.msi` pattern that auto-update (8.2) will parse.
+5. **Smoke-test** the published MSI on a clean Windows machine: install, launch,
+   project a song, uninstall.
 
-   The MSI **asset name** must keep the `OpenAdoration-<version>-win-x64.msi`
-   pattern — the auto-update check parses the version and downloads this asset.
+## Building locally (fallback / testing)
+
+To produce the MSI without tagging (e.g. to test the installer):
+
+```powershell
+pwsh installer/build.ps1 -Version 1.1.0
+```
+
+Produces `installer/out/OpenAdoration-1.1.0-win-x64.msi` (self-contained, no .NET
+prerequisite). This is exactly what `release.yml` runs.
 
 ## What auto-update expects (Milestone 8.2)
 
