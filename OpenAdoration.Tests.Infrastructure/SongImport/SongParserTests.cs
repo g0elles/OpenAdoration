@@ -71,6 +71,27 @@ public sealed class SongParserTests
     }
 
     [Fact]
+    public void ChordPro_ParsesMetadata_StripsChords_DelimitsSections()
+    {
+        var song = SongFormatDispatcher.Import(FixturePath("chordpro_minimal.cho"));
+
+        Assert.Equal("Amazing Grace", song.Title);
+        Assert.Equal("John Newton", song.Author);
+        Assert.Equal("Public Domain", song.Copyright);
+        Assert.Equal("22025", song.CcliNumber);
+
+        Assert.Equal(3, song.Sections.Count);
+        Assert.Equal(
+            new[] { SectionType.Verse, SectionType.Chorus, SectionType.Verse },
+            song.Sections.Select(s => s.Type));
+        Assert.Equal(new[] { 1, 1, 2 }, song.Sections.Select(s => s.SectionNumber));
+
+        Assert.DoesNotContain("[", song.Sections[0].Lyrics);
+        Assert.Contains("Amazing grace how sweet the sound", song.Sections[0].Lyrics);
+        Assert.Equal("Praise the Lord", song.Sections[1].Lyrics);
+    }
+
+    [Fact]
     public void Dispatcher_RoutesOpenLyricsByNamespace()
     {
         var song = SongFormatDispatcher.Import(FixturePath("openlyrics_minimal.xml"));

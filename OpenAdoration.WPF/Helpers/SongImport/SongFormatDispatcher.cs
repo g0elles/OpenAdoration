@@ -17,8 +17,9 @@ namespace OpenAdoration.WPF.Helpers.SongImport;
 public static class SongFormatDispatcher
 {
     public const string FileDialogFilter =
-        "Song files|*.xml;*.txt;*.openlyrics;*.opensong;*.vpagd" +
+        "Song files|*.xml;*.txt;*.openlyrics;*.opensong;*.vpagd;*.cho;*.crd;*.chopro;*.chordpro" +
         "|OpenLyrics / OpenSong XML (*.xml)|*.xml;*.openlyrics;*.opensong" +
+        "|ChordPro (*.cho;*.crd;*.chopro)|*.cho;*.crd;*.chopro;*.chordpro" +
         "|VideoPsalm agenda (*.vpagd)|*.vpagd" +
         "|Plain text (*.txt)|*.txt" +
         "|All files|*.*";
@@ -51,11 +52,12 @@ public static class SongFormatDispatcher
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
         return ext switch
         {
-            ".txt"                                 => PlainTextParser.Parse(filePath),
-            ".xml" or ".openlyrics" or ".opensong" => ImportXml(filePath),
-            _                                      => IsXml(filePath)
-                                                          ? ImportXml(filePath)
-                                                          : PlainTextParser.Parse(filePath)
+            ".txt"                                       => PlainTextParser.Parse(filePath),
+            ".cho" or ".crd" or ".chopro" or ".chordpro" => ChordProParser.Parse(filePath),
+            ".xml" or ".openlyrics" or ".opensong"       => ImportXml(filePath),
+            _                                            => IsXml(filePath)
+                                                                ? ImportXml(filePath)
+                                                                : PlainTextParser.Parse(filePath)
         };
     }
 
