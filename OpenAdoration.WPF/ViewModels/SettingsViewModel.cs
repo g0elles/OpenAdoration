@@ -23,7 +23,10 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
     [ObservableProperty] private int _announcementDurationSeconds = 25;
     [ObservableProperty] private int _slideTransitionMilliseconds = 300;
+    [ObservableProperty] private SlideTransitionKind _selectedTransition = SlideTransitionKind.Fade;
     [ObservableProperty] private bool _checkForUpdatesOnStartup;
+
+    public IReadOnlyList<SlideTransitionKind> AvailableTransitions { get; } = Enum.GetValues<SlideTransitionKind>();
 
     public IReadOnlyList<LanguageOption> AvailableLanguages => _localization.AvailableLanguages;
 
@@ -73,6 +76,7 @@ public partial class SettingsViewModel : BaseViewModel
             DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
             AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
             SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
+            SelectedTransition          = current.SlideTransition;
             CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
@@ -100,6 +104,7 @@ public partial class SettingsViewModel : BaseViewModel
                 DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
+                SlideTransition             = SelectedTransition,
                 UiCulture                   = SelectedLanguage?.Code,
                 CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup
             };
@@ -219,6 +224,7 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     partial void OnCheckForUpdatesOnStartupChanged(bool value) => IsSaved = false;
+    partial void OnSelectedTransitionChanged(SlideTransitionKind value) => IsSaved = false;
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)
     {

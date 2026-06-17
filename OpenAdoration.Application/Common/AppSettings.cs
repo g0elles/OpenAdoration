@@ -35,6 +35,12 @@ public sealed class AppSettings
     public int SlideTransitionMilliseconds { get; set; } = 300;
 
     /// <summary>
+    /// Visual style of the slide-change transition (Fade / Slide / Zoom).
+    /// Ignored when <see cref="SlideTransitionMilliseconds"/> is 0 (instant Cut).
+    /// </summary>
+    public SlideTransitionKind SlideTransition { get; set; } = SlideTransitionKind.Fade;
+
+    /// <summary>
     /// UI language as a two-letter ISO code (e.g. "en", "es"). Null/empty = follow the
     /// operating system language when supported, otherwise English.
     /// </summary>
