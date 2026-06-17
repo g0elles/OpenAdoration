@@ -69,6 +69,10 @@
   <data name="Nav_Stage" xml:space="preserve"><value>📺  Stage View</value></data>
   <data name="Nav_Plugins" xml:space="preserve"><value>🧩  Plugins</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>⚙  Settings</value></data>
+  <data name="Nav_Group_Content" xml:space="preserve"><value>CONTENT</value></data>
+  <data name="Nav_Group_Present" xml:space="preserve"><value>PRESENT</value></data>
+  <data name="Nav_Group_Setup" xml:space="preserve"><value>SETUP</value></data>
+  <data name="Settings_TabGeneral" xml:space="preserve"><value>General</value></data>
   <data name="Plugins_Title" xml:space="preserve"><value>Plugins</value></data>
   <data name="Plugins_Add" xml:space="preserve"><value>Add…</value></data>
   <data name="Plugins_Remove" xml:space="preserve"><value>Remove</value></data>

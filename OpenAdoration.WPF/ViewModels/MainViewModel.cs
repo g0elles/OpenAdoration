@@ -121,13 +121,6 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         NavigateTo<SettingsViewModel>();
     }
 
-    [RelayCommand]
-    private void NavigateToPlugins()
-    {
-        _logger.LogDebug("Navigating to Plugins");
-        NavigateTo<PluginsViewModel>();
-    }
-
     private void NavigateTo<T>() where T : BaseViewModel
     {
         if (CurrentView is T)

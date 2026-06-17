@@ -61,6 +61,7 @@
                                Margin="16,0" />
 
                     <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0">
+                        <TextBlock Text="{loc:Loc Nav_Group_Content}" Style="{StaticResource NavGroupHeader}" />
                         <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Songs}"
                                 Command="{Binding NavigateToSongsCommand}" />
@@ -68,20 +69,21 @@
                                 Content="{loc:Loc Nav_Bible}"
                                 Command="{Binding NavigateToBibleCommand}" />
                         <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Schedule}"
-                                Command="{Binding NavigateToScheduleCommand}" />
-                        <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Media}"
-                                Command="{Binding NavigateToMediaCommand}" />
-                        <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Themes}"
                                 Command="{Binding NavigateToThemesCommand}" />
                         <Button Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Media}"
+                                Command="{Binding NavigateToMediaCommand}" />
+
+                        <TextBlock Text="{loc:Loc Nav_Group_Present}" Style="{StaticResource NavGroupHeader}" />
+                        <Button Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Schedule}"
+                                Command="{Binding NavigateToScheduleCommand}" />
+                        <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Stage}"
                                 Command="{Binding NavigateToStageCommand}" />
-                        <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Plugins}"
-                                Command="{Binding NavigateToPluginsCommand}" />
+
+                        <TextBlock Text="{loc:Loc Nav_Group_Setup}" Style="{StaticResource NavGroupHeader}" />
                         <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Settings}"
                                 Command="{Binding NavigateToSettingsCommand}" />

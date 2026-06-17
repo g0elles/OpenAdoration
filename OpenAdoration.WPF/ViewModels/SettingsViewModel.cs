@@ -33,12 +33,16 @@ public partial class SettingsViewModel : BaseViewModel
 
     public bool ShowSavedConfirmation => IsSaved;
 
+    /// <summary>Hosted on the Settings → Plugins tab (resolved in the same nav scope).</summary>
+    public PluginsViewModel Plugins { get; }
+
     public SettingsViewModel(
         IAppSettingsService settings,
         IProjectionService projectionService,
         ILocalizationService localization,
         IBackupService backup,
         IDialogService dialog,
+        PluginsViewModel plugins,
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
@@ -46,6 +50,7 @@ public partial class SettingsViewModel : BaseViewModel
         _localization      = localization;
         _backup            = backup;
         _dialog            = dialog;
+        Plugins            = plugins;
         _logger            = logger;
     }
 

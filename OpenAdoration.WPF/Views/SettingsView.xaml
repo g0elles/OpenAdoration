@@ -23,9 +23,11 @@
                        VerticalAlignment="Center" />
         </Border>
 
-        <!-- Form -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
+        <!-- Tabs: General settings + Plugins -->
+        <TabControl Grid.Row="1">
+            <TabItem Header="{loc:Loc Settings_TabGeneral}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
 
                 <TextBlock Text="{loc:Loc Settings_LanguageSection}"
                            Foreground="{StaticResource TextSecondaryBrush}"
@@ -145,8 +147,14 @@
                                Visibility="{Binding ShowSavedConfirmation, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-            </StackPanel>
-        </ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="{loc:Loc Plugins_Title}">
+                <ContentControl Content="{Binding Plugins}" />
+            </TabItem>
+        </TabControl>
 
         <!-- Error banner -->
         <Border Grid.Row="2"
