@@ -28,8 +28,9 @@ public static partial class ChordProParser
                 continue;
             }
             if (line.TrimStart().StartsWith('#')) continue; // ChordPro comment line
+            if (acc.Skipping) continue;                     // inside an abc/ly/grid/tab block
 
-            var lyric = ChordRegex().Replace(line, string.Empty);
+            var lyric = MetaRegex().Replace(ChordRegex().Replace(line, string.Empty), string.Empty);
             if (lyric.Trim().Length == 0 && !acc.ExplicitSection)
                 acc.Flush(song.Sections); // blank line = block boundary in free-form mode
             else
@@ -52,14 +53,25 @@ public static partial class ChordProParser
             case "start_of_chorus" or "soc":           acc.Begin(song.Sections, SectionType.Chorus); break;
             case "start_of_verse" or "sov":            acc.Begin(song.Sections, SectionType.Verse); break;
             case "start_of_bridge" or "sob":           acc.Begin(song.Sections, SectionType.Bridge); break;
-            case "end_of_chorus" or "eoc"
-                 or "end_of_verse" or "eov"
-                 or "end_of_bridge" or "eob":           acc.End(song.Sections); break;
 
             // A comment is often a section label ("Verse 2", "Bridge").
             case "comment" or "c" or "comment_italic" or "ci"
                 when SongSectionTokens.TryParse(value, out var type, out var number):
                 acc.Label(song.Sections, type, number);
+                break;
+
+            // Music-notation blocks carry no lyrics — discard their body.
+            case "start_of_abc" or "start_of_ly" or "start_of_grid" or "start_of_tab":
+                acc.BeginSkip(song.Sections);
+                break;
+
+            default:
+                // Any other {start_of_*} (e.g. textblock) holds lyric text → keep it as a section;
+                // {end_of_*} (incl. eoc/eov/eob) closes the current section or skip block.
+                if (name.StartsWith("start_of_", StringComparison.Ordinal))
+                    acc.Begin(song.Sections, SectionType.Verse);
+                else if (name.StartsWith("end_of_", StringComparison.Ordinal) || name is "eoc" or "eov" or "eob")
+                    acc.End(song.Sections);
                 break;
         }
     }
@@ -70,10 +82,13 @@ public static partial class ChordProParser
         var trimmed = line.Trim();
         if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[^1] != '}') return false;
 
+        // The name runs to the first ':' (key: value form) or whitespace (block attributes,
+        // e.g. {start_of_abc spread=32}); only a ':' carries a value we use.
         var body = trimmed[1..^1];
-        var colon = body.IndexOf(':');
-        name  = (colon < 0 ? body : body[..colon]).Trim().ToLowerInvariant();
-        value = colon < 0 ? string.Empty : body[(colon + 1)..].Trim();
+        var end = 0;
+        while (end < body.Length && body[end] != ':' && !char.IsWhiteSpace(body[end])) end++;
+        name  = body[..end].Trim().ToLowerInvariant();
+        value = end < body.Length && body[end] == ':' ? body[(end + 1)..].Trim() : string.Empty;
         return name.Length > 0;
     }
 
@@ -81,6 +96,10 @@ public static partial class ChordProParser
 
     [GeneratedRegex(@"\[[^\]]*\]")]
     private static partial Regex ChordRegex();
+
+    // ChordPro %{name} metadata substitutions — not lyric text.
+    [GeneratedRegex(@"%\{[^}]*\}")]
+    private static partial Regex MetaRegex();
 
     private sealed class Accumulator
     {
@@ -92,6 +111,9 @@ public static partial class ChordProParser
         /// <summary>True while a {start_of_*} block is open — blank lines stay inside it.</summary>
         public bool ExplicitSection { get; private set; }
 
+        /// <summary>True inside a non-lyric block (abc/ly/grid/tab) whose body is discarded.</summary>
+        public bool Skipping { get; private set; }
+
         public void Add(string line) => _buffer.Add(line);
 
         public void Begin(List<SongSection> target, SectionType type)
@@ -99,12 +121,21 @@ public static partial class ChordProParser
             Flush(target);
             _type = type;
             ExplicitSection = true;
+            Skipping = false;
+        }
+
+        public void BeginSkip(List<SongSection> target)
+        {
+            Flush(target);
+            ExplicitSection = true;
+            Skipping = true;
         }
 
         public void End(List<SongSection> target)
         {
             Flush(target);
             ExplicitSection = false;
+            Skipping = false;
         }
 
         public void Label(List<SongSection> target, SectionType type, int number)
