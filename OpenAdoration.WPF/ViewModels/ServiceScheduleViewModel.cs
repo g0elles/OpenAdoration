@@ -76,17 +76,17 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [NotifyPropertyChangedFor(nameof(BibleConfirmButtonText))]
     private ScheduleItemViewModel? _replacingBibleItem;
 
-    public string BibleConfirmButtonText => ReplacingBibleItem is null ? "Add" : "Replace";
+    public string BibleConfirmButtonText => ReplacingBibleItem is null ? L("Common_Add") : L("Sched_Replace");
 
     public bool   CanConfirmAddBible       => _versePickerAnchor > 0;
     public string BiblePickerSelectionLabel
     {
         get
         {
-            if (_versePickerAnchor == 0) return "Click a verse to select it, then click another to extend the range.";
+            if (_versePickerAnchor == 0) return L("Sched_VersePickerHint");
             var lo = Math.Min(_versePickerAnchor, _versePickerEnd);
             var hi = Math.Max(_versePickerAnchor, _versePickerEnd);
-            return lo == hi ? $"Selected: verse {lo}" : $"Selected: verses {lo} – {hi}";
+            return lo == hi ? L("Sched_SelectedVerse", lo) : L("Sched_SelectedVerses", lo, hi);
         }
     }
 
@@ -191,7 +191,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load worship services");
-            SetError("Could not load services.");
+            SetError(L("Sched_ErrLoadServices"));
         }
         finally { IsBusy = false; }
     }
@@ -217,7 +217,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         if (string.IsNullOrWhiteSpace(NewServiceName))
         {
-            SetError("Service name is required.");
+            SetError(L("Sched_ErrNameRequired"));
             return;
         }
 
@@ -237,7 +237,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create service");
-            SetError("Could not create service.");
+            SetError(L("Sched_ErrCreateService"));
         }
     }
 
@@ -246,8 +246,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Import VideoPsalm service",
-            Filter = "VideoPsalm agenda (*.vpagd)|*.vpagd",
+            Title = L("Sched_OpenVpTitle"),
+            Filter = L("Sched_VpFilter") + "|*.vpagd",
             Multiselect = false
         };
 
@@ -266,25 +266,25 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to import VideoPsalm agenda from {File}", dialog.FileName);
-            _dialogService.Inform("Could not import this VideoPsalm agenda. It may be corrupt or an unsupported file.", "Import Service");
+            _dialogService.Inform(L("Sched_ErrImportVp"), L("Sched_ImportServiceTitle"));
             return;
         }
         finally { IsBusy = false; }
 
         await LoadAsync();
-        _dialogService.Inform(FormatSummary(summary), "Import Service");
+        _dialogService.Inform(FormatSummary(summary), L("Sched_ImportServiceTitle"));
     }
 
     [RelayCommand]
     private async Task ImportVideoPsalmFolderAsync()
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Import a folder of VideoPsalm services" };
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = L("Sched_OpenFolderTitle") };
         if (dialog.ShowDialog() != true) return;
 
         var files = Directory.GetFiles(dialog.FolderName, "*.vpagd", SearchOption.AllDirectories);
         if (files.Length == 0)
         {
-            _dialogService.Inform("No VideoPsalm agendas (*.vpagd) were found in that folder.", "Import Folder");
+            _dialogService.Inform(L("Sched_ErrNoAgendas"), L("Sched_ImportFolderTitle"));
             return;
         }
 
@@ -301,13 +301,13 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Batch VideoPsalm import failed for {Folder}", dialog.FolderName);
-            _dialogService.Inform("Could not import this folder.", "Import Folder");
+            _dialogService.Inform(L("Sched_ErrImportFolder"), L("Sched_ImportFolderTitle"));
             return;
         }
         finally { IsBusy = false; }
 
         await LoadAsync();
-        _dialogService.Inform(FormatBatchSummary(batch), "Import Folder");
+        _dialogService.Inform(FormatBatchSummary(batch), L("Sched_ImportFolderTitle"));
     }
 
     private static string FormatBatchSummary(VpBatchSummary batch)
@@ -317,17 +317,17 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
         var lines = new List<string>
         {
-            $"Imported {added.Count} service(s)" + (skipped > 0 ? $", {skipped} already present" : "") + ":",
-            $"• Songs: {added.Sum(s => s.SongsImported)} new, {added.Sum(s => s.SongsReused)} reused",
-            $"• Scripture references: {added.Sum(s => s.ScriptureReferences)} (verse text omitted — it's licensed; install a Bible version to display it)",
-            $"• Media: {added.Sum(s => s.MediaImported)} new, {added.Sum(s => s.MediaReused)} reused"
+            skipped > 0 ? L("Sched_BatchHeaderSkipped", added.Count, skipped) : L("Sched_BatchHeader", added.Count),
+            L("Sched_SumSongs", added.Sum(s => s.SongsImported), added.Sum(s => s.SongsReused)),
+            L("Sched_SumScripture", added.Sum(s => s.ScriptureReferences)),
+            L("Sched_SumMedia", added.Sum(s => s.MediaImported), added.Sum(s => s.MediaReused))
         };
         var themes = added.Sum(s => s.ThemesCreated);
-        if (themes > 0) lines.Add($"• Themes reconstructed: {themes}");
+        if (themes > 0) lines.Add(L("Sched_SumThemes", themes));
         if (batch.Failed.Count > 0)
         {
-            lines.Add($"• Failed: {batch.Failed.Count}");
-            lines.AddRange(batch.Failed.Select(f => $"   – {f}"));
+            lines.Add(L("Sched_SumFailed", batch.Failed.Count));
+            lines.AddRange(batch.Failed.Select(f => L("Sched_SumFailedItem", f)));
         }
         return string.Join(Environment.NewLine, lines);
     }
@@ -335,18 +335,18 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private static string FormatSummary(VpImportSummary s)
     {
         if (s.AlreadyImported)
-            return $"\"{s.ServiceName}\" was already imported — nothing was added.";
+            return L("Sched_SumAlreadyImported", s.ServiceName);
 
         var lines = new List<string>
         {
-            $"Imported \"{s.ServiceName}\" ({s.TotalItems} items):",
-            $"• Songs: {s.SongsImported} new, {s.SongsReused} reused",
-            $"• Scripture references: {s.ScriptureReferences} (verse text omitted — it's licensed; install a Bible version to display it)",
-            $"• Media: {s.MediaImported} new, {s.MediaReused} reused"
+            L("Sched_SumHeader", s.ServiceName, s.TotalItems),
+            L("Sched_SumSongs", s.SongsImported, s.SongsReused),
+            L("Sched_SumScripture", s.ScriptureReferences),
+            L("Sched_SumMedia", s.MediaImported, s.MediaReused)
         };
-        if (s.ThemesCreated > 0) lines.Add($"• Themes reconstructed: {s.ThemesCreated}");
-        if (s.MediaMissing > 0) lines.Add($"• Media skipped (bytes not found): {s.MediaMissing}");
-        if (s.ItemsSkipped > 0) lines.Add($"• Other items skipped: {s.ItemsSkipped}");
+        if (s.ThemesCreated > 0) lines.Add(L("Sched_SumThemes", s.ThemesCreated));
+        if (s.MediaMissing > 0) lines.Add(L("Sched_SumMediaMissing", s.MediaMissing));
+        if (s.ItemsSkipped > 0) lines.Add(L("Sched_SumItemsSkipped", s.ItemsSkipped));
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -354,7 +354,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private async Task DeleteServiceAsync(WorshipService? service)
     {
         if (service is null) return;
-        if (!_dialogService.Confirm($"Delete \"{service.Name}\"? This will remove all its schedule items.", "Delete Service"))
+        if (!_dialogService.Confirm(L("Sched_ConfirmDelete", service.Name), L("Sched_DeleteServiceTitle")))
             return;
 
         try
@@ -367,7 +367,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete service {ServiceId}", service.Id);
-            SetError("Could not delete service.");
+            SetError(L("Sched_ErrDeleteService"));
         }
     }
 
@@ -382,7 +382,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             var loaded = await _serviceService.GetWithItemsAsync(service.Id);
             if (loaded is null)
             {
-                SetError("Service not found.");
+                SetError(L("Sched_ErrServiceNotFound"));
                 return;
             }
             OpenedService   = loaded;
@@ -395,7 +395,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to open service {ServiceId}", service.Id);
-            SetError("Could not load service.");
+            SetError(L("Sched_ErrLoadService"));
         }
         finally { IsBusy = false; }
     }
@@ -434,7 +434,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load songs for picker");
-            SetError("Could not load songs.");
+            SetError(L("Sched_ErrLoadSongs"));
             IsAddingSong = false;
         }
     }
@@ -482,7 +482,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add song to service");
-            SetError("Could not add song.");
+            SetError(L("Sched_ErrAddSong"));
         }
     }
 
@@ -515,7 +515,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load Bible versions for picker");
-            SetError("Could not load Bible versions.");
+            SetError(L("Sched_ErrLoadVersions"));
             IsAddingBible = false;
         }
     }
@@ -646,7 +646,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load media files for picker");
-            SetError("Could not load media files.");
+            SetError(L("Sched_ErrLoadMedia"));
             IsAddingMedia = false;
         }
     }
@@ -674,7 +674,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add media item to service");
-            SetError("Could not add media file.");
+            SetError(L("Sched_ErrAddMedia"));
         }
     }
 
@@ -683,14 +683,14 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         if (OpenedService is null || SelectedAddBibleVersion is null || SelectedAddBibleBook is null)
         {
-            SetError("Select a Bible version and book.");
+            SetError(L("Sched_ErrSelectVersionBook"));
             return;
         }
 
         var chapter = SelectedAddBibleChapterNumber;
-        if (chapter < 1) { SetError("Select a chapter."); return; }
+        if (chapter < 1) { SetError(L("Sched_ErrSelectChapter")); return; }
 
-        if (_versePickerAnchor <= 0) { SetError("Select at least one verse."); return; }
+        if (_versePickerAnchor <= 0) { SetError(L("Sched_ErrSelectVerse")); return; }
 
         var verseStart = Math.Min(_versePickerAnchor, _versePickerEnd);
         var verseEnd   = Math.Max(_versePickerAnchor, _versePickerEnd);
@@ -723,7 +723,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save Bible item to service");
-            SetError("Could not save Bible passage.");
+            SetError(L("Sched_ErrSaveBible"));
         }
     }
 
@@ -863,7 +863,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private async void OnItemDelete(object? sender, EventArgs e)
     {
         if (sender is not ScheduleItemViewModel vm || OpenedService is null) return;
-        if (!_dialogService.Confirm($"Remove \"{vm.DisplayTitle}\" from the schedule?", "Remove Item"))
+        if (!_dialogService.Confirm(L("Sched_ConfirmRemove", vm.DisplayTitle), L("Sched_RemoveItemTitle")))
             return;
 
         UnsubscribeItemEvents(vm);
@@ -883,7 +883,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to remove schedule item {ItemId}", vm.Item.Id);
-            SetError("Could not remove item.");
+            SetError(L("Sched_ErrRemoveItem"));
             SubscribeItemEvents(vm); // re-attach on failure
         }
     }
@@ -903,7 +903,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void StartLive()
     {
-        if (ScheduleItems.Count == 0) { SetError("Add at least one item before starting."); return; }
+        if (ScheduleItems.Count == 0) { SetError(L("Sched_ErrNoItemsStart")); return; }
         ClearError();
         IsAddingSong  = false;
         IsAddingBible = false;
@@ -972,7 +972,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                 case SongScheduleItem songItem:
                 {
                     var slides = _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride);
-                    if (slides.Count == 0) { SetError("This song has no lyrics to project."); return; }
+                    if (slides.Count == 0) { SetError(L("Sched_ErrNoLyrics")); return; }
                     _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId));
                     break;
                 }
@@ -1001,7 +1001,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load slides for schedule item {ItemId}", itemVm.Item.Id);
-            SetError("Could not project this item.");
+            SetError(L("Sched_ErrProject"));
         }
 
         // Push the first slide of the next schedule item so the stage view

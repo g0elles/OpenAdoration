@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using OpenAdoration.WPF.Localization;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -26,4 +27,11 @@ public abstract partial class BaseViewModel : ObservableObject
         ErrorMessage = string.Empty;
         OnPropertyChanged(nameof(HasError));
     }
+
+    /// <summary>Localized string for <paramref name="key"/> (current UI culture).</summary>
+    protected static string L(string key) => TranslationSource.Instance[key];
+
+    /// <summary>Localized string with <see cref="string.Format(string,object[])"/> arguments.</summary>
+    protected static string L(string key, params object[] args) =>
+        string.Format(TranslationSource.Instance[key], args);
 }

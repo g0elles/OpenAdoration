@@ -124,7 +124,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Stage view load failed");
-            SetError("Stage view failed to load.");
+            SetError(L("Stage_ErrLoad"));
         }
         finally { IsBusy = false; }
     }

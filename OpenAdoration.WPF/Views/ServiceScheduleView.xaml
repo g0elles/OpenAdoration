@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              Loaded="OnLoaded">
 
     <Grid Background="{StaticResource SurfaceBrush}">
@@ -22,20 +23,20 @@
                     BorderThickness="0,0,0,1"
                     Padding="16,12">
                 <Grid>
-                    <TextBlock Text="Service Schedule"
+                    <TextBlock Text="{loc:Loc Sched_Title}"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Import VideoPsalm…"
+                        <Button Content="{loc:Loc Sched_ImportVp}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ImportVideoPsalmServiceCommand}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Import folder…"
+                        <Button Content="{loc:Loc Sched_ImportFolder}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ImportVideoPsalmFolderCommand}"
                                 Margin="0,0,8,0" />
-                        <Button Content="+ New Service"
+                        <Button Content="{loc:Loc Sched_NewService}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding ShowCreateFormCommand}" />
                     </StackPanel>
@@ -61,7 +62,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Style="{StaticResource FieldTextBox}"
-                             Tag="Service name (e.g. Sunday 11am)"
+                             Tag="{loc:Loc Sched_ServiceNamePlaceholder}"
                              Text="{Binding NewServiceName, UpdateSourceTrigger=PropertyChanged}" />
                     <DatePicker Grid.Column="2"
                                 SelectedDate="{Binding NewServiceDate}"
@@ -70,11 +71,11 @@
                                 BorderBrush="{StaticResource BorderBrush}"
                                 FontSize="13" />
                     <Button Grid.Column="4"
-                            Content="Create"
+                            Content="{loc:Loc Sched_Create}"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding ConfirmCreateServiceCommand}" />
                     <Button Grid.Column="6"
-                            Content="Cancel"
+                            Content="{loc:Loc Common_Cancel}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding CancelCreateCommand}" />
                 </Grid>
@@ -102,7 +103,7 @@
                                                    FontSize="12" Margin="0,2,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1"
-                                            Content="Open"
+                                            Content="{loc:Loc Sched_Open}"
                                             Style="{StaticResource SecondaryButton}"
                                             Command="{Binding DataContext.OpenServiceCommand,
                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -124,10 +125,10 @@
             <StackPanel Grid.Row="2"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding HasNoServices, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="No services yet."
+                <TextBlock Text="{loc:Loc Sched_NoServices}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="15" HorizontalAlignment="Center" />
-                <TextBlock Text="Click &quot;+ New Service&quot; to get started."
+                <TextBlock Text="{loc:Loc Sched_NoServicesHelp}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>
@@ -169,7 +170,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0"
-                            Content="◀ Back"
+                            Content="{loc:Loc Sched_Back}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding CloseServiceCommand}" />
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
@@ -181,7 +182,7 @@
                                    FontSize="12" />
                     </StackPanel>
                     <Button Grid.Column="3"
-                            Content="▶ Start Service"
+                            Content="{loc:Loc Sched_StartService}"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding StartLiveCommand}" />
                 </Grid>
@@ -194,15 +195,15 @@
                     BorderThickness="0,0,0,1"
                     Padding="12,8">
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="+ Add Song"
+                    <Button Content="{loc:Loc Sched_AddSong}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddSongPanelCommand}"
                             Margin="0,0,8,0" />
-                    <Button Content="+ Add Bible"
+                    <Button Content="{loc:Loc Sched_AddBible}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddBiblePanelCommand}"
                             Margin="0,0,8,0" />
-                    <Button Content="+ Add Media"
+                    <Button Content="{loc:Loc Sched_AddMedia}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddMediaPanelCommand}"
                             Margin="0,0,8,0" />
@@ -244,7 +245,7 @@
                     </Grid.RowDefinitions>
                     <TextBox Grid.Row="0"
                              Style="{StaticResource FieldTextBox}"
-                             Tag="Search songs…"
+                             Tag="{loc:Loc Sched_SearchSongs}"
                              Text="{Binding SongPickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,8" />
                     <Border Grid.Row="1"
@@ -277,12 +278,12 @@
                         </ListBox>
                     </Border>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button Content="Add Selected"
+                        <Button Content="{loc:Loc Sched_AddSelected}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding ConfirmAddSongCommand}"
                                 IsEnabled="{Binding CanConfirmAddSong}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Cancel"
+                        <Button Content="{loc:Loc Common_Cancel}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelAddSongCommand}" />
                     </StackPanel>
@@ -307,7 +308,7 @@
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="VERSION" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{loc:Loc Sched_Version}" Style="{StaticResource FieldLabel}" />
                             <ComboBox Style="{StaticResource FieldComboBox}"
                                       ItemsSource="{Binding BibleVersions}"
                                       SelectedItem="{Binding SelectedAddBibleVersion}">
@@ -319,7 +320,7 @@
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="BOOK" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{loc:Loc Sched_Book}" Style="{StaticResource FieldLabel}" />
                             <ComboBox Style="{StaticResource FieldComboBox}"
                                       ItemsSource="{Binding AddBibleBooks}"
                                       SelectedItem="{Binding SelectedAddBibleBook}">
@@ -331,7 +332,7 @@
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
-                            <TextBlock Text="CHAPTER" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{loc:Loc Sched_Chapter}" Style="{StaticResource FieldLabel}" />
                             <ComboBox Style="{StaticResource FieldComboBox}"
                                       ItemsSource="{Binding AddBibleChapters}"
                                       SelectedItem="{Binding SelectedAddBibleChapterNumber}" />
@@ -412,7 +413,7 @@
                                 Command="{Binding ConfirmAddBibleCommand}"
                                 IsEnabled="{Binding CanConfirmAddBible}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Cancel"
+                        <Button Content="{loc:Loc Common_Cancel}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelAddBibleCommand}" />
                     </StackPanel>
@@ -476,12 +477,12 @@
                     </Border>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal">
-                        <Button Content="Add Selected"
+                        <Button Content="{loc:Loc Sched_AddSelected}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding ConfirmAddMediaCommand}"
                                 IsEnabled="{Binding CanConfirmAddMedia}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Cancel"
+                        <Button Content="{loc:Loc Common_Cancel}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelAddMediaCommand}" />
                     </StackPanel>
@@ -519,7 +520,7 @@
                                                    FontSize="13" />
                                         <!-- Per-service verse order override (song items only) -->
                                         <TextBox Style="{StaticResource FieldTextBox}"
-                                                 Tag="Order override — blank = all verses (e.g. V1 C V2 C)"
+                                                 Tag="{loc:Loc Sched_OrderOverride}"
                                                  Text="{Binding VerseOrderOverride, UpdateSourceTrigger=LostFocus}"
                                                  FontSize="11"
                                                  Margin="0,4,8,0"
@@ -548,13 +549,13 @@
                                         <StackPanel Orientation="Horizontal"
                                                     Margin="0,3,8,0"
                                                     Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="⚠ Verse text not found"
+                                            <TextBlock Text="{loc:Loc Sched_VerseNotFound}"
                                                        Foreground="{StaticResource WarningBrush}"
                                                        FontSize="10"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,8,0" />
-                                            <Button Content="Select from Bible…"
+                                            <Button Content="{loc:Loc Sched_SelectFromBible}"
                                                     Style="{StaticResource SecondaryButton}"
                                                     FontSize="10"
                                                     Padding="6,2"
@@ -619,10 +620,10 @@
             <StackPanel Grid.Row="3"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding HasNoScheduleItems, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="No items yet."
+                <TextBlock Text="{loc:Loc Sched_NoItems}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="15" HorizontalAlignment="Center" />
-                <TextBlock Text="Use the toolbar to add songs and Bible passages."
+                <TextBlock Text="{loc:Loc Sched_NoItemsHelp}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>
@@ -663,14 +664,14 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0"
-                            Content="■ Stop"
+                            Content="{loc:Loc Sched_Stop}"
                             Style="{StaticResource DangerButton}"
                             Command="{Binding StopLiveCommand}" />
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding OpenedService.Name}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontSize="15" FontWeight="SemiBold" />
-                        <TextBlock Text="● LIVE"
+                        <TextBlock Text="{loc:Loc Sched_LiveBadge}"
                                    Foreground="#4CAF50"
                                    FontSize="11" FontWeight="Bold" />
                     </StackPanel>
@@ -684,19 +685,19 @@
                     BorderThickness="0,0,0,1"
                     Padding="12,8">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Queue:"
+                    <TextBlock Text="{loc:Loc Sched_Queue}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="12" VerticalAlignment="Center"
                                Margin="0,0,12,0" />
-                    <Button Content="+ Song"
+                    <Button Content="{loc:Loc Sched_QueueSong}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddSongPanelCommand}"
                             Margin="0,0,8,0" />
-                    <Button Content="+ Bible"
+                    <Button Content="{loc:Loc Sched_QueueBible}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddBiblePanelCommand}"
                             Margin="0,0,8,0" />
-                    <Button Content="+ Media"
+                    <Button Content="{loc:Loc Sched_QueueMedia}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddMediaPanelCommand}" />
                 </StackPanel>
@@ -735,7 +736,7 @@
                         </Grid.RowDefinitions>
                         <TextBox Grid.Row="0"
                                  Style="{StaticResource FieldTextBox}"
-                                 Tag="Search songs…"
+                                 Tag="{loc:Loc Sched_SearchSongs}"
                                  Text="{Binding SongPickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,8" />
                         <Border Grid.Row="1"
@@ -766,12 +767,12 @@
                             </ListBox>
                         </Border>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="Add to Queue"
+                            <Button Content="{loc:Loc Sched_AddToQueue}"
                                     Style="{StaticResource PrimaryButton}"
                                     Command="{Binding ConfirmAddSongCommand}"
                                     IsEnabled="{Binding CanConfirmAddSong}"
                                     Margin="0,0,8,0" />
-                            <Button Content="Cancel"
+                            <Button Content="{loc:Loc Common_Cancel}"
                                     Style="{StaticResource SecondaryButton}"
                                     Command="{Binding CancelAddSongCommand}" />
                         </StackPanel>
@@ -795,7 +796,7 @@
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="VERSION" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="{loc:Loc Sched_Version}" Style="{StaticResource FieldLabel}" />
                                 <ComboBox Style="{StaticResource FieldComboBox}"
                                           ItemsSource="{Binding BibleVersions}"
                                           SelectedItem="{Binding SelectedAddBibleVersion}">
@@ -807,7 +808,7 @@
                                 </ComboBox>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="BOOK" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="{loc:Loc Sched_Book}" Style="{StaticResource FieldLabel}" />
                                 <ComboBox Style="{StaticResource FieldComboBox}"
                                           ItemsSource="{Binding AddBibleBooks}"
                                           SelectedItem="{Binding SelectedAddBibleBook}">
@@ -819,7 +820,7 @@
                                 </ComboBox>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
-                                <TextBlock Text="CHAPTER" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="{loc:Loc Sched_Chapter}" Style="{StaticResource FieldLabel}" />
                                 <ComboBox Style="{StaticResource FieldComboBox}"
                                           ItemsSource="{Binding AddBibleChapters}"
                                           SelectedItem="{Binding SelectedAddBibleChapterNumber}" />
@@ -887,12 +888,12 @@
                         </Border>
 
                         <StackPanel Grid.Row="3" Orientation="Horizontal">
-                            <Button Content="Add to Queue"
+                            <Button Content="{loc:Loc Sched_AddToQueue}"
                                     Style="{StaticResource PrimaryButton}"
                                     Command="{Binding ConfirmAddBibleCommand}"
                                     IsEnabled="{Binding CanConfirmAddBible}"
                                     Margin="0,0,8,0" />
-                            <Button Content="Cancel"
+                            <Button Content="{loc:Loc Common_Cancel}"
                                     Style="{StaticResource SecondaryButton}"
                                     Command="{Binding CancelAddBibleCommand}" />
                         </StackPanel>
@@ -950,12 +951,12 @@
                             </ListBox>
                         </Border>
                         <StackPanel Grid.Row="1" Orientation="Horizontal">
-                            <Button Content="Add to Queue"
+                            <Button Content="{loc:Loc Sched_AddToQueue}"
                                     Style="{StaticResource PrimaryButton}"
                                     Command="{Binding ConfirmAddMediaCommand}"
                                     IsEnabled="{Binding CanConfirmAddMedia}"
                                     Margin="0,0,8,0" />
-                            <Button Content="Cancel"
+                            <Button Content="{loc:Loc Common_Cancel}"
                                     Style="{StaticResource SecondaryButton}"
                                     Command="{Binding CancelAddMediaCommand}" />
                         </StackPanel>
@@ -1008,7 +1009,7 @@
                                                                    Foreground="{StaticResource TextPrimaryBrush}"
                                                                    FontSize="12"
                                                                    TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Text="⚠ Verse text not found"
+                                                        <TextBlock Text="{loc:Loc Sched_VerseNotFound}"
                                                                    Foreground="{StaticResource WarningBrush}"
                                                                    FontSize="10"
                                                                    TextTrimming="CharacterEllipsis"
@@ -1040,20 +1041,17 @@
                         Background="{StaticResource SurfaceBrush}"
                         Padding="24">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Now projecting:"
+                        <TextBlock Text="{loc:Loc Sched_NowProjecting}"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,4" />
                         <TextBlock Text="{Binding CurrentLiveItemTitle}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontSize="18" FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
-                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                        <TextBlock Text="{loc:Loc Sched_LiveHelp}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="12" TextWrapping="Wrap"
-                                   Margin="0,16,0,0">
-                            Use ◀ / ▶ in the main bar to move between slides.
-                            Click any item on the left to jump to it.
-                            Use Queue to add more items on the fly.
-                        </TextBlock>
+                                   Margin="0,16,0,0" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -1066,20 +1064,24 @@
                     Padding="16,12">
                 <Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="◀ Prev Item"
+                        <Button Content="{loc:Loc Sched_PrevItem}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding PrevItemCommand}"
                                 Margin="0,0,12,0" />
-                        <Button Content="Next Item ▶"
+                        <Button Content="{loc:Loc Sched_NextItem}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding NextItemCommand}" />
                     </StackPanel>
                     <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="12">
-                        <Run Text="{Binding CurrentLiveDisplayNumber, StringFormat='Item {0}', Mode=OneWay}" />
-                        <Run Text=" of " />
-                        <Run Text="{Binding ScheduleItems.Count, Mode=OneWay}" />
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource LocFormat}">
+                                <Binding Path="[Sched_ItemCounter]" Source="{x:Static loc:TranslationSource.Instance}" />
+                                <Binding Path="CurrentLiveDisplayNumber" Mode="OneWay" />
+                                <Binding Path="ScheduleItems.Count" Mode="OneWay" />
+                            </MultiBinding>
+                        </TextBlock.Text>
                     </TextBlock>
                 </Grid>
             </Border>
@@ -1089,7 +1091,7 @@
         <Grid Background="#80000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Loading…"
+                <TextBlock Text="{loc:Loc Common_Loading}"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            FontSize="16" HorizontalAlignment="Center" />
             </StackPanel>

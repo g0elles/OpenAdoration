@@ -12,10 +12,10 @@ namespace OpenAdoration.WPF.Services;
 /// </summary>
 public sealed class LocalizationService : ILocalizationService
 {
-    // Temporary lock to English until the UI is fully translated (M11). While false, the
-    // app ignores saved/OS culture and offers only English, so a partially-translated UI
-    // is never shown. Flip to true once every view/dialog/VM string is localized.
-    private const bool MultiLanguageEnabled = false;
+    // M11.3 complete: every view, dialog, and VM string is externalized to resx (en + es,
+    // parity-tested). Multi-language is live — the app honours saved/OS culture and the
+    // Settings language picker. Re-lock to English only if a future view ships untranslated.
+    private const bool MultiLanguageEnabled = true;
 
     private static readonly LanguageOption[] Languages =
     {

@@ -25,7 +25,7 @@ public partial class AddEditSongViewModel : BaseViewModel
     public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
 
     public bool   IsNew     => _songId == 0;
-    public string FormTitle => IsNew ? "New Song" : "Edit Song";
+    public string FormTitle => IsNew ? L("SongEdit_FormNew") : L("SongEdit_FormEdit");
 
     public event EventHandler<Song>? Saved;
     public event EventHandler?       Cancelled;
@@ -87,19 +87,19 @@ public partial class AddEditSongViewModel : BaseViewModel
 
         if (string.IsNullOrWhiteSpace(Title))
         {
-            SetError("Song title is required.");
+            SetError(L("SongEdit_ErrTitleRequired"));
             return;
         }
 
         if (!Sections.Any())
         {
-            SetError("At least one section is required.");
+            SetError(L("SongEdit_ErrSectionRequired"));
             return;
         }
 
         if (Sections.Any(s => string.IsNullOrWhiteSpace(s.Lyrics)))
         {
-            SetError("All sections must have lyrics before saving.");
+            SetError(L("SongEdit_ErrLyricsRequired"));
             return;
         }
 
@@ -127,7 +127,7 @@ public partial class AddEditSongViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save song");
-            SetError("Failed to save. Please try again.");
+            SetError(L("Common_SaveFailed"));
         }
         finally
         {

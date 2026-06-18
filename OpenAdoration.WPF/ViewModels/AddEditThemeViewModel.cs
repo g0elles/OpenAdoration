@@ -56,7 +56,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
     [ObservableProperty] private string? _footerTemplate;
 
     public bool IsNew      => _themeId == 0;
-    public string FormTitle => IsNew ? "New Theme" : "Edit Theme";
+    public string FormTitle => IsNew ? L("ThemeEdit_FormNew") : L("ThemeEdit_FormEdit");
 
     public bool IsBackgroundColor => SelectedBackgroundType == BackgroundType.Color;
     public bool IsBackgroundImage => SelectedBackgroundType == BackgroundType.Image;
@@ -142,8 +142,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
     {
         if (IsBusy) return;
 
-        if (string.IsNullOrWhiteSpace(Name)) { SetError("Theme name is required."); return; }
-        if (FontSize <= 0)                   { SetError("Font size must be greater than zero."); return; }
+        if (string.IsNullOrWhiteSpace(Name)) { SetError(L("ThemeEdit_ErrNameRequired")); return; }
+        if (FontSize <= 0)                   { SetError(L("ThemeEdit_ErrFontSize")); return; }
 
         IsBusy = true;
         ClearError();
@@ -168,7 +168,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save theme");
-            SetError("Failed to save. Please try again.");
+            SetError(L("Common_SaveFailed"));
         }
         finally
         {

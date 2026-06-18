@@ -146,6 +146,27 @@
   <data name="Common_Edit" xml:space="preserve"><value>Editar</value></data>
   <data name="Common_Project" xml:space="preserve"><value>Proyectar</value></data>
   <data name="Common_New" xml:space="preserve"><value>+ Nuevo</value></data>
+  <data name="Common_Clear" xml:space="preserve"><value>Borrar</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Bible_NoVersion" xml:space="preserve"><value>No hay ninguna versión de la Biblia importada</value></data>
+  <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Importa un archivo de la Biblia para empezar. Formatos admitidos: Zefania XML, OSIS XML, USFX XML y JSON.</value></data>
+  <data name="Bible_ImportFile" xml:space="preserve"><value>Importar archivo de la Biblia…</value></data>
+  <data name="Bible_SecondaryTooltip" xml:space="preserve"><value>Segunda versión opcional, debajo de la primera en cada diapositiva</value></data>
+  <data name="Bible_ClearSecondary" xml:space="preserve"><value>Quitar segunda versión</value></data>
+  <data name="Bible_Keyword" xml:space="preserve"><value>≡ Palabra clave</value></data>
+  <data name="Bible_KeywordTooltip" xml:space="preserve"><value>Alternar el modo de búsqueda por palabra clave</value></data>
+  <data name="Bible_Phrase" xml:space="preserve"><value>" " Frase</value></data>
+  <data name="Bible_PhraseTooltip" xml:space="preserve"><value>Buscar la frase exacta en lugar de todas las palabras</value></data>
+  <data name="Bible_Import" xml:space="preserve"><value>Importar…</value></data>
+  <data name="Bible_DeleteVersion" xml:space="preserve"><value>Eliminar versión</value></data>
+  <data name="Bible_Freeze" xml:space="preserve"><value>🔒 Congelar</value></data>
+  <data name="Bible_FreezeTooltip" xml:space="preserve"><value>Mantén la diapositiva actual en pantalla mientras navegas a la siguiente</value></data>
+  <data name="Bible_Project" xml:space="preserve"><value>▶▶ Proyectar</value></data>
+  <data name="Bible_SearchResults" xml:space="preserve"><value>Resultados de búsqueda para "{0}"</value></data>
+  <data name="Bible_SelectPrompt" xml:space="preserve"><value>Selecciona un libro y luego toca el número de capítulo</value></data>
+  <data name="Bible_PlaceholderPhrase" xml:space="preserve"><value>Escribe la frase exacta a buscar…</value></data>
+  <data name="Bible_PlaceholderKeyword" xml:space="preserve"><value>Escribe palabra(s) clave a buscar…</value></data>
+  <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
   <data name="Media_Import" xml:space="preserve"><value>+ Importar</value></data>
   <data name="Media_ImportFolder" xml:space="preserve"><value>+ Importar carpeta</value></data>
@@ -165,4 +186,235 @@
   <data name="Songs_NoResults" xml:space="preserve"><value>No se encontraron canciones para "{0}".</value></data>
   <data name="Songs_SelectPrompt" xml:space="preserve"><value>Selecciona una canción de la lista</value></data>
   <data name="Songs_SelectPromptSub" xml:space="preserve"><value>o haz clic en + Nuevo para crear una</value></data>
+  <data name="Themes_Title" xml:space="preserve"><value>Temas</value></data>
+  <data name="Themes_Empty" xml:space="preserve"><value>Aún no hay temas. Haz clic en + Nuevo para agregar uno.</value></data>
+  <data name="Themes_DefaultBadge" xml:space="preserve"><value>PREDETERMINADO</value></data>
+  <data name="Themes_SetDefault" xml:space="preserve"><value>Establecer como tema predeterminado</value></data>
+  <data name="Themes_DeleteTooltip" xml:space="preserve"><value>No se puede eliminar el tema predeterminado</value></data>
+  <data name="Themes_BgColor" xml:space="preserve"><value>Color de fondo</value></data>
+  <data name="Themes_FontColor" xml:space="preserve"><value>Color de fuente</value></data>
+  <data name="Themes_SelectPrompt" xml:space="preserve"><value>Selecciona un tema de la lista</value></data>
+  <data name="Themes_SelectPromptSub" xml:space="preserve"><value>o haz clic en + Nuevo para crear uno</value></data>
+  <data name="Common_Saving" xml:space="preserve"><value>Guardando…</value></data>
+  <data name="Common_Optional" xml:space="preserve"><value>Opcional</value></data>
+  <data name="Common_MoveUp" xml:space="preserve"><value>Subir</value></data>
+  <data name="Common_MoveDown" xml:space="preserve"><value>Bajar</value></data>
+  <data name="Common_SaveFailed" xml:space="preserve"><value>No se pudo guardar. Inténtalo de nuevo.</value></data>
+  <data name="Section_Verse" xml:space="preserve"><value>Verso</value></data>
+  <data name="Section_Chorus" xml:space="preserve"><value>Coro</value></data>
+  <data name="Section_PreChorus" xml:space="preserve"><value>Pre-coro</value></data>
+  <data name="Section_Bridge" xml:space="preserve"><value>Puente</value></data>
+  <data name="Section_Intro" xml:space="preserve"><value>Introducción</value></data>
+  <data name="Section_Outro" xml:space="preserve"><value>Cierre</value></data>
+  <data name="Section_Tag" xml:space="preserve"><value>Coda</value></data>
+  <data name="SongEdit_Save" xml:space="preserve"><value>Guardar canción</value></data>
+  <data name="SongEdit_FormNew" xml:space="preserve"><value>Nueva canción</value></data>
+  <data name="SongEdit_FormEdit" xml:space="preserve"><value>Editar canción</value></data>
+  <data name="SongEdit_Title" xml:space="preserve"><value>TÍTULO</value></data>
+  <data name="SongEdit_TitlePlaceholder" xml:space="preserve"><value>Título de la canción</value></data>
+  <data name="SongEdit_Author" xml:space="preserve"><value>AUTOR / ARTISTA</value></data>
+  <data name="SongEdit_Classification" xml:space="preserve"><value>CLASIFICACIÓN</value></data>
+  <data name="SongEdit_ClassificationPlaceholder" xml:space="preserve"><value>p. ej. Adoración, Himno, Contemporáneo…</value></data>
+  <data name="SongEdit_Copyright" xml:space="preserve"><value>DERECHOS DE AUTOR</value></data>
+  <data name="SongEdit_CopyrightPlaceholder" xml:space="preserve"><value>Opcional — p. ej. © 2001 Hillsong Music</value></data>
+  <data name="SongEdit_Ccli" xml:space="preserve"><value>N.º CCLI</value></data>
+  <data name="SongEdit_PlayOrder" xml:space="preserve"><value>ORDEN DE EJECUCIÓN</value></data>
+  <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Opcional — p. ej. V1 C V2 C B C</value></data>
+  <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Déjalo en blanco para reproducir las secciones de arriba abajo. Usa las fichas de sección de abajo (p. ej. V1 = Verso 1, C = Coro, B = Puente); repite una ficha para repetir esa sección.</value></data>
+  <data name="SongEdit_RemoveSection" xml:space="preserve"><value>Quitar sección</value></data>
+  <data name="SongEdit_AddSection" xml:space="preserve"><value>AGREGAR SECCIÓN</value></data>
+  <data name="SongEdit_AddVerse" xml:space="preserve"><value>+ Verso</value></data>
+  <data name="SongEdit_AddChorus" xml:space="preserve"><value>+ Coro</value></data>
+  <data name="SongEdit_AddPreChorus" xml:space="preserve"><value>+ Pre-coro</value></data>
+  <data name="SongEdit_AddBridge" xml:space="preserve"><value>+ Puente</value></data>
+  <data name="SongEdit_AddIntro" xml:space="preserve"><value>+ Introducción</value></data>
+  <data name="SongEdit_AddOutro" xml:space="preserve"><value>+ Cierre</value></data>
+  <data name="SongEdit_AddTag" xml:space="preserve"><value>+ Coda</value></data>
+  <data name="SongEdit_ErrTitleRequired" xml:space="preserve"><value>El título de la canción es obligatorio.</value></data>
+  <data name="SongEdit_ErrSectionRequired" xml:space="preserve"><value>Se requiere al menos una sección.</value></data>
+  <data name="SongEdit_ErrLyricsRequired" xml:space="preserve"><value>Todas las secciones deben tener letra antes de guardar.</value></data>
+  <data name="Common_Browse" xml:space="preserve"><value>Examinar…</value></data>
+  <data name="ThemeEdit_Save" xml:space="preserve"><value>Guardar tema</value></data>
+  <data name="ThemeEdit_FormNew" xml:space="preserve"><value>Nuevo tema</value></data>
+  <data name="ThemeEdit_FormEdit" xml:space="preserve"><value>Editar tema</value></data>
+  <data name="ThemeEdit_Name" xml:space="preserve"><value>NOMBRE</value></data>
+  <data name="ThemeEdit_NamePlaceholder" xml:space="preserve"><value>Nombre del tema</value></data>
+  <data name="ThemeEdit_Font" xml:space="preserve"><value>FUENTE</value></data>
+  <data name="ThemeEdit_FontFamily" xml:space="preserve"><value>Familia de fuente</value></data>
+  <data name="ThemeEdit_Size" xml:space="preserve"><value>Tamaño (pt)</value></data>
+  <data name="ThemeEdit_FontColor" xml:space="preserve"><value>Color de fuente</value></data>
+  <data name="ThemeEdit_TextAlignment" xml:space="preserve"><value>Alineación del texto</value></data>
+  <data name="ThemeEdit_AlignLeft" xml:space="preserve"><value>Izquierda</value></data>
+  <data name="ThemeEdit_AlignCenter" xml:space="preserve"><value>Centro</value></data>
+  <data name="ThemeEdit_AlignRight" xml:space="preserve"><value>Derecha</value></data>
+  <data name="ThemeEdit_Background" xml:space="preserve"><value>FONDO</value></data>
+  <data name="ThemeEdit_Type" xml:space="preserve"><value>Tipo</value></data>
+  <data name="ThemeEdit_BgColor" xml:space="preserve"><value>Color</value></data>
+  <data name="ThemeEdit_BgImage" xml:space="preserve"><value>Imagen</value></data>
+  <data name="ThemeEdit_BgVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="ThemeEdit_NoImage" xml:space="preserve"><value>Ninguna imagen seleccionada</value></data>
+  <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>Ningún video seleccionado</value></data>
+  <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Usar como tema predeterminado para todas las diapositivas</value></data>
+  <data name="ThemeEdit_HeaderFooter" xml:space="preserve"><value>ENCABEZADO / PIE</value></data>
+  <data name="ThemeEdit_TokenNote1" xml:space="preserve"><value>Las zonas de fichas se ocultan automáticamente cuando las fichas no tienen valor para el tipo de diapositiva actual (p. ej. un encabezado bíblico en una diapositiva de canción). </value></data>
+  <data name="ThemeEdit_TokenNote2" xml:space="preserve"><value>El texto fijo que escribas siempre aparecerá en cada diapositiva.</value></data>
+  <data name="ThemeEdit_HeaderTop" xml:space="preserve"><value>Encabezado (arriba)</value></data>
+  <data name="ThemeEdit_FooterBottom" xml:space="preserve"><value>Pie (abajo)</value></data>
+  <data name="ThemeEdit_Insert" xml:space="preserve"><value>Insertar: </value></data>
+  <data name="ThemeEdit_Preview" xml:space="preserve"><value>VISTA PREVIA</value></data>
+  <data name="ThemeEdit_VideoActive" xml:space="preserve"><value>🎬  Fondo de video activo</value></data>
+  <data name="ThemeEdit_SampleLyrics" xml:space="preserve"><value>Letra de ejemplo línea uno&#x0a;Segunda línea de la canción</value></data>
+  <data name="ThemeEdit_ErrNameRequired" xml:space="preserve"><value>El nombre del tema es obligatorio.</value></data>
+  <data name="ThemeEdit_ErrFontSize" xml:space="preserve"><value>El tamaño de fuente debe ser mayor que cero.</value></data>
+  <data name="ThemeEdit_TokChurchName" xml:space="preserve"><value>Nombre de iglesia</value></data>
+  <data name="ThemeEdit_TokSiteLicense" xml:space="preserve"><value>Licencia</value></data>
+  <data name="ThemeEdit_TokSongTitle" xml:space="preserve"><value>Título</value></data>
+  <data name="ThemeEdit_TokSongAuthor" xml:space="preserve"><value>Autor</value></data>
+  <data name="ThemeEdit_TokSection" xml:space="preserve"><value>Sección</value></data>
+  <data name="ThemeEdit_TokCopyright" xml:space="preserve"><value>Derechos</value></data>
+  <data name="ThemeEdit_TokCcli" xml:space="preserve"><value>N.º CCLI</value></data>
+  <data name="ThemeEdit_TokVerseRef" xml:space="preserve"><value>Referencia</value></data>
+  <data name="ThemeEdit_TokBibleBook" xml:space="preserve"><value>Libro</value></data>
+  <data name="ThemeEdit_TokChapter" xml:space="preserve"><value>Capítulo n.º</value></data>
+  <data name="ThemeEdit_TokVerse" xml:space="preserve"><value>Versículo n.º</value></data>
+  <data name="ThemeEdit_TokBibleVersion" xml:space="preserve"><value>Versión bíblica</value></data>
+  <data name="Common_Add" xml:space="preserve"><value>Agregar</value></data>
+  <data name="Common_Unknown" xml:space="preserve"><value>Desconocido</value></data>
+  <data name="Sched_Title" xml:space="preserve"><value>Programa del servicio</value></data>
+  <data name="Sched_ImportVp" xml:space="preserve"><value>Importar VideoPsalm…</value></data>
+  <data name="Sched_ImportFolder" xml:space="preserve"><value>Importar carpeta…</value></data>
+  <data name="Sched_NewService" xml:space="preserve"><value>+ Nuevo servicio</value></data>
+  <data name="Sched_ServiceNamePlaceholder" xml:space="preserve"><value>Nombre del servicio (p. ej. Domingo 11h)</value></data>
+  <data name="Sched_Create" xml:space="preserve"><value>Crear</value></data>
+  <data name="Sched_Open" xml:space="preserve"><value>Abrir</value></data>
+  <data name="Sched_NoServices" xml:space="preserve"><value>Aún no hay servicios.</value></data>
+  <data name="Sched_NoServicesHelp" xml:space="preserve"><value>Haz clic en "+ Nuevo servicio" para empezar.</value></data>
+  <data name="Sched_Back" xml:space="preserve"><value>◀ Atrás</value></data>
+  <data name="Sched_StartService" xml:space="preserve"><value>▶ Iniciar servicio</value></data>
+  <data name="Sched_AddSong" xml:space="preserve"><value>+ Agregar canción</value></data>
+  <data name="Sched_AddBible" xml:space="preserve"><value>+ Agregar Biblia</value></data>
+  <data name="Sched_AddMedia" xml:space="preserve"><value>+ Agregar multimedia</value></data>
+  <data name="Sched_SearchSongs" xml:space="preserve"><value>Buscar canciones…</value></data>
+  <data name="Sched_AddSelected" xml:space="preserve"><value>Agregar seleccionado</value></data>
+  <data name="Sched_Version" xml:space="preserve"><value>VERSIÓN</value></data>
+  <data name="Sched_Book" xml:space="preserve"><value>LIBRO</value></data>
+  <data name="Sched_Chapter" xml:space="preserve"><value>CAPÍTULO</value></data>
+  <data name="Sched_OrderOverride" xml:space="preserve"><value>Orden personalizado — vacío = todos los versos (p. ej. V1 C V2 C)</value></data>
+  <data name="Sched_VerseNotFound" xml:space="preserve"><value>⚠ Texto del versículo no encontrado</value></data>
+  <data name="Sched_SelectFromBible" xml:space="preserve"><value>Seleccionar de la Biblia…</value></data>
+  <data name="Sched_NoItems" xml:space="preserve"><value>Aún no hay elementos.</value></data>
+  <data name="Sched_NoItemsHelp" xml:space="preserve"><value>Usa la barra de herramientas para agregar canciones y pasajes bíblicos.</value></data>
+  <data name="Sched_Stop" xml:space="preserve"><value>■ Detener</value></data>
+  <data name="Sched_LiveBadge" xml:space="preserve"><value>● EN VIVO</value></data>
+  <data name="Sched_Queue" xml:space="preserve"><value>Cola:</value></data>
+  <data name="Sched_QueueSong" xml:space="preserve"><value>+ Canción</value></data>
+  <data name="Sched_QueueBible" xml:space="preserve"><value>+ Biblia</value></data>
+  <data name="Sched_QueueMedia" xml:space="preserve"><value>+ Multimedia</value></data>
+  <data name="Sched_AddToQueue" xml:space="preserve"><value>Agregar a la cola</value></data>
+  <data name="Sched_NowProjecting" xml:space="preserve"><value>Proyectando ahora:</value></data>
+  <data name="Sched_LiveHelp" xml:space="preserve"><value>Usa ◀ / ▶ en la barra principal para moverte entre diapositivas. Haz clic en cualquier elemento de la izquierda para saltar a él. Usa la cola para agregar más elementos sobre la marcha.</value></data>
+  <data name="Sched_PrevItem" xml:space="preserve"><value>◀ Elemento anterior</value></data>
+  <data name="Sched_NextItem" xml:space="preserve"><value>Elemento siguiente ▶</value></data>
+  <data name="Sched_ItemCounter" xml:space="preserve"><value>Elemento {0} de {1}</value></data>
+  <data name="Sched_Replace" xml:space="preserve"><value>Reemplazar</value></data>
+  <data name="Sched_VersePickerHint" xml:space="preserve"><value>Haz clic en un versículo para seleccionarlo, luego en otro para extender el rango.</value></data>
+  <data name="Sched_SelectedVerse" xml:space="preserve"><value>Seleccionado: versículo {0}</value></data>
+  <data name="Sched_SelectedVerses" xml:space="preserve"><value>Seleccionado: versículos {0} – {1}</value></data>
+  <data name="Sched_Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Sched_VerseOrderHint" xml:space="preserve"><value>Muestra {0} de {1} secciones</value></data>
+  <data name="Sched_OpenVpTitle" xml:space="preserve"><value>Importar servicio de VideoPsalm</value></data>
+  <data name="Sched_VpFilter" xml:space="preserve"><value>Agenda de VideoPsalm (*.vpagd)</value></data>
+  <data name="Sched_OpenFolderTitle" xml:space="preserve"><value>Importar una carpeta de servicios de VideoPsalm</value></data>
+  <data name="Sched_ImportServiceTitle" xml:space="preserve"><value>Importar servicio</value></data>
+  <data name="Sched_ImportFolderTitle" xml:space="preserve"><value>Importar carpeta</value></data>
+  <data name="Sched_DeleteServiceTitle" xml:space="preserve"><value>Eliminar servicio</value></data>
+  <data name="Sched_RemoveItemTitle" xml:space="preserve"><value>Quitar elemento</value></data>
+  <data name="Sched_ErrImportVp" xml:space="preserve"><value>No se pudo importar esta agenda de VideoPsalm. Puede estar dañada o ser un archivo no compatible.</value></data>
+  <data name="Sched_ErrNoAgendas" xml:space="preserve"><value>No se encontraron agendas de VideoPsalm (*.vpagd) en esa carpeta.</value></data>
+  <data name="Sched_ErrImportFolder" xml:space="preserve"><value>No se pudo importar esta carpeta.</value></data>
+  <data name="Sched_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"? Esto quitará todos sus elementos del programa.</value></data>
+  <data name="Sched_ConfirmRemove" xml:space="preserve"><value>¿Quitar "{0}" del programa?</value></data>
+  <data name="Sched_BatchHeader" xml:space="preserve"><value>Se importaron {0} servicio(s):</value></data>
+  <data name="Sched_BatchHeaderSkipped" xml:space="preserve"><value>Se importaron {0} servicio(s), {1} ya presente(s):</value></data>
+  <data name="Sched_SumSongs" xml:space="preserve"><value>• Canciones: {0} nuevas, {1} reutilizadas</value></data>
+  <data name="Sched_SumScripture" xml:space="preserve"><value>• Referencias bíblicas: {0} (texto del versículo omitido — tiene licencia; instala una versión de la Biblia para mostrarlo)</value></data>
+  <data name="Sched_SumMedia" xml:space="preserve"><value>• Multimedia: {0} nuevos, {1} reutilizados</value></data>
+  <data name="Sched_SumThemes" xml:space="preserve"><value>• Temas reconstruidos: {0}</value></data>
+  <data name="Sched_SumFailed" xml:space="preserve"><value>• Fallidos: {0}</value></data>
+  <data name="Sched_SumFailedItem" xml:space="preserve"><value>   – {0}</value></data>
+  <data name="Sched_SumAlreadyImported" xml:space="preserve"><value>"{0}" ya se había importado — no se agregó nada.</value></data>
+  <data name="Sched_SumHeader" xml:space="preserve"><value>Se importó "{0}" ({1} elementos):</value></data>
+  <data name="Sched_SumMediaMissing" xml:space="preserve"><value>• Multimedia omitido (bytes no encontrados): {0}</value></data>
+  <data name="Sched_SumItemsSkipped" xml:space="preserve"><value>• Otros elementos omitidos: {0}</value></data>
+  <data name="Sched_ErrLoadServices" xml:space="preserve"><value>No se pudieron cargar los servicios.</value></data>
+  <data name="Sched_ErrNameRequired" xml:space="preserve"><value>El nombre del servicio es obligatorio.</value></data>
+  <data name="Sched_ErrCreateService" xml:space="preserve"><value>No se pudo crear el servicio.</value></data>
+  <data name="Sched_ErrDeleteService" xml:space="preserve"><value>No se pudo eliminar el servicio.</value></data>
+  <data name="Sched_ErrServiceNotFound" xml:space="preserve"><value>Servicio no encontrado.</value></data>
+  <data name="Sched_ErrLoadService" xml:space="preserve"><value>No se pudo cargar el servicio.</value></data>
+  <data name="Sched_ErrLoadSongs" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
+  <data name="Sched_ErrAddSong" xml:space="preserve"><value>No se pudo agregar la canción.</value></data>
+  <data name="Sched_ErrLoadVersions" xml:space="preserve"><value>No se pudieron cargar las versiones de la Biblia.</value></data>
+  <data name="Sched_ErrLoadMedia" xml:space="preserve"><value>No se pudieron cargar los archivos multimedia.</value></data>
+  <data name="Sched_ErrAddMedia" xml:space="preserve"><value>No se pudo agregar el archivo multimedia.</value></data>
+  <data name="Sched_ErrSelectVersionBook" xml:space="preserve"><value>Selecciona una versión de la Biblia y un libro.</value></data>
+  <data name="Sched_ErrSelectChapter" xml:space="preserve"><value>Selecciona un capítulo.</value></data>
+  <data name="Sched_ErrSelectVerse" xml:space="preserve"><value>Selecciona al menos un versículo.</value></data>
+  <data name="Sched_ErrSaveBible" xml:space="preserve"><value>No se pudo guardar el pasaje bíblico.</value></data>
+  <data name="Sched_ErrRemoveItem" xml:space="preserve"><value>No se pudo quitar el elemento.</value></data>
+  <data name="Sched_ErrNoItemsStart" xml:space="preserve"><value>Agrega al menos un elemento antes de comenzar.</value></data>
+  <data name="Sched_ErrNoLyrics" xml:space="preserve"><value>Esta canción no tiene letra para proyectar.</value></data>
+  <data name="Sched_ErrProject" xml:space="preserve"><value>No se pudo proyectar este elemento.</value></data>
+  <data name="Songs_ErrLoad" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
+  <data name="Songs_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?
+
+Esta acción no se puede deshacer.</value></data>
+  <data name="Songs_DeleteTitle" xml:space="preserve"><value>Eliminar canción</value></data>
+  <data name="Songs_ErrDelete" xml:space="preserve"><value>No se pudo eliminar la canción.</value></data>
+  <data name="Songs_ImportTitle" xml:space="preserve"><value>Importar canción</value></data>
+  <data name="Songs_ImportFailed" xml:space="preserve"><value>Error al importar. Formatos admitidos: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), texto sin formato.</value></data>
+  <data name="Songs_ImportResultTitle" xml:space="preserve"><value>Importar canciones</value></data>
+  <data name="Songs_ImportedOne" xml:space="preserve"><value>Se importó 1 canción.</value></data>
+  <data name="Songs_ImportedMany" xml:space="preserve"><value>Se importaron {0} canciones.</value></data>
+  <data name="Media_ImportTitle" xml:space="preserve"><value>Importar multimedia</value></data>
+  <data name="Media_ImportFolderTitle" xml:space="preserve"><value>Importar carpeta multimedia</value></data>
+  <data name="Media_FilterImages" xml:space="preserve"><value>Imágenes</value></data>
+  <data name="Media_FilterVideos" xml:space="preserve"><value>Videos</value></data>
+  <data name="Media_FilterAll" xml:space="preserve"><value>Todos los admitidos</value></data>
+  <data name="Media_Skipped" xml:space="preserve"><value>Se omitieron {0} archivo(s) — tipo no compatible, demasiado grande o no es una imagen/video válido.</value></data>
+  <data name="Media_ImportFailed" xml:space="preserve"><value>Error al importar. Inténtalo de nuevo.</value></data>
+  <data name="Media_DeleteFailed" xml:space="preserve"><value>Error al eliminar.</value></data>
+  <data name="Media_ProjectFailed" xml:space="preserve"><value>No se pudo proyectar el archivo.</value></data>
+  <data name="Themes_ErrLoad" xml:space="preserve"><value>No se pudieron cargar los temas.</value></data>
+  <data name="Themes_ErrSetDefault" xml:space="preserve"><value>No se pudo establecer el tema predeterminado.</value></data>
+  <data name="Themes_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?
+
+Esta acción no se puede deshacer.</value></data>
+  <data name="Themes_DeleteDialogTitle" xml:space="preserve"><value>Eliminar tema</value></data>
+  <data name="Themes_ErrDelete" xml:space="preserve"><value>No se pudo eliminar el tema.</value></data>
+  <data name="Stage_ErrLoad" xml:space="preserve"><value>No se pudo cargar la vista de escenario.</value></data>
+  <data name="Settings_ErrSave" xml:space="preserve"><value>No se pudo guardar la configuración.</value></data>
+  <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Crear copia de seguridad</value></data>
+  <data name="Settings_BackupFilter" xml:space="preserve"><value>Copia de OpenAdoration (*.oabak)</value></data>
+  <data name="Settings_BackupCreated" xml:space="preserve"><value>Copia de seguridad creada correctamente.</value></data>
+  <data name="Settings_ErrCreateBackup" xml:space="preserve"><value>No se pudo crear la copia de seguridad.</value></data>
+  <data name="Settings_RestoreBackupTitle" xml:space="preserve"><value>Restaurar copia de seguridad</value></data>
+  <data name="Settings_RestoreConfirm" xml:space="preserve"><value>Restaurar reemplaza tu biblioteca actual (cánticos, Biblias, temas, servicios, multimedia) y cierra la aplicación para finalizar. ¿Continuar?</value></data>
+  <data name="Settings_ErrRestore" xml:space="preserve"><value>No se pudo restaurar la copia de seguridad.</value></data>
+  <data name="Settings_UpToDate" xml:space="preserve"><value>Estás usando la versión más reciente.</value></data>
+  <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Buscar actualizaciones</value></data>
+  <data name="Settings_UpdateConfirm" xml:space="preserve"><value>La versión {0} está disponible ({1} MB). ¿Descargar e instalar ahora? La aplicación se cerrará para finalizar.</value></data>
+  <data name="Settings_UpdateAvailableTitle" xml:space="preserve"><value>Actualización disponible</value></data>
+  <data name="Settings_ErrUpdate" xml:space="preserve"><value>No se pudo completar la actualización.</value></data>
+  <data name="Plugins_AddTitle" xml:space="preserve"><value>Agregar complemento</value></data>
+  <data name="Plugins_Filter" xml:space="preserve"><value>Complemento de OpenAdoration (*.oaplugin)</value></data>
+  <data name="Plugins_Installed" xml:space="preserve"><value>Complemento instalado.</value></data>
+  <data name="Plugins_ErrInstall" xml:space="preserve"><value>No se pudo instalar el complemento.</value></data>
+  <data name="Plugins_ConfirmRemove" xml:space="preserve"><value>¿Quitar el complemento '{0}'? Se descarga por completo tras reiniciar.</value></data>
+  <data name="Plugins_RemoveTitle" xml:space="preserve"><value>Quitar complemento</value></data>
+  <data name="Plugins_ErrRemove" xml:space="preserve"><value>No se pudo quitar el complemento.</value></data>
+  <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Configuración guardada.</value></data>
+  <data name="Plugins_ErrFetch" xml:space="preserve"><value>No se pudieron obtener las versiones del complemento.</value></data>
+  <data name="Plugins_Imported" xml:space="preserve"><value>Se importó '{0}' a tu biblioteca de la Biblia.</value></data>
+  <data name="Plugins_ErrImport" xml:space="preserve"><value>No se pudo importar la versión.</value></data>
 </root>

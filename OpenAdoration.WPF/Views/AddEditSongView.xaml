@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              d:DataContext="{d:DesignInstance Type=vm:AddEditSongViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -14,7 +15,7 @@
               Background="#80000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Saving…"
+                <TextBlock Text="{loc:Loc Common_Saving}"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
@@ -45,11 +46,11 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
-                        <Button Content="Cancel"
+                        <Button Content="{loc:Loc Common_Cancel}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelCommand}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Save Song"
+                        <Button Content="{loc:Loc SongEdit_Save}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding SaveCommand}" />
                     </StackPanel>
@@ -68,24 +69,24 @@
                                Margin="0,0,0,20" />
 
                     <!-- Title field -->
-                    <TextBlock Text="TITLE" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="{loc:Loc SongEdit_Title}" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource FieldTextBox}"
-                             Tag="Song title"
+                             Tag="{loc:Loc SongEdit_TitlePlaceholder}"
                              MaxLength="200"
                              Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,14" />
 
                     <!-- Author field -->
-                    <TextBlock Text="AUTHOR / ARTIST" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="{loc:Loc SongEdit_Author}" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource FieldTextBox}"
-                             Tag="Optional"
+                             Tag="{loc:Loc Common_Optional}"
                              Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,14" />
 
                     <!-- Classification field -->
-                    <TextBlock Text="CLASSIFICATION" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="{loc:Loc SongEdit_Classification}" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource FieldTextBox}"
-                             Tag="e.g. Worship, Hymn, Contemporary…"
+                             Tag="{loc:Loc SongEdit_ClassificationPlaceholder}"
                              Text="{Binding Classification, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,14" />
 
@@ -98,27 +99,27 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="COPYRIGHT" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{loc:Loc SongEdit_Copyright}" Style="{StaticResource FieldLabel}" />
                             <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="Optional — e.g. © 2001 Hillsong Music"
+                                     Tag="{loc:Loc SongEdit_CopyrightPlaceholder}"
                                      Text="{Binding Copyright, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="CCLI NO." Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{loc:Loc SongEdit_Ccli}" Style="{StaticResource FieldLabel}" />
                             <TextBox Style="{StaticResource FieldTextBox}"
-                                     Tag="Optional"
+                                     Tag="{loc:Loc Common_Optional}"
                                      Text="{Binding CcliNumber, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
 
                     <!-- Play order (verse order token string) -->
-                    <TextBlock Text="PLAY ORDER" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="{loc:Loc SongEdit_PlayOrder}" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource FieldTextBox}"
-                             Tag="Optional — e.g. V1 C V2 C B C"
+                             Tag="{loc:Loc SongEdit_PlayOrderPlaceholder}"
                              Text="{Binding VerseOrder, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,4" />
-                    <TextBlock Text="Leave blank to play sections top-to-bottom. Use the section tokens below (e.g. V1 = Verse 1, C = Chorus, B = Bridge); repeat a token to repeat that section."
+                    <TextBlock Text="{loc:Loc SongEdit_PlayOrderHelp}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,0,0,20" TextWrapping="Wrap" />
 
@@ -159,16 +160,16 @@
                                                 <Button Content="▲"
                                                         Style="{StaticResource IconButton}"
                                                         Command="{Binding MoveUpCommand}"
-                                                        ToolTip="Move up" />
+                                                        ToolTip="{loc:Loc Common_MoveUp}" />
                                                 <Button Content="▼"
                                                         Style="{StaticResource IconButton}"
                                                         Command="{Binding MoveDownCommand}"
                                                         Margin="2,0"
-                                                        ToolTip="Move down" />
+                                                        ToolTip="{loc:Loc Common_MoveDown}" />
                                                 <Button Content="✕"
                                                         Style="{StaticResource IconDangerButton}"
                                                         Command="{Binding DeleteCommand}"
-                                                        ToolTip="Remove section" />
+                                                        ToolTip="{loc:Loc SongEdit_RemoveSection}" />
                                             </StackPanel>
                                         </Grid>
 
@@ -185,39 +186,39 @@
                     </ItemsControl>
 
                     <!-- Add section buttons (below the list so they stay in view) -->
-                    <TextBlock Text="ADD SECTION" Style="{StaticResource FieldLabel}" Margin="0,20,0,8" />
+                    <TextBlock Text="{loc:Loc SongEdit_AddSection}" Style="{StaticResource FieldLabel}" Margin="0,20,0,8" />
                     <WrapPanel>
-                        <Button Content="+ Verse"
+                        <Button Content="{loc:Loc SongEdit_AddVerse}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Verse"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Chorus"
+                        <Button Content="{loc:Loc SongEdit_AddChorus}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Chorus"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Pre-Chorus"
+                        <Button Content="{loc:Loc SongEdit_AddPreChorus}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="PreChorus"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Bridge"
+                        <Button Content="{loc:Loc SongEdit_AddBridge}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Bridge"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Intro"
+                        <Button Content="{loc:Loc SongEdit_AddIntro}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Intro"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Outro"
+                        <Button Content="{loc:Loc SongEdit_AddOutro}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Outro"
                                 Margin="0,0,6,6" />
-                        <Button Content="+ Tag"
+                        <Button Content="{loc:Loc SongEdit_AddTag}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddSectionCommand}"
                                 CommandParameter="Tag"

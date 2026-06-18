@@ -120,7 +120,7 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save settings");
-            SetError("Could not save settings.");
+            SetError(L("Settings_ErrSave"));
         }
         finally
         {
@@ -133,8 +133,8 @@ public partial class SettingsViewModel : BaseViewModel
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Create Backup",
-            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            Title = L("Settings_CreateBackupTitle"),
+            Filter = L("Settings_BackupFilter") + "|*.oabak",
             FileName = $"OpenAdoration-backup-{DateTime.Now:yyyy-MM-dd}.oabak"
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
@@ -144,12 +144,12 @@ public partial class SettingsViewModel : BaseViewModel
         try
         {
             await _backup.CreateAsync(dialog.FileName);
-            _dialog.Inform("Backup created successfully.", "Create Backup");
+            _dialog.Inform(L("Settings_BackupCreated"), L("Settings_CreateBackupTitle"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Backup failed");
-            SetError("Could not create the backup.");
+            SetError(L("Settings_ErrCreateBackup"));
         }
         finally { IsBusy = false; }
     }
@@ -159,15 +159,13 @@ public partial class SettingsViewModel : BaseViewModel
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Restore Backup",
-            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            Title = L("Settings_RestoreBackupTitle"),
+            Filter = L("Settings_BackupFilter") + "|*.oabak",
             Multiselect = false
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
 
-        if (!_dialog.Confirm(
-                "Restoring replaces your current library (songs, Bibles, themes, services, media) " +
-                "and closes the app to finish. Continue?", "Restore Backup"))
+        if (!_dialog.Confirm(L("Settings_RestoreConfirm"), L("Settings_RestoreBackupTitle")))
             return;
 
         IsBusy = true;
@@ -177,7 +175,7 @@ public partial class SettingsViewModel : BaseViewModel
             var result = await _backup.RestoreAsync(dialog.FileName);
             if (result.Outcome == RestoreOutcome.Compatible)
             {
-                _dialog.Inform(result.Message, "Restore Backup");
+                _dialog.Inform(result.Message, L("Settings_RestoreBackupTitle"));
                 System.Windows.Application.Current.Shutdown();
                 return;
             }
@@ -186,7 +184,7 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Restore failed");
-            SetError("Could not restore the backup.");
+            SetError(L("Settings_ErrRestore"));
         }
         finally { IsBusy = false; }
     }
@@ -202,14 +200,14 @@ public partial class SettingsViewModel : BaseViewModel
             var info = await _update.CheckAsync();
             if (info is null)
             {
-                _dialog.Inform("You're running the latest version.", "Check for Updates");
+                _dialog.Inform(L("Settings_UpToDate"), L("Settings_CheckUpdatesTitle"));
                 return;
             }
 
             var sizeMb = info.MsiSizeBytes / 1024d / 1024d;
             if (!_dialog.Confirm(
-                    $"Version {info.Version} is available ({sizeMb:0.#} MB). Download and install now? " +
-                    "The app will close to finish.", "Update Available"))
+                    L("Settings_UpdateConfirm", info.Version, sizeMb.ToString("0.#")),
+                    L("Settings_UpdateAvailableTitle")))
                 return;
 
             await _update.DownloadAndApplyAsync(info);
@@ -218,7 +216,7 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update failed");
-            SetError("Could not complete the update.");
+            SetError(L("Settings_ErrUpdate"));
         }
         finally { IsBusy = false; }
     }

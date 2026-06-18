@@ -51,7 +51,7 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load themes");
-            SetError("Failed to load themes.");
+            SetError(L("Themes_ErrLoad"));
         }
         finally
         {
@@ -89,7 +89,7 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to set default theme {ThemeId}", theme.Id);
-            SetError("Failed to set default theme.");
+            SetError(L("Themes_ErrSetDefault"));
             return;
         }
         finally
@@ -105,8 +105,8 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
     private async Task DeleteThemeAsync(Theme theme)
     {
         if (!_dialogService.Confirm(
-                $"Delete \"{theme.Name}\"?\n\nThis action cannot be undone.",
-                "Delete Theme"))
+                L("Themes_ConfirmDelete", theme.Name),
+                L("Themes_DeleteDialogTitle")))
             return;
 
         if (IsBusy) return;
@@ -118,16 +118,16 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
             _logger.LogInformation("Theme deleted: {ThemeId}", theme.Id);
             if (SelectedTheme?.Id == theme.Id) SelectedTheme = null;
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             // Repository throws this when trying to delete the default theme
-            SetError(ex.Message);
+            SetError(L("Themes_DeleteTooltip"));
             return;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete theme {ThemeId}", theme.Id);
-            SetError("Failed to delete theme.");
+            SetError(L("Themes_ErrDelete"));
             return;
         }
         finally

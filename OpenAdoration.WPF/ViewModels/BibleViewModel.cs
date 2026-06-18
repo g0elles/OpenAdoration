@@ -103,8 +103,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     public bool   IsSearchActive         => IsKeywordMode && _searchResults.Count > 0;
     public string ReferenceBarPlaceholder => IsKeywordMode
-        ? (IsPhraseSearch ? "Type exact phrase to search…" : "Type keyword(s) to search…")
-        : "e.g. John 3:16-18";
+        ? (IsPhraseSearch ? L("Bible_PlaceholderPhrase") : L("Bible_PlaceholderKeyword"))
+        : L("Bible_PlaceholderRef");
 
     // ── Import ────────────────────────────────────────────────────────────
     public bool   IsImporting           => _importService.IsImporting;

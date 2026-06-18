@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -142,7 +143,7 @@
         <Grid Panel.ZIndex="20"
               Background="#B0000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Loading…"
+            <TextBlock Text="{loc:Loc Common_Loading}"
                        Foreground="{StaticResource TextPrimaryBrush}"
                        FontSize="15"
                        HorizontalAlignment="Center"
@@ -153,17 +154,15 @@
         <Grid Visibility="{Binding HasVersions, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="340">
                 <TextBlock Text="📖" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,14" />
-                <TextBlock Text="No Bible version imported"
+                <TextBlock Text="{loc:Loc Bible_NoVersion}"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            FontSize="18" FontWeight="SemiBold"
                            HorizontalAlignment="Center" Margin="0,0,0,8" />
-                <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                <TextBlock Text="{loc:Loc Bible_NoVersionHelp}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13" TextAlignment="Center" TextWrapping="Wrap"
-                           Margin="0,0,0,24">
-                    Import a Bible file to get started. Supported formats:
-                    Zefania XML, OSIS XML, USFX XML, and JSON.
-                </TextBlock>
-                <Button Content="Import Bible File…"
+                           Margin="0,0,0,24" />
+                <Button Content="{loc:Loc Bible_ImportFile}"
                         Style="{StaticResource PrimaryButton}"
                         Padding="20,10" HorizontalAlignment="Center"
                         Click="OnImportClick" />
@@ -255,7 +254,7 @@
                                   SelectedItem="{Binding SecondaryVersion}"
                                   Style="{StaticResource FieldComboBox}"
                                   MinWidth="120" Margin="6,0,0,0"
-                                  ToolTip="Optional second version, stacked under the first on each slide">
+                                  ToolTip="{loc:Loc Bible_SecondaryTooltip}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}" />
@@ -266,32 +265,32 @@
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ClearSecondaryVersionCommand}"
                                 Padding="8,4" Margin="4,0,0,0"
-                                ToolTip="Clear second version"
+                                ToolTip="{loc:Loc Bible_ClearSecondary}"
                                 Visibility="{Binding HasSecondaryVersion, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
 
                     <!-- Keyword mode toggle -->
                     <ToggleButton Grid.Column="2"
-                                  Content="≡ Keyword"
+                                  Content="{loc:Loc Bible_Keyword}"
                                   IsChecked="{Binding IsKeywordMode}"
                                   Style="{StaticResource AlignToggleButton}"
                                   Padding="10,6" Margin="0,0,6,0"
-                                  ToolTip="Toggle keyword search mode" />
+                                  ToolTip="{loc:Loc Bible_KeywordTooltip}" />
 
                     <!-- Phrase vs keyword (only meaningful in keyword search mode) -->
                     <ToggleButton Grid.Column="3"
-                                  Content="&quot; &quot; Phrase"
+                                  Content="{loc:Loc Bible_Phrase}"
                                   IsChecked="{Binding IsPhraseSearch}"
                                   Style="{StaticResource AlignToggleButton}"
                                   Padding="10,6" Margin="0,0,6,0"
                                   Visibility="{Binding IsKeywordMode, Converter={StaticResource BoolToVis}}"
-                                  ToolTip="Match the exact phrase instead of all words" />
+                                  ToolTip="{loc:Loc Bible_PhraseTooltip}" />
 
                     <!-- Clear input -->
                     <Button Grid.Column="4" Content="✕"
                             Style="{StaticResource IconButton}"
                             Command="{Binding ClearReferenceCommand}"
-                            ToolTip="Clear" />
+                            ToolTip="{loc:Loc Common_Clear}" />
                 </Grid>
             </Border>
 
@@ -316,7 +315,7 @@
                                      Foreground="{StaticResource AccentBrush}"
                                      Background="{StaticResource BorderBrush}" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Cancel"
+                    <Button Grid.Column="1" Content="{loc:Loc Common_Cancel}"
                             Style="{StaticResource SecondaryButton}"
                             Padding="10,4" VerticalAlignment="Center"
                             Command="{Binding CancelImportCommand}" />
@@ -349,12 +348,12 @@
                 <DockPanel>
                     <!-- Manage buttons (right-aligned) -->
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button Content="Import…"
+                        <Button Content="{loc:Loc Bible_Import}"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="10,6" Margin="0,0,6,0"
                                 IsEnabled="{Binding CanImport}"
                                 Click="OnImportClick" />
-                        <Button Content="Delete Version"
+                        <Button Content="{loc:Loc Bible_DeleteVersion}"
                                 Style="{StaticResource DangerButton}"
                                 Padding="10,6"
                                 IsEnabled="{Binding CanDeleteVersion}"
@@ -363,12 +362,12 @@
 
                     <!-- Live-service controls (left) -->
                     <StackPanel Orientation="Horizontal">
-                        <ToggleButton Content="🔒 Freeze"
+                        <ToggleButton Content="{loc:Loc Bible_Freeze}"
                                       IsChecked="{Binding IsFrozen, Mode=TwoWay}"
                                       Style="{StaticResource AlignToggleButton}"
                                       Padding="12,6" Margin="0,0,12,0"
-                                      ToolTip="Hold current slide on screen while you navigate to the next" />
-                        <Button Content="▶▶ Project"
+                                      ToolTip="{loc:Loc Bible_FreezeTooltip}" />
+                        <Button Content="{loc:Loc Bible_Project}"
                                 Style="{StaticResource PrimaryButton}"
                                 Padding="16,6"
                                 Command="{Binding ProjectSelectedCommand}"
@@ -506,7 +505,12 @@
                             Panel.ZIndex="1"
                             Visibility="{Binding IsSearchActive, Converter={StaticResource BoolToVis}}">
                         <TextBlock FontSize="12" Foreground="{StaticResource TextSecondaryBrush}">
-                            <Run Text="Search results for &quot;" /><Run Text="{Binding ReferenceInput, Mode=OneWay}" /><Run Text="&quot;" />
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{StaticResource LocFormat}">
+                                    <Binding Path="[Bible_SearchResults]" Source="{x:Static loc:TranslationSource.Instance}" />
+                                    <Binding Path="ReferenceInput" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
                         </TextBlock>
                     </Border>
 
@@ -607,6 +611,7 @@
                     <!-- Placeholder: no chapter selected and no search active -->
                     <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
+                               Text="{loc:Loc Bible_SelectPrompt}"
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
@@ -618,7 +623,6 @@
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
-                        Select a book, then tap a chapter number
                     </TextBlock>
                 </Grid>
             </Grid>

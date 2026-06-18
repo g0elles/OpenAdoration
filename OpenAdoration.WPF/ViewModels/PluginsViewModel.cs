@@ -58,16 +58,16 @@ public partial class PluginsViewModel : BaseViewModel
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Add plugin",
-            Filter = "OpenAdoration plugin (*.oaplugin)|*.oaplugin",
+            Title = L("Plugins_AddTitle"),
+            Filter = L("Plugins_Filter") + "|*.oaplugin",
             Multiselect = false
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
 
         IsBusy = true;
         ClearError();
-        try { _manager.Install(dialog.FileName); RefreshList(); _dialog.Inform("Plugin installed.", "Plugins"); }
-        catch (Exception ex) { _logger.LogError(ex, "Plugin install failed"); SetError("Could not install the plugin."); }
+        try { _manager.Install(dialog.FileName); RefreshList(); _dialog.Inform(L("Plugins_Installed"), L("Plugins_Title")); }
+        catch (Exception ex) { _logger.LogError(ex, "Plugin install failed"); SetError(L("Plugins_ErrInstall")); }
         finally { IsBusy = false; }
     }
 
@@ -75,13 +75,13 @@ public partial class PluginsViewModel : BaseViewModel
     private void RemovePlugin()
     {
         if (SelectedPlugin is null || IsBusy) return;
-        if (!_dialog.Confirm($"Remove plugin '{SelectedPlugin.Name}'? It is fully unloaded after a restart.", "Remove Plugin"))
+        if (!_dialog.Confirm(L("Plugins_ConfirmRemove", SelectedPlugin.Name), L("Plugins_RemoveTitle")))
             return;
 
         IsBusy = true;
         ClearError();
         try { _manager.Remove(SelectedPlugin.Id); RefreshList(); }
-        catch (Exception ex) { _logger.LogError(ex, "Plugin remove failed"); SetError("Could not remove the plugin."); }
+        catch (Exception ex) { _logger.LogError(ex, "Plugin remove failed"); SetError(L("Plugins_ErrRemove")); }
         finally { IsBusy = false; }
     }
 
@@ -92,9 +92,9 @@ public partial class PluginsViewModel : BaseViewModel
         try
         {
             _manager.UpdateSettings(SelectedPlugin.Id, Settings.ToDictionary(s => s.Key, s => s.Value));
-            _dialog.Inform("Settings saved.", "Plugins");
+            _dialog.Inform(L("Plugins_SettingsSaved"), L("Plugins_Title"));
         }
-        catch (Exception ex) { _logger.LogError(ex, "Save plugin settings failed"); SetError("Could not save settings."); }
+        catch (Exception ex) { _logger.LogError(ex, "Save plugin settings failed"); SetError(L("Settings_ErrSave")); }
     }
 
     [RelayCommand]
@@ -109,7 +109,7 @@ public partial class PluginsViewModel : BaseViewModel
             var versions = await bible.GetAvailableVersionsAsync();
             AvailableVersions = new(versions.Select(v => new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language)));
         }
-        catch (Exception ex) { _logger.LogError(ex, "Fetch versions failed"); SetError("Could not fetch versions from the plugin."); }
+        catch (Exception ex) { _logger.LogError(ex, "Fetch versions failed"); SetError(L("Plugins_ErrFetch")); }
         finally { IsBusy = false; }
     }
 
@@ -123,9 +123,9 @@ public partial class PluginsViewModel : BaseViewModel
         try
         {
             await _bibleImporter.ImportAsync(bible, SelectedVersion.Id);
-            _dialog.Inform($"Imported '{SelectedVersion.Name}' into your Bible library.", "Plugins");
+            _dialog.Inform(L("Plugins_Imported", SelectedVersion.Name), L("Plugins_Title"));
         }
-        catch (Exception ex) { _logger.LogError(ex, "Plugin Bible import failed"); SetError("Could not import the version."); }
+        catch (Exception ex) { _logger.LogError(ex, "Plugin Bible import failed"); SetError(L("Plugins_ErrImport")); }
         finally { IsBusy = false; }
     }
 

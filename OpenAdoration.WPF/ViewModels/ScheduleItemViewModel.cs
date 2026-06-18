@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Localization;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -21,7 +22,7 @@ public partial class ScheduleItemViewModel : ObservableObject
         SongScheduleItem s  => s.Song?.Title ?? $"Song #{s.SongId}",
         BibleScheduleItem b => b.Reference,
         MediaScheduleItem m => m.MediaFile?.FileName ?? $"Media #{m.MediaFileId}",
-        _                   => "Unknown"
+        _                   => TranslationSource.Instance["Common_Unknown"]
     };
 
     [ObservableProperty] private bool _canMoveUp;
@@ -35,7 +36,7 @@ public partial class ScheduleItemViewModel : ObservableObject
     private int _autoAdvanceSeconds;
 
     public bool   HasAutoAdvance    => AutoAdvanceSeconds > 0;
-    public string AutoAdvanceLabel  => AutoAdvanceSeconds > 0 ? $"{AutoAdvanceSeconds}s" : "Manual";
+    public string AutoAdvanceLabel  => AutoAdvanceSeconds > 0 ? $"{AutoAdvanceSeconds}s" : TranslationSource.Instance["Sched_Manual"];
 
     /// <summary>True only for song items — gates the verse-order override field in the builder.</summary>
     public bool IsSongItem => Item is SongScheduleItem;
@@ -76,7 +77,9 @@ public partial class ScheduleItemViewModel : ObservableObject
     public bool IsVerseOrderReduced => HasVerseOrderHint && ResolvedSectionCount < TotalSectionCount;
 
     public string VerseOrderHint =>
-        HasVerseOrderHint ? $"Shows {ResolvedSectionCount} of {TotalSectionCount} sections" : string.Empty;
+        HasVerseOrderHint
+            ? string.Format(TranslationSource.Instance["Sched_VerseOrderHint"], ResolvedSectionCount, TotalSectionCount)
+            : string.Empty;
 
     public event EventHandler? MoveUpRequested;
     public event EventHandler? MoveDownRequested;
