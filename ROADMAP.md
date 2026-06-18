@@ -650,6 +650,10 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 ### 14.4 — Fold M12.4 into the cascade
 - VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
 
+### 14.5 — Icon system: emoji → Fluent font, decoupled from resx
+- Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
+- **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
+
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
 
 ---
