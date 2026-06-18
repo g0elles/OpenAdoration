@@ -40,6 +40,10 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private string _announcementText = string.Empty;
     [ObservableProperty] private bool   _isAnnouncementActive;
 
+    // Persistent lower-third overlay (M10.2) — stays until cleared, no auto-dismiss
+    [ObservableProperty] private string _lowerThirdText = string.Empty;
+    [ObservableProperty] private bool   _isLowerThirdActive;
+
     // Video transport bar — visible only when the current slide is a video (M10.5)
     [ObservableProperty] private bool   _isVideoSlideActive;
     [ObservableProperty] private bool   _isMediaPlaying;
@@ -66,6 +70,7 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.SlideChanged           += OnSlideChanged;
         _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      += OnLowerThirdChanged;
         _projectionService.VideoSlideActiveChanged += OnVideoSlideActiveChanged;
         _projectionService.MediaTransportChanged   += OnMediaTransportChanged;
     }
@@ -230,6 +235,16 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _projectionService.ClearAnnouncement();
     }
 
+    [RelayCommand]
+    private void ShowLowerThird()
+    {
+        if (string.IsNullOrWhiteSpace(LowerThirdText)) return;
+        _projectionService.ShowLowerThird(LowerThirdText);
+    }
+
+    [RelayCommand]
+    private void ClearLowerThird() => _projectionService.ClearLowerThird();
+
     private void StartAnnouncementTimer()
     {
         StopAnnouncementTimer();
@@ -293,12 +308,19 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         });
     }
 
+    private void OnLowerThirdChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            IsLowerThirdActive = _projectionService.IsLowerThirdActive);
+    }
+
     public void Dispose()
     {
         StopAnnouncementTimer();
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.SlideChanged           -= OnSlideChanged;
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      -= OnLowerThirdChanged;
         _projectionService.VideoSlideActiveChanged -= OnVideoSlideActiveChanged;
         _projectionService.MediaTransportChanged   -= OnMediaTransportChanged;
         _currentScope?.Dispose();

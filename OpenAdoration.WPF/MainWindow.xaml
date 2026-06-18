@@ -163,6 +163,25 @@
                             Margin="0,0,10,0"
                             Visibility="{Binding IsAnnouncementActive, Converter={StaticResource BoolToVis}}" />
 
+                    <!-- Persistent lower-third -->
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="{loc:Loc Projection_LowerThirdPlaceholder}"
+                             Width="170"
+                             VerticalAlignment="Center"
+                             Margin="0,0,6,0"
+                             Text="{Binding LowerThirdText, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="{loc:Loc Projection_LowerThird}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowLowerThirdCommand}"
+                            Padding="10,8"
+                            Margin="0,0,6,0" />
+                    <Button Content="{loc:Loc Projection_Clear}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ClearLowerThirdCommand}"
+                            Padding="10,8"
+                            Margin="0,0,10,0"
+                            Visibility="{Binding IsLowerThirdActive, Converter={StaticResource BoolToVis}}" />
+
                     <Button Content="{loc:Loc Projection_OpenScreen}"
                             Style="{StaticResource SecondaryButton}"
                             Click="OnToggleScreenClick"

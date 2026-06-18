@@ -61,6 +61,7 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.ThemeChanged           += OnThemeChanged;
         _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      += OnLowerThirdChanged;
         _projectionService.MediaCommandRequested  += OnMediaCommandRequested;
         _projectionService.MediaSeekRequested     += OnMediaSeekRequested;
     }
@@ -199,6 +200,25 @@ public partial class ProjectionWindow : Window
             {
                 AnnouncementText.Text = text;
                 AnnouncementBanner.Visibility = Visibility.Visible;
+            }
+        });
+    }
+
+    // Persistent overlay — stays across slide changes until the operator clears it.
+    private void OnLowerThirdChanged(object? sender, EventArgs e)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            var text = _projectionService.CurrentLowerThird;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                LowerThirdBar.Visibility = Visibility.Collapsed;
+                LowerThirdText.Text = string.Empty;
+            }
+            else
+            {
+                LowerThirdText.Text = text;
+                LowerThirdBar.Visibility = Visibility.Visible;
             }
         });
     }
@@ -734,6 +754,7 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.ThemeChanged           -= OnThemeChanged;
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      -= OnLowerThirdChanged;
         _projectionService.MediaCommandRequested  -= OnMediaCommandRequested;
         _projectionService.MediaSeekRequested     -= OnMediaSeekRequested;
         base.OnClosed(e);

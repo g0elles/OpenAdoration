@@ -152,5 +152,22 @@
                        TextAlignment="Center" />
         </Border>
 
+        <!-- Persistent lower-third: stays across slides until cleared (speaker / sermon / ref) -->
+        <Border x:Name="LowerThirdBar"
+                VerticalAlignment="Bottom"
+                HorizontalAlignment="Stretch"
+                Padding="60,18"
+                Background="#CC101018"
+                Panel.ZIndex="190"
+                Visibility="Collapsed">
+            <TextBlock x:Name="LowerThirdText"
+                       Foreground="White"
+                       FontFamily="Arial"
+                       FontSize="40"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center" />
+        </Border>
+
     </Grid>
 </Window>

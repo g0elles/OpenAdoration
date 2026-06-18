@@ -88,6 +88,8 @@
   <data name="Live_Badge" xml:space="preserve"><value>LIVE</value></data>
   <data name="Projection_AnnouncementPlaceholder" xml:space="preserve"><value>Announcement…</value></data>
   <data name="Projection_Announce" xml:space="preserve"><value>📢 Announce</value></data>
+  <data name="Projection_LowerThird" xml:space="preserve"><value>🏷 Lower Third</value></data>
+  <data name="Projection_LowerThirdPlaceholder" xml:space="preserve"><value>Speaker / sermon / ref…</value></data>
   <data name="Projection_Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Projection_OpenScreen" xml:space="preserve"><value>Open Screen</value></data>
   <data name="Projection_CloseScreen" xml:space="preserve"><value>Close Screen</value></data>

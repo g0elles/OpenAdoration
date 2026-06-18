@@ -34,11 +34,14 @@ public sealed class ProjectionService : IProjectionService
     private bool  _isServiceScheduleActive;
     private Slide? _nextScheduleItemPreviewSlide;
     private string? _currentAnnouncement;
+    private string? _currentLowerThird;
 
     public bool   IsServiceScheduleActive      => _isServiceScheduleActive;
     public Slide? NextScheduleItemPreviewSlide => _nextScheduleItemPreviewSlide;
     public string? CurrentAnnouncement         => _currentAnnouncement;
     public bool   IsAnnouncementActive         => _currentAnnouncement is not null;
+    public string? CurrentLowerThird           => _currentLowerThird;
+    public bool   IsLowerThirdActive           => _currentLowerThird is not null;
 
     private bool                _isVideoSlideActive;
     private MediaTransportState _mediaTransport = MediaTransportState.Empty;
@@ -54,6 +57,7 @@ public sealed class ProjectionService : IProjectionService
     public event EventHandler?         ServiceScheduleActiveChanged;
     public event EventHandler?         NextScheduleItemPreviewChanged;
     public event EventHandler?         AnnouncementChanged;
+    public event EventHandler?         LowerThirdChanged;
     public event EventHandler?              VideoSlideActiveChanged;
     public event EventHandler?              MediaTransportChanged;
     public event EventHandler<MediaCommand>? MediaCommandRequested;
@@ -210,6 +214,34 @@ public sealed class ProjectionService : IProjectionService
         RaiseSafe(AnnouncementChanged);
     }
 
+    public void ShowLowerThird(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _logger.LogWarning("ShowLowerThird called with empty text — ignored");
+            return;
+        }
+
+        if (!_isProjecting)
+        {
+            _logger.LogWarning("ShowLowerThird called while not projecting — ignored");
+            return;
+        }
+
+        _logger.LogInformation("Showing lower-third overlay");
+        _currentLowerThird = text;
+        RaiseSafe(LowerThirdChanged);
+    }
+
+    public void ClearLowerThird()
+    {
+        if (_currentLowerThird is null) return;
+
+        _logger.LogInformation("Clearing lower-third overlay");
+        _currentLowerThird = null;
+        RaiseSafe(LowerThirdChanged);
+    }
+
     public void Stop()
     {
         _logger.LogInformation("Stopping projection (was on slide {Index}/{Total})", _currentIndex + 1, _slides.Count);
@@ -222,14 +254,17 @@ public sealed class ProjectionService : IProjectionService
 
         var wasScheduleActive           = _isServiceScheduleActive;
         var wasAnnouncementActive       = _currentAnnouncement is not null;
+        var wasLowerThirdActive         = _currentLowerThird is not null;
         _isServiceScheduleActive        = false;
         _nextScheduleItemPreviewSlide   = null;
         _currentAnnouncement            = null;
+        _currentLowerThird              = null;
 
         RaiseSlideChanged(null);
         RaiseProjectionStateChanged(false);
         if (wasScheduleActive) RaiseSafe(ServiceScheduleActiveChanged);
         if (wasAnnouncementActive) RaiseSafe(AnnouncementChanged);
+        if (wasLowerThirdActive) RaiseSafe(LowerThirdChanged);
         RaiseSafe(NextScheduleItemPreviewChanged);
 
         _logger.LogInformation("Projection stopped");
