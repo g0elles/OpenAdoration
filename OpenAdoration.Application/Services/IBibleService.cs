@@ -25,13 +25,20 @@ public interface IBibleService
     /// Generates a slide for one or more consecutive verses.
     /// Pass <paramref name="themeId"/> to override the default theme on the generated slide.
     /// When null, the default theme is used.
+    /// Pass <paramref name="secondaryVerses"/> (matched by verse number) to stack a second
+    /// version's text below the primary on the same slide (M10.3 dual-version scripture).
     /// </summary>
-    Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null);
+    Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null,
+                        IReadOnlyList<BibleVerse>? secondaryVerses = null, BibleVersion? secondaryVersion = null);
 
     /// <summary>
     /// Generates one or more slides, chunking <paramref name="verses"/> into groups of
     /// <paramref name="versesPerSlide"/> consecutive verses (minimum 1). Each chunk becomes
     /// its own slide via <see cref="GenerateSlide"/> with its own reference label/context.
+    /// When <paramref name="secondaryVerses"/> is supplied, each chunk pairs in the second
+    /// version's matching verse numbers (dual-version scripture).
     /// </summary>
-    IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null);
+    IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null,
+                        BibleVersion? version = null, IReadOnlyList<BibleVerse>? secondaryVerses = null,
+                        BibleVersion? secondaryVersion = null);
 }

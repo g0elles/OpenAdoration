@@ -40,6 +40,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private bool _isChapterProjection;
 
     private List<BibleVerse> _chapterVerses = new();
+    private List<BibleVerse> _secondaryChapterVerses = new();
     private List<BibleVerse> _searchResults = new();
 
     // ── Versions ──────────────────────────────────────────────────────────
@@ -47,6 +48,16 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanDeleteVersion))]
     private BibleVersion? _selectedVersion;
+
+    // Optional second version stacked under the primary on each slide (M10.3 dual-version).
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSecondaryVersion))]
+    private BibleVersion? _secondaryVersion;
+
+    public bool HasSecondaryVersion => SecondaryVersion is not null;
+
+    [RelayCommand]
+    private void ClearSecondaryVersion() => SecondaryVersion = null;
     public bool CanDeleteVersion => SelectedVersion is not null;
     public bool HasVersions   => Versions.Count > 0;
     public bool NoVersionsYet => Versions.Count == 0 && !IsBusy;
@@ -281,6 +292,31 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             Chapters.Add(c);
     }
 
+    // ── Dual-version (M10.3) ──────────────────────────────────────────────
+
+    private bool IsDualVersionActive =>
+        SecondaryVersion is not null && SelectedVersion is not null && SecondaryVersion.Id != SelectedVersion.Id;
+
+    private BibleVersion? DualSecondaryVersion => IsDualVersionActive ? SecondaryVersion : null;
+
+    // Only when browsing a loaded chapter — keyword-search results have no paired secondary.
+    private IReadOnlyList<BibleVerse>? DualSecondaryVerses =>
+        IsDualVersionActive && !IsKeywordMode && _secondaryChapterVerses.Count > 0 ? _secondaryChapterVerses : null;
+
+    partial void OnSecondaryVersionChanged(BibleVersion? value)
+    {
+        // Reload the current chapter so the secondary text is fetched (or cleared).
+        if (SelectedChapter > 0 && SelectedVersion is not null && SelectedBook is not null)
+        {
+            _versesCts.Cancel(); _versesCts.Dispose(); _versesCts = new();
+            _ = LoadVersesAsync(SelectedVersion.Id, SelectedBook.Name, SelectedChapter, _versesCts.Token);
+        }
+        else
+        {
+            _secondaryChapterVerses = new();
+        }
+    }
+
     // ── Chapter selection ─────────────────────────────────────────────────
 
     partial void OnSelectedChapterChanged(int value)
@@ -307,6 +343,13 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             if (ct.IsCancellationRequested) return;
 
             _chapterVerses = list.ToList();
+
+            // Dual-version: load the same passage in the secondary version (empty if it
+            // lacks this book — e.g. a different book-name spelling, G21 — degrades to primary-only).
+            _secondaryChapterVerses = IsDualVersionActive
+                ? (await _bibleService.GetVersesAsync(SecondaryVersion!.Id, book, chapter, ct)).ToList()
+                : new();
+            if (ct.IsCancellationRequested) return;
             foreach (var item in CheckableVerses) UnsubscribeItem(item);
             CheckableVerses.Clear();
             foreach (var v in _chapterVerses)
@@ -584,7 +627,11 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             {
                 // Single verse in chapter mode: load the full chapter as individual slides so the
                 // main-window ◀/▶ can navigate verse-by-verse — same as songs navigate section-by-section.
-                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(new[] { v }, version: SelectedVersion)).ToArray();
+                var secondary = DualSecondaryVerses;
+                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(
+                                   new[] { v }, version: SelectedVersion,
+                                   secondaryVerses: secondary?.Where(s => s.Verse == v.Verse).ToList(),
+                                   secondaryVersion: DualSecondaryVersion)).ToArray();
                 var label    = $"{selected[0].Book} {selected[0].Chapter}";
                 var startIdx = _chapterVerses.FindIndex(v => v.Verse == selected[0].Verse);
                 if (startIdx < 0) startIdx = 0;
@@ -605,7 +652,8 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
                 // Multi-verse selection or keyword search: chunk by the configured verses-per-slide.
                 _isChapterProjection = false;
                 var versesPerSlide = Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
-                var slides = _bibleService.GenerateSlides(selected, versesPerSlide, version: SelectedVersion);
+                var slides = _bibleService.GenerateSlides(selected, versesPerSlide, version: SelectedVersion,
+                                 secondaryVerses: DualSecondaryVerses, secondaryVersion: DualSecondaryVersion);
                 _projectionService.LoadSlides(slides, slides[0].Label);
                 SlidePreviewText  = slides[0].Content;
                 SlidePreviewLabel = slides[0].Label;

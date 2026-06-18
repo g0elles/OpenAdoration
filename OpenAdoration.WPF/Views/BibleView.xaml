@@ -239,18 +239,36 @@
                         </Popup>
                     </Grid>
 
-                    <!-- Version selector -->
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding Versions}"
-                              SelectedItem="{Binding SelectedVersion}"
-                              Style="{StaticResource FieldComboBox}"
-                              MinWidth="140" Margin="0,0,6,0">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                    <!-- Version selector (+ optional secondary for dual-version projection) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,0">
+                        <ComboBox ItemsSource="{Binding Versions}"
+                                  SelectedItem="{Binding SelectedVersion}"
+                                  Style="{StaticResource FieldComboBox}"
+                                  MinWidth="140">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <ComboBox ItemsSource="{Binding Versions}"
+                                  SelectedItem="{Binding SecondaryVersion}"
+                                  Style="{StaticResource FieldComboBox}"
+                                  MinWidth="120" Margin="6,0,0,0"
+                                  ToolTip="Optional second version, stacked under the first on each slide">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Content="✕"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ClearSecondaryVersionCommand}"
+                                Padding="8,4" Margin="4,0,0,0"
+                                ToolTip="Clear second version"
+                                Visibility="{Binding HasSecondaryVersion, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
 
                     <!-- Keyword mode toggle -->
                     <ToggleButton Grid.Column="2"
