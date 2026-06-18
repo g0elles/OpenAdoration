@@ -21,6 +21,7 @@
             <converters:ColorToBrushConverter x:Key="ColorToBrush" />
             <converters:TestamentToLabelConverter x:Key="TestamentToLabel" />
             <converters:IntEqualityConverter x:Key="IntEquality" />
+            <converters:StringFormatMultiConverter x:Key="LocFormat" />
 
             <!-- ViewModel → View mapping for ContentControl navigation -->
             <DataTemplate DataType="{x:Type vm:SongsViewModel}">

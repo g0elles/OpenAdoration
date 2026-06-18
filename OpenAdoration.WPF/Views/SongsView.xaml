@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:views="clr-namespace:OpenAdoration.WPF.Views"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -36,20 +37,20 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
-                                   Text="Songs"
+                                   Text="{loc:Loc Songs_Title}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                         <Button Grid.Column="1"
-                                Content="Import"
+                                Content="{loc:Loc Songs_Import}"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ImportSongCommand}"
                                 Padding="10,6"
                                 Margin="0,0,6,0"
-                                ToolTip="Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd, plain text)" />
+                                ToolTip="{loc:Loc Songs_ImportTooltip}" />
                         <Button Grid.Column="2"
-                                Content="+ New"
+                                Content="{loc:Loc Common_New}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding NewSongCommand}"
                                 Padding="10,6" />
@@ -84,7 +85,7 @@
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <!-- Loading indicator -->
-                    <TextBlock Text="Loading…"
+                    <TextBlock Text="{loc:Loc Common_Loading}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
@@ -101,7 +102,7 @@
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
 
                     <!-- Empty state — no songs exist yet -->
-                    <TextBlock Text="No songs yet. Click + New to add one."
+                    <TextBlock Text="{loc:Loc Songs_Empty}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
@@ -133,9 +134,12 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                Margin="16">
-                        <Run Text="No songs found for &quot;" />
-                        <Run Text="{Binding SearchText}" />
-                        <Run Text="&quot;." />
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource LocFormat}">
+                                <Binding Path="[Songs_NoResults]" Source="{x:Static loc:TranslationSource.Instance}" />
+                                <Binding Path="SearchText" />
+                            </MultiBinding>
+                        </TextBlock.Text>
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -205,20 +209,20 @@
                                                             HorizontalAlignment="Right">
                                                     <Button Content="▶"
                                                             Style="{StaticResource IconButton}"
-                                                            ToolTip="Project"
+                                                            ToolTip="{loc:Loc Common_Project}"
                                                             Command="{Binding DataContext.ProjectSongCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}" />
                                                     <Button Content="✎"
                                                             Style="{StaticResource IconButton}"
-                                                            ToolTip="Edit"
+                                                            ToolTip="{loc:Loc Common_Edit}"
                                                             Command="{Binding DataContext.EditSongCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
                                                             Margin="2,0" />
                                                     <Button Content="✕"
                                                             Style="{StaticResource IconDangerButton}"
-                                                            ToolTip="Delete"
+                                                            ToolTip="{loc:Loc Common_Delete}"
                                                             Command="{Binding DataContext.DeleteSongCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}" />
@@ -291,11 +295,11 @@
               Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center">
-                <TextBlock Text="Select a song from the list"
+                <TextBlock Text="{loc:Loc Songs_SelectPrompt}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="or click + New to create one"
+                <TextBlock Text="{loc:Loc Songs_SelectPromptSub}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13"
                            HorizontalAlignment="Center"

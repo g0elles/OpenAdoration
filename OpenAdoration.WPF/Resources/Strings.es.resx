@@ -141,4 +141,28 @@
   <data name="Settings_LanguageHelp" xml:space="preserve"><value>Cambia el idioma de la interfaz de la aplicación.</value></data>
   <data name="Settings_Save" xml:space="preserve"><value>Guardar</value></data>
   <data name="Settings_Saved" xml:space="preserve"><value>✓ Guardado</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Cargando…</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Eliminar</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Editar</value></data>
+  <data name="Common_Project" xml:space="preserve"><value>Proyectar</value></data>
+  <data name="Common_New" xml:space="preserve"><value>+ Nuevo</value></data>
+  <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
+  <data name="Media_Import" xml:space="preserve"><value>+ Importar</value></data>
+  <data name="Media_ImportFolder" xml:space="preserve"><value>+ Importar carpeta</value></data>
+  <data name="Media_ImportCta" xml:space="preserve"><value>+ Importar multimedia</value></data>
+  <data name="Media_Empty" xml:space="preserve"><value>Aún no hay archivos multimedia</value></data>
+  <data name="Media_EmptyHelp" xml:space="preserve"><value>Importa imágenes o videos para usarlos en las presentaciones.</value></data>
+  <data name="Stage_Stopped" xml:space="preserve"><value>DETENIDO</value></data>
+  <data name="Stage_PrevItem" xml:space="preserve"><value>◀ Anterior</value></data>
+  <data name="Stage_NextItem" xml:space="preserve"><value>Siguiente ▶</value></data>
+  <data name="Stage_NotProjecting" xml:space="preserve"><value>Sin proyección</value></data>
+  <data name="Stage_UpNext" xml:space="preserve"><value>A CONTINUACIÓN</value></data>
+  <data name="Stage_EndOfItem" xml:space="preserve"><value>Fin del elemento</value></data>
+  <data name="Songs_Title" xml:space="preserve"><value>Canciones</value></data>
+  <data name="Songs_Import" xml:space="preserve"><value>Importar</value></data>
+  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Importar canciones (OpenLyrics, OpenSong, VideoPsalm .vpagd, texto sin formato)</value></data>
+  <data name="Songs_Empty" xml:space="preserve"><value>Aún no hay canciones. Haz clic en + Nuevo para agregar una.</value></data>
+  <data name="Songs_NoResults" xml:space="preserve"><value>No se encontraron canciones para "{0}".</value></data>
+  <data name="Songs_SelectPrompt" xml:space="preserve"><value>Selecciona una canción de la lista</value></data>
+  <data name="Songs_SelectPromptSub" xml:space="preserve"><value>o haz clic en + Nuevo para crear una</value></data>
 </root>

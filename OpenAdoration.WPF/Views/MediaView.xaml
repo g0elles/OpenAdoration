@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -14,7 +15,7 @@
         <Border Panel.ZIndex="20"
                 Background="#AA1E1E2E"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Loading…"
+            <TextBlock Text="{loc:Loc Common_Loading}"
                        Foreground="{StaticResource TextSecondaryBrush}"
                        FontSize="16"
                        HorizontalAlignment="Center"
@@ -27,16 +28,16 @@
                     Background="{StaticResource PrimaryBrush}"
                     Padding="20,14">
                 <Grid>
-                    <TextBlock Text="Media Library"
+                    <TextBlock Text="{loc:Loc Media_Title}"
                                FontSize="18" FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="+ Import Folder"
+                        <Button Content="{loc:Loc Media_ImportFolder}"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="16,7"
                                 Command="{Binding ImportFolderCommand}" />
-                        <Button Content="+ Import"
+                        <Button Content="{loc:Loc Media_Import}"
                                 Style="{StaticResource PrimaryButton}"
                                 Padding="16,7" Margin="8,0,0,0"
                                 Command="{Binding ImportFileCommand}" />
@@ -64,17 +65,17 @@
                                FontSize="56"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,16" />
-                    <TextBlock Text="No media files yet"
+                    <TextBlock Text="{loc:Loc Media_Empty}"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontSize="18" FontWeight="SemiBold"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8" />
-                    <TextBlock Text="Import images or videos to use them in presentations."
+                    <TextBlock Text="{loc:Loc Media_EmptyHelp}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,24" />
-                    <Button Content="+ Import Media"
+                    <Button Content="{loc:Loc Media_ImportCta}"
                             Style="{StaticResource PrimaryButton}"
                             Padding="20,9"
                             HorizontalAlignment="Center"
@@ -177,7 +178,7 @@
                                                         Content="✕"
                                                         Style="{StaticResource IconDangerButton}"
                                                         Margin="6,0,0,0"
-                                                        ToolTip="Delete"
+                                                        ToolTip="{loc:Loc Common_Delete}"
                                                         Command="{Binding DataContext.DeleteFileCommand,
                                                                   RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}" />
