@@ -77,3 +77,6 @@ Bibles/
 /AGENTS.md
 /SESSION_STATUS.md
 /VIDEOPSALM_REFERENCE.md
+
+## Local agent config & skills — kept locally, never published (same rule as CLAUDE.md)
+/.claude/
