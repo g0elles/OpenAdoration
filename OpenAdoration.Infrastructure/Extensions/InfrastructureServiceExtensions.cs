@@ -1,3 +1,5 @@
+using System.IO;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -64,14 +66,41 @@ public static class InfrastructureServiceExtensions
     }
 
     /// <summary>
-    /// Applies any pending EF Core migrations.
-    /// Safe to call on every launch — no-op when the schema is up to date.
+    /// Applies any pending EF Core migrations. Safe to call on every launch — no-op when the
+    /// schema is up to date. Before a schema change it snapshots the DB to <c>{db}.oabak.auto</c>
+    /// (G26) and rolls back to it in place if the migration throws, so a failed auto-update
+    /// migration can't leave a user's library half-migrated.
     /// </summary>
     public static async Task InitialiseDatabaseAsync(this IServiceProvider services)
     {
+        var dbPath = services.GetRequiredService<AppPaths>().DbPath;
+
         await using var scope = services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+
+        var pending = await context.Database.GetPendingMigrationsAsync();
+        if (!pending.Any()) return;
+
+        // Only existing DBs can be rolled back; a first run has nothing to lose.
+        var dbExists = File.Exists(dbPath);
+        var snapshot = dbPath + ".oabak.auto";
+        if (dbExists) SqliteSnapshot.Create(dbPath, snapshot);
+
+        try
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch
+        {
+            if (dbExists)
+            {
+                // Release EF's file handle, then restore the pre-migration copy in place.
+                await context.DisposeAsync();
+                SqliteConnection.ClearAllPools();
+                File.Copy(snapshot, dbPath, overwrite: true);
+            }
+            throw;
+        }
     }
 
     private static void EnsureDirectoryExists(string dbPath)
