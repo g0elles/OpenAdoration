@@ -7,7 +7,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             Background="{StaticResource SurfaceBrush}">
+             Background="{DynamicResource SurfaceBrush}">
 
     <Grid>
         <!-- Busy overlay -->
@@ -16,7 +16,7 @@
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{loc:Loc Common_Saving}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
             </StackPanel>
@@ -27,14 +27,14 @@
 
             <!-- ── Footer: error + action buttons ── -->
             <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="20,12">
                 <Grid>
                     <!-- Error message (left) -->
                     <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource DangerBrush}"
+                               Foreground="{DynamicResource DangerBrush}"
                                FontSize="12"
                                VerticalAlignment="Center"
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
@@ -63,7 +63,7 @@
 
                     <!-- Header -->
                     <TextBlock Text="{Binding FormTitle}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="20"
                                FontWeight="SemiBold"
                                Margin="0,0,0,20" />
@@ -120,7 +120,7 @@
                              Text="{Binding VerseOrder, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,4" />
                     <TextBlock Text="{loc:Loc SongEdit_PlayOrderHelp}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,0,0,20" TextWrapping="Wrap" />
 
                     <!-- Theme (per-song override; default = inherit service/app theme) -->
@@ -137,7 +137,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <TextBlock Text="{loc:Loc SongEdit_ThemeHelp}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,0,0,20" TextWrapping="Wrap" />
 
                     <!-- Section list -->
@@ -167,7 +167,7 @@
                                                                HorizontalAlignment="Center" />
                                                 </Border>
                                                 <TextBlock Text="{Binding Label}"
-                                                           Foreground="{StaticResource AccentBrush}"
+                                                           Foreground="{DynamicResource AccentBrush}"
                                                            FontSize="12"
                                                            FontWeight="SemiBold"
                                                            VerticalAlignment="Center" />

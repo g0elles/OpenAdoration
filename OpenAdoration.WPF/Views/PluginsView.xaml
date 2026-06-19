@@ -4,7 +4,7 @@
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              Loaded="OnLoaded">
 
-    <Grid Background="{StaticResource SurfaceBrush}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -12,9 +12,9 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
-            <TextBlock Text="{loc:Loc Plugins_Title}" Foreground="{StaticResource TextPrimaryBrush}"
+        <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+            <TextBlock Text="{loc:Loc Plugins_Title}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
         </Border>
 
@@ -34,12 +34,12 @@
                             IsEnabled="{Binding HasSelection}" />
                 </StackPanel>
                 <ListBox ItemsSource="{Binding InstalledPlugins}" SelectedItem="{Binding SelectedPlugin}"
-                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="4">
-                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" />
-                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="11">
+                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11">
                                     <Run Text="v" /><Run Text="{Binding Version, Mode=OneWay}" />
                                     <Run Text="  ·  " /><Run Text="{Binding Capability, Mode=OneWay}" />
                                 </TextBlock>
@@ -53,11 +53,11 @@
             <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
                           Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
-                    <TextBlock Text="{Binding SelectedPlugin.Name}" Foreground="{StaticResource TextPrimaryBrush}"
+                    <TextBlock Text="{Binding SelectedPlugin.Name}" Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12" />
 
                     <!-- Settings -->
-                    <TextBlock Text="{loc:Loc Plugins_Settings}" Foreground="{StaticResource TextSecondaryBrush}"
+                    <TextBlock Text="{loc:Loc Plugins_Settings}" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <ItemsControl ItemsSource="{Binding Settings}">
                         <ItemsControl.ItemTemplate>
@@ -75,16 +75,16 @@
 
                     <!-- Bible-source sync -->
                     <StackPanel Visibility="{Binding SelectedIsBibleSource, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="{loc:Loc Plugins_Versions}" Foreground="{StaticResource TextSecondaryBrush}"
+                        <TextBlock Text="{loc:Loc Plugins_Versions}" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <Button Content="{loc:Loc Plugins_FetchVersions}" Style="{StaticResource SecondaryButton}"
                                 HorizontalAlignment="Left" Command="{Binding FetchVersionsCommand}" Margin="0,0,0,8" />
                         <ListBox ItemsSource="{Binding AvailableVersions}" SelectedItem="{Binding SelectedVersion}"
                                  MaxHeight="200" Width="340" HorizontalAlignment="Left"
-                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Foreground="{StaticResource TextPrimaryBrush}">
+                                    <TextBlock Foreground="{DynamicResource TextPrimaryBrush}">
                                         <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
                                     </TextBlock>
                                 </DataTemplate>
@@ -99,10 +99,10 @@
         </Grid>
 
         <!-- Error banner -->
-        <Border Grid.Row="2" Background="#3E1A1A" BorderBrush="{StaticResource DangerBrush}"
+        <Border Grid.Row="2" Background="#3E1A1A" BorderBrush="{DynamicResource DangerBrush}"
                 BorderThickness="0,1,0,0" Padding="16,10"
                 Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}"
                        FontSize="13" TextWrapping="Wrap" />
         </Border>
     </Grid>

@@ -8,7 +8,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel}"
              Loaded="OnLoaded"
-             Background="{StaticResource SurfaceBrush}">
+             Background="{DynamicResource SurfaceBrush}">
 
     <Grid>
         <!-- Busy overlay -->
@@ -16,7 +16,7 @@
                 Background="#AA1E1E2E"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{loc:Loc Common_Loading}"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="16"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
@@ -25,12 +25,12 @@
         <DockPanel>
             <!-- Toolbar -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource PrimaryBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
                     Padding="20,14">
                 <Grid>
                     <TextBlock Text="{loc:Loc Media_Title}"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="{loc:Loc Media_ImportFolder}"
@@ -47,7 +47,7 @@
 
             <!-- Error bar -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource DangerBrush}"
+                    Background="{DynamicResource DangerBrush}"
                     Padding="20,10"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
@@ -67,12 +67,12 @@
                                HorizontalAlignment="Center"
                                Margin="0,0,0,16" />
                     <TextBlock Text="{loc:Loc Media_Empty}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="18" FontWeight="SemiBold"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8" />
                     <TextBlock Text="{loc:Loc Media_EmptyHelp}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,24" />
@@ -99,8 +99,8 @@
                                 <Border Width="180" Margin="8"
                                         CornerRadius="6"
                                         BorderThickness="1.5"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Cursor="Hand">
                                     <Border.Style>
                                         <Style TargetType="Border">
@@ -115,7 +115,7 @@
                                                                      TargetNullValue="0" />
                                                         </MultiBinding>
                                                     </DataTrigger.Binding>
-                                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -155,7 +155,7 @@
                                         <!-- Filename + actions -->
                                         <StackPanel Margin="10,8,10,10">
                                             <TextBlock Text="{Binding FileName}"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                                        FontSize="12"
                                                        TextTrimming="CharacterEllipsis"
                                                        ToolTip="{Binding FileName}"

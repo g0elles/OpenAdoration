@@ -17,7 +17,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- ══════════════════════════════════════ LEFT: Theme list ══ -->
-        <Grid Grid.Column="0" Background="{StaticResource PrimaryBrush}">
+        <Grid Grid.Column="0" Background="{DynamicResource PrimaryBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -25,12 +25,12 @@
 
             <!-- Header -->
             <Border Grid.Row="0"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,1"
                     Padding="12,12,12,10">
                 <Grid>
                     <TextBlock Text="{loc:Loc Themes_Title}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="16"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" />
@@ -44,12 +44,12 @@
 
             <!-- Theme list -->
             <Border Grid.Row="1"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <!-- Loading -->
                     <TextBlock Text="{loc:Loc Common_Loading}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -57,7 +57,7 @@
 
                     <!-- Error -->
                     <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource DangerBrush}"
+                               Foreground="{DynamicResource DangerBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
                                Margin="12"
@@ -66,7 +66,7 @@
 
                     <!-- Empty state -->
                     <TextBlock Text="{loc:Loc Themes_Empty}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Center"
@@ -135,14 +135,14 @@
                                                     <TextBlock Grid.Column="0"
                                                                Text="{Binding Name}"
                                                                ToolTip="{Binding Name}"
-                                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                                FontSize="13"
                                                                FontWeight="SemiBold"
                                                                VerticalAlignment="Center"
                                                                TextTrimming="CharacterEllipsis" />
                                                     <!-- Default badge -->
                                                     <Border Grid.Column="1"
-                                                            Background="{StaticResource AccentBrush}"
+                                                            Background="{DynamicResource AccentBrush}"
                                                             CornerRadius="2"
                                                             Padding="5,1"
                                                             Margin="6,0,0,0"
@@ -183,7 +183,7 @@
 
                                             <!-- Font info -->
                                             <TextBlock Grid.Row="1"
-                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        FontSize="11"
                                                        Margin="0,3,0,0"
                                                        TextTrimming="CharacterEllipsis">
@@ -199,13 +199,13 @@
                                                         Margin="0,6,0,0">
                                                 <Border Width="16" Height="16"
                                                         CornerRadius="2"
-                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderBrush="{DynamicResource BorderBrush}"
                                                         BorderThickness="1"
                                                         Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}"
                                                         ToolTip="{loc:Loc Themes_BgColor}" />
                                                 <Border Width="16" Height="16"
                                                         CornerRadius="2"
-                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderBrush="{DynamicResource BorderBrush}"
                                                         BorderThickness="1"
                                                         Background="{Binding FontColor, Converter={StaticResource HexToBrush}}"
                                                         Margin="4,0,0,0"
@@ -229,15 +229,15 @@
                                              Converter={StaticResource BoolToVis}}" />
 
         <Grid Grid.Column="1"
-              Background="{StaticResource SurfaceBrush}"
+              Background="{DynamicResource SurfaceBrush}"
               Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{loc:Loc Themes_SelectPrompt}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
                 <TextBlock Text="{loc:Loc Themes_SelectPromptSub}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13"
                            HorizontalAlignment="Center"
                            Margin="0,4,0,0" />

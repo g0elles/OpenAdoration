@@ -5,7 +5,7 @@
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              Loaded="OnLoaded">
 
-    <Grid Background="{StaticResource SurfaceBrush}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
 
         <!-- ══════════════════════════════════════════════ PANEL 1: SERVICE LIST -->
         <Grid Visibility="{Binding IsServiceOpen, Converter={StaticResource InverseBoolToVis}}">
@@ -18,13 +18,13 @@
 
             <!-- Header bar -->
             <Border Grid.Row="0"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="16,12">
                 <Grid>
                     <TextBlock Text="{loc:Loc Sched_Title}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -45,8 +45,8 @@
 
             <!-- Create form -->
             <Border Grid.Row="1"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="16,12"
                     Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
@@ -66,9 +66,9 @@
                              Text="{Binding NewServiceName, UpdateSourceTrigger=PropertyChanged}" />
                     <DatePicker Grid.Column="2"
                                 SelectedDate="{Binding NewServiceDate}"
-                                Background="{StaticResource PrimaryBrush}"
-                                Foreground="{StaticResource TextPrimaryBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{DynamicResource PrimaryBrush}"
+                                Foreground="{DynamicResource TextPrimaryBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 FontSize="13" />
                     <Button Grid.Column="4"
                             Content="{loc:Loc Sched_Create}"
@@ -96,10 +96,10 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    FontSize="14" FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding Date, StringFormat='{}{0:dddd, MMMM d, yyyy}'}"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                                    FontSize="12" Margin="0,2,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1"
@@ -126,22 +126,22 @@
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding HasNoServices, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{loc:Loc Sched_NoServices}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="15" HorizontalAlignment="Center" />
                 <TextBlock Text="{loc:Loc Sched_NoServicesHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>
 
             <!-- Error banner -->
             <Border Grid.Row="3"
                     Background="#3E1A1A"
-                    BorderBrush="{StaticResource DangerBrush}"
+                    BorderBrush="{DynamicResource DangerBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="16,10"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="{StaticResource DangerBrush}"
+                           Foreground="{DynamicResource DangerBrush}"
                            FontSize="13" TextWrapping="Wrap" />
             </Border>
         </Grid>
@@ -158,8 +158,8 @@
 
             <!-- Header -->
             <Border Grid.Row="0"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="12,10">
                 <Grid>
@@ -175,10 +175,10 @@
                             Command="{Binding CloseServiceCommand}" />
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding OpenedService.Name}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="15" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding OpenedService.Date, StringFormat='{}{0:MMMM d, yyyy}'}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" />
                     </StackPanel>
                     <Button Grid.Column="3"
@@ -190,8 +190,8 @@
 
             <!-- Toolbar: Add buttons -->
             <Border Grid.Row="1"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="12,8">
                 <StackPanel Orientation="Horizontal">
@@ -212,8 +212,8 @@
 
             <!-- Add panels (collapsible) -->
             <Border Grid.Row="2"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="16,12">
                 <Border.Style>
@@ -249,8 +249,8 @@
                              Text="{Binding SongPickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,8" />
                     <Border Grid.Row="1"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4">
                         <ListBox ItemsSource="{Binding SongPickerResults}"
@@ -258,19 +258,19 @@
                                  DisplayMemberPath="Title"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     <Setter Property="Padding"    Value="10,6" />
                                     <Style.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -342,14 +342,14 @@
                     <!-- Row 1: Selection hint / label -->
                     <TextBlock Grid.Row="1"
                                Text="{Binding BiblePickerSelectionLabel}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12"
                                Margin="0,0,0,6" />
 
                     <!-- Row 2: Verse list -->
                     <Border Grid.Row="2"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Margin="0,0,0,8"
@@ -375,13 +375,13 @@
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Grid.Column="0"
                                                                        Text="{Binding Number}"
-                                                                       Foreground="{StaticResource AccentBrush}"
+                                                                       Foreground="{DynamicResource AccentBrush}"
                                                                        FontWeight="SemiBold"
                                                                        FontSize="12"
                                                                        VerticalAlignment="Center" />
                                                             <TextBlock Grid.Column="1"
                                                                        Text="{Binding Preview}"
-                                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                                                        FontSize="12"
                                                                        TextTrimming="CharacterEllipsis"
                                                                        VerticalAlignment="Center" />
@@ -390,11 +390,11 @@
                                                     <ControlTemplate.Triggers>
                                                         <DataTrigger Binding="{Binding IsInRange}" Value="True">
                                                             <Setter TargetName="VerseBd" Property="Background"
-                                                                    Value="{StaticResource AccentBrush}" />
+                                                                    Value="{DynamicResource AccentBrush}" />
                                                         </DataTrigger>
                                                         <Trigger Property="IsMouseOver" Value="True">
                                                             <Setter TargetName="VerseBd" Property="Background"
-                                                                    Value="{StaticResource ActiveNavBrush}" />
+                                                                    Value="{DynamicResource ActiveNavBrush}" />
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -427,8 +427,8 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Margin="0,0,0,8">
@@ -440,14 +440,14 @@
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     <Setter Property="Padding"    Value="10,7" />
                                     <Style.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -510,13 +510,13 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding TypeIcon}"
-                                               Foreground="{StaticResource AccentBrush}"
+                                               Foreground="{DynamicResource AccentBrush}"
                                                FontSize="16"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding DisplayTitle}"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    FontSize="13" />
                                         <!-- Per-service verse order override (song items only) -->
                                         <TextBox Style="{StaticResource FieldTextBox}"
@@ -535,10 +535,10 @@
                                                    Visibility="{Binding HasVerseOrderHint, Converter={StaticResource BoolToVis}}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsVerseOrderReduced}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
                                                             <Setter Property="FontWeight" Value="SemiBold" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -550,7 +550,7 @@
                                                     Margin="0,3,8,0"
                                                     Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="{loc:Loc Sched_VerseNotFound}"
-                                                       Foreground="{StaticResource WarningBrush}"
+                                                       Foreground="{DynamicResource WarningBrush}"
                                                        FontSize="10"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"
@@ -579,11 +579,11 @@
                                                 MinWidth="54">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <TextBlock Text="⏱ "
-                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                                            FontSize="11"
                                                            VerticalAlignment="Center" />
                                                 <TextBlock Text="{Binding AutoAdvanceLabel}"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            FontSize="11"
                                                            VerticalAlignment="Center" />
                                             </StackPanel>
@@ -621,22 +621,22 @@
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding HasNoScheduleItems, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{loc:Loc Sched_NoItems}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="15" HorizontalAlignment="Center" />
                 <TextBlock Text="{loc:Loc Sched_NoItemsHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>
 
             <!-- Error banner -->
             <Border Grid.Row="4"
                     Background="#3E1A1A"
-                    BorderBrush="{StaticResource DangerBrush}"
+                    BorderBrush="{DynamicResource DangerBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="16,10"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="{StaticResource DangerBrush}"
+                           Foreground="{DynamicResource DangerBrush}"
                            FontSize="13" TextWrapping="Wrap" />
             </Border>
         </Grid>
@@ -669,7 +669,7 @@
                             Command="{Binding StopLiveCommand}" />
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding OpenedService.Name}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="15" FontWeight="SemiBold" />
                         <TextBlock Text="{loc:Loc Sched_LiveBadge}"
                                    Foreground="#4CAF50"
@@ -680,13 +680,13 @@
 
             <!-- Queue toolbar: add items on the fly -->
             <Border Grid.Row="1"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="12,8">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{loc:Loc Sched_Queue}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" VerticalAlignment="Center"
                                Margin="0,0,12,0" />
                     <Button Content="{loc:Loc Sched_QueueSong}"
@@ -705,8 +705,8 @@
 
             <!-- Add panels (collapsible) — same pickers as the builder -->
             <Border Grid.Row="2"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="16,12">
                 <Border.Style>
@@ -740,26 +740,26 @@
                                  Text="{Binding SongPickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,8" />
                         <Border Grid.Row="1"
-                                Background="{StaticResource SurfaceBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1" CornerRadius="4">
                             <ListBox ItemsSource="{Binding SongPickerResults}"
                                      SelectedItem="{Binding PickerSelectedSong}"
                                      DisplayMemberPath="Title"
                                      Background="Transparent" BorderThickness="0"
-                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter Property="Padding"    Value="10,6" />
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected"   Value="True">
-                                                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -829,12 +829,12 @@
 
                         <TextBlock Grid.Row="1"
                                    Text="{Binding BiblePickerSelectionLabel}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,6" />
 
                         <Border Grid.Row="2"
-                                Background="{StaticResource SurfaceBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1" CornerRadius="4"
                                 Margin="0,0,0,8" ClipToBounds="True">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -857,12 +857,12 @@
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock Grid.Column="0"
                                                                            Text="{Binding Number}"
-                                                                           Foreground="{StaticResource AccentBrush}"
+                                                                           Foreground="{DynamicResource AccentBrush}"
                                                                            FontWeight="SemiBold" FontSize="12"
                                                                            VerticalAlignment="Center" />
                                                                 <TextBlock Grid.Column="1"
                                                                            Text="{Binding Preview}"
-                                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                                            FontSize="12"
                                                                            TextTrimming="CharacterEllipsis"
                                                                            VerticalAlignment="Center" />
@@ -871,11 +871,11 @@
                                                         <ControlTemplate.Triggers>
                                                             <DataTrigger Binding="{Binding IsInRange}" Value="True">
                                                                 <Setter TargetName="VerseBd2" Property="Background"
-                                                                        Value="{StaticResource AccentBrush}" />
+                                                                        Value="{DynamicResource AccentBrush}" />
                                                             </DataTrigger>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="VerseBd2" Property="Background"
-                                                                        Value="{StaticResource ActiveNavBrush}" />
+                                                                        Value="{DynamicResource ActiveNavBrush}" />
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -906,8 +906,8 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Border Grid.Row="0"
-                                Background="{StaticResource SurfaceBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1" CornerRadius="4"
                                 Margin="0,0,0,8">
                             <ListBox ItemsSource="{Binding MediaPickerFiles}"
@@ -917,14 +917,14 @@
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter Property="Padding"    Value="10,7" />
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected"  Value="True">
-                                                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -974,7 +974,7 @@
 
                 <!-- Left: item list -->
                 <ScrollViewer Grid.Column="0"
-                              Background="{StaticResource PrimaryBrush}"
+                              Background="{DynamicResource PrimaryBrush}"
                               VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding ScheduleItems}" Margin="8,8">
                         <ItemsControl.ItemTemplate>
@@ -1000,17 +1000,17 @@
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0"
                                                                Text="{Binding TypeIcon}"
-                                                               Foreground="{StaticResource AccentBrush}"
+                                                               Foreground="{DynamicResource AccentBrush}"
                                                                FontSize="13"
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center" />
                                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding DisplayTitle}"
-                                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    FontSize="12"
                                                                    TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Text="{loc:Loc Sched_VerseNotFound}"
-                                                                   Foreground="{StaticResource WarningBrush}"
+                                                                   Foreground="{DynamicResource WarningBrush}"
                                                                    FontSize="10"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    Visibility="{Binding NeedsBibleVersion, Converter={StaticResource BoolToVis}}" />
@@ -1019,10 +1019,10 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding IsCurrentLiveItem}" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}" />
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
                                                 </DataTrigger>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -1034,22 +1034,22 @@
                 </ScrollViewer>
 
                 <!-- Separator -->
-                <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
+                <Rectangle Grid.Column="1" Fill="{DynamicResource BorderBrush}" />
 
                 <!-- Right: now projecting -->
                 <Border Grid.Column="2"
-                        Background="{StaticResource SurfaceBrush}"
+                        Background="{DynamicResource SurfaceBrush}"
                         Padding="24">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{loc:Loc Sched_NowProjecting}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,4" />
                         <TextBlock Text="{Binding CurrentLiveItemTitle}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="18" FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{loc:Loc Sched_LiveHelp}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" TextWrapping="Wrap"
                                    Margin="0,16,0,0" />
                     </StackPanel>
@@ -1058,8 +1058,8 @@
 
             <!-- Bottom nav bar -->
             <Border Grid.Row="4"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="16,12">
                 <Grid>
@@ -1073,7 +1073,7 @@
                                 Command="{Binding NextItemCommand}" />
                     </StackPanel>
                     <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12">
                         <TextBlock.Text>
                             <MultiBinding Converter="{StaticResource LocFormat}">
@@ -1092,7 +1092,7 @@
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{loc:Loc Common_Loading}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="16" HorizontalAlignment="Center" />
             </StackPanel>
         </Grid>

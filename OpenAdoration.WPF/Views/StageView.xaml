@@ -8,7 +8,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:StageViewModel}"
-             Background="{StaticResource PrimaryBrush}"
+             Background="{DynamicResource PrimaryBrush}"
              Loaded="OnLoaded">
 
     <Grid>
@@ -20,7 +20,7 @@
         <!-- ── Status bar ── -->
         <Border Grid.Row="0"
                 Background="#12121E"
-                BorderBrush="{StaticResource BorderBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,10">
             <Grid>
@@ -32,15 +32,15 @@
 
                 <!-- LIVE / STOPPED badge -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
-                    <Border Background="{StaticResource AccentBrush}"
+                    <Border Background="{DynamicResource AccentBrush}"
                             CornerRadius="3" Padding="8,3"
                             Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="● LIVE" Foreground="White" FontSize="11" FontWeight="Bold" />
                     </Border>
-                    <Border Background="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource BorderBrush}"
                             CornerRadius="3" Padding="8,3"
                             Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">
-                        <TextBlock Text="{loc:Loc Stage_Stopped}" Foreground="{StaticResource TextSecondaryBrush}"
+                        <TextBlock Text="{loc:Loc Stage_Stopped}" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="11" FontWeight="Bold" />
                     </Border>
                 </StackPanel>
@@ -48,7 +48,7 @@
                 <!-- Context label -->
                 <TextBlock Grid.Column="1"
                            Text="{Binding ContextLabel}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="14" FontWeight="SemiBold"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
@@ -56,7 +56,7 @@
                 <!-- Slide position + schedule navigation -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding SlidePosition}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13" VerticalAlignment="Center"
                                Margin="0,0,16,0" />
 
@@ -202,19 +202,19 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding CurrentPreview.SectionLabel}"
-                                   Foreground="{StaticResource AccentBrush}"
+                                   Foreground="{DynamicResource AccentBrush}"
                                    FontSize="11" FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding SlidePosition}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="11" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
             </Grid>
 
             <!-- Column separator -->
-            <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
+            <Rectangle Grid.Column="1" Fill="{DynamicResource BorderBrush}" />
 
             <!-- ─────────── NEXT SLIDE ─────────── -->
             <Grid Grid.Column="2" Background="#141422">
