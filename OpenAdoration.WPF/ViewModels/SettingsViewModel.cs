@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace OpenAdoration.WPF.ViewModels;
 public partial class SettingsViewModel : BaseViewModel
 {
     private readonly IAppSettingsService _settings;
+    private readonly IThemeService _themeService;
     private readonly IProjectionService _projectionService;
     private readonly ILocalizationService _localization;
     private readonly IBackupService _backup;
@@ -31,6 +33,13 @@ public partial class SettingsViewModel : BaseViewModel
     public IReadOnlyList<LanguageOption> AvailableLanguages => _localization.AvailableLanguages;
 
     [ObservableProperty] private LanguageOption? _selectedLanguage;
+
+    /// <summary>Per-content-type default-theme pickers; index 0 is the "app default" (null) sentinel.</summary>
+    public ObservableCollection<ThemeOption> AvailableThemes { get; } = [];
+
+    [ObservableProperty] private ThemeOption? _selectedSongTheme;
+    [ObservableProperty] private ThemeOption? _selectedScriptureTheme;
+    [ObservableProperty] private ThemeOption? _selectedMediaTheme;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowSavedConfirmation))]
@@ -55,6 +64,7 @@ public partial class SettingsViewModel : BaseViewModel
 
     public SettingsViewModel(
         IAppSettingsService settings,
+        IThemeService themeService,
         IProjectionService projectionService,
         ILocalizationService localization,
         IBackupService backup,
@@ -64,6 +74,7 @@ public partial class SettingsViewModel : BaseViewModel
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
+        _themeService      = themeService;
         _projectionService = projectionService;
         _localization      = localization;
         _backup            = backup;
@@ -74,7 +85,7 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void Load()
+    private async Task Load()
     {
         if (IsBusy) return;
         IsBusy = true;
@@ -94,6 +105,7 @@ public partial class SettingsViewModel : BaseViewModel
             CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
+            await LoadThemesAsync(current);
         }
         finally
         {
@@ -101,6 +113,20 @@ public partial class SettingsViewModel : BaseViewModel
             _loading = false;
             HasUnsavedChanges = false;
         }
+    }
+
+    private async Task LoadThemesAsync(AppSettings current)
+    {
+        AvailableThemes.Clear();
+        AvailableThemes.Add(new ThemeOption(null, L("Settings_ThemeAppDefault")));
+        foreach (var theme in await _themeService.GetAllAsync())
+            AvailableThemes.Add(new ThemeOption(theme.Id, theme.Name));
+
+        SelectedSongTheme      = Pick(current.DefaultSongThemeId);
+        SelectedScriptureTheme = Pick(current.DefaultScriptureThemeId);
+        SelectedMediaTheme     = Pick(current.DefaultMediaThemeId);
+
+        ThemeOption Pick(int? id) => AvailableThemes.FirstOrDefault(o => o.Id == id) ?? AvailableThemes[0];
     }
 
     /// <summary>
@@ -138,7 +164,10 @@ public partial class SettingsViewModel : BaseViewModel
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
                 SlideTransition             = SelectedTransition,
                 UiCulture                   = SelectedLanguage?.Code,
-                CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup
+                CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup,
+                DefaultSongThemeId          = SelectedSongTheme?.Id,
+                DefaultScriptureThemeId     = SelectedScriptureTheme?.Id,
+                DefaultMediaThemeId         = SelectedMediaTheme?.Id
             };
 
             await _settings.SaveAsync(updated);
@@ -257,6 +286,9 @@ public partial class SettingsViewModel : BaseViewModel
 
     partial void OnCheckForUpdatesOnStartupChanged(bool value) => MarkDirty();
     partial void OnSelectedTransitionChanged(SlideTransitionKind value) => MarkDirty();
+    partial void OnSelectedSongThemeChanged(ThemeOption? value) => MarkDirty();
+    partial void OnSelectedScriptureThemeChanged(ThemeOption? value) => MarkDirty();
+    partial void OnSelectedMediaThemeChanged(ThemeOption? value) => MarkDirty();
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)
     {

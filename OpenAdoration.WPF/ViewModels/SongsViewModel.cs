@@ -118,19 +118,21 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     }
 
     [RelayCommand]
-    private void NewSong()
+    private async Task NewSong()
     {
         SelectedSong = null;
         EditViewModel.InitialiseNew();
         IsEditing = true;
+        await EditViewModel.LoadThemesAsync(null);
     }
 
     [RelayCommand]
-    private void EditSong(Song song)
+    private async Task EditSong(Song song)
     {
         SelectedSong = song;
         EditViewModel.InitialiseEdit(song);
         IsEditing = true;
+        await EditViewModel.LoadThemesAsync(song.ThemeId);
     }
 
     [RelayCommand]

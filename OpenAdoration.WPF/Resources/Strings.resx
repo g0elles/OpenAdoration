@@ -128,6 +128,12 @@
   <data name="Settings_AnnouncementDurationHelp" xml:space="preserve"><value>How long the announcement banner stays on screen before it vanishes. Minimum 1.</value></data>
   <data name="Settings_Transition" xml:space="preserve"><value>Slide transition (milliseconds)</value></data>
   <data name="Settings_TransitionHelp" xml:space="preserve"><value>Fade duration when the projected slide changes. 0 = no transition.</value></data>
+  <data name="Settings_ThemesSection" xml:space="preserve"><value>CONTENT THEMES</value></data>
+  <data name="Settings_DefaultSongTheme" xml:space="preserve"><value>Songs default theme</value></data>
+  <data name="Settings_DefaultScriptureTheme" xml:space="preserve"><value>Scripture default theme</value></data>
+  <data name="Settings_DefaultMediaTheme" xml:space="preserve"><value>Media default theme</value></data>
+  <data name="Settings_ThemesHelp" xml:space="preserve"><value>Theme used for each content type when the content itself has no theme set. Falls back to the app default theme.</value></data>
+  <data name="Settings_ThemeAppDefault" xml:space="preserve"><value>App default</value></data>
   <data name="Settings_BackupSection" xml:space="preserve"><value>BACKUP &amp; RESTORE</value></data>
   <data name="Settings_CreateBackup" xml:space="preserve"><value>Create Backup…</value></data>
   <data name="Settings_RestoreBackup" xml:space="preserve"><value>Restore Backup…</value></data>
@@ -213,6 +219,9 @@
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>PLAY ORDER</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Optional — e.g. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Leave blank to play sections top-to-bottom. Use the section tokens below (e.g. V1 = Verse 1, C = Chorus, B = Bridge); repeat a token to repeat that section.</value></data>
+  <data name="SongEdit_Theme" xml:space="preserve"><value>THEME</value></data>
+  <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Use default theme</value></data>
+  <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Theme for this song when projected. Leave as default to use the service or app theme.</value></data>
   <data name="SongEdit_RemoveSection" xml:space="preserve"><value>Remove section</value></data>
   <data name="SongEdit_AddSection" xml:space="preserve"><value>ADD SECTION</value></data>
   <data name="SongEdit_AddVerse" xml:space="preserve"><value>+ Verse</value></data>

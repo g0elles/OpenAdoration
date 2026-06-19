@@ -155,6 +155,7 @@ public sealed class SongRepository : ISongRepository
         existing.VerseOrder     = song.VerseOrder;
         existing.Copyright      = song.Copyright;
         existing.CcliNumber     = song.CcliNumber;
+        existing.ThemeId        = song.ThemeId;
 
         // Replace sections entirely to avoid stale or orphaned section rows
         context.SongSections.RemoveRange(existing.Sections);

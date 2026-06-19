@@ -30,7 +30,7 @@ All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentio
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
 | M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
-| M14 Content-level theming | 🔶 In progress — **14.1 + 14.2 done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver applied at every slide-gen site, standalone + service). Next: 14.3 UI (theme picker in song editor + per-content-type default pickers). Also pending: 14.4 VP-import folding, per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
+| M14 Content-level theming | 🔶 In progress — **14.1 + 14.2 + 14.3 done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor theme picker + Settings "Content themes" default pickers). Next: 14.4 fold VP import into the cascade. Also pending: per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
 
 ---
 
@@ -645,9 +645,10 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Single resolver `ThemeCascade` (Application/Common), most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → null`. The final `null` rung means "no explicit theme", which `ProjectionWindow.ResolveThemeAsync` already maps to the app-wide default — so app default is not duplicated in the resolver.
 - Applied at **every** slide-generation call site: service items (`ServiceScheduleViewModel`, incl. UP-NEXT previews + live song-edit refresh) **and** standalone `SongsViewModel` / `BibleViewModel` / `MediaViewModel`. `SongsViewModel` + `MediaViewModel` gained `IAppSettingsService`. Unit-tested (`ThemeCascadeTests`, +3 → 67 tests).
 
-### 14.3 — UI
-- Theme picker in the song editor (inherit / pick).
-- "Default themes" section (Settings or the Themes page): set the per-content-type defaults; the app default stays the existing "Set default".
+### 14.3 — UI ✅
+- Theme picker in the song editor (`AddEditSongView`): "Use default theme" sentinel + all themes; persists `Song.ThemeId` (also fixed `SongRepository.UpdateAsync`, which wasn't copying `ThemeId`).
+- "Content themes" section in Settings → General: Songs / Scripture / Media default-theme pickers ("App default" sentinel) → `AppSettings.Default{Song,Scripture,Media}ThemeId`. Save fires `NotifyThemeChanged()` so a changed default refreshes a live projection. App-wide default stays the existing Themes-page "Set default".
+- Shared `ThemeOption` record drives both pickers (null Id = inherit sentinel). New en/es resx keys (`SongEdit_Theme*`, `Settings_*Theme*`). Build 0/0, tests 67/67.
 
 ### 14.4 — Fold M12.4 into the cascade
 - VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
