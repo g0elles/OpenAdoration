@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Helpers.SongImport;
@@ -15,6 +16,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService      _projectionService;
     private readonly IDialogService          _dialogService;
     private readonly ISongLibraryNotifier    _songNotifier;
+    private readonly IAppSettingsService     _appSettings;
     private readonly ILogger<SongsViewModel> _logger;
 
     // Child VM -- shares the same DI scope, created once per navigation to Songs
@@ -38,12 +40,14 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         IDialogService          dialogService,
         ISongLibraryNotifier    songNotifier,
         AddEditSongViewModel    editViewModel,
+        IAppSettingsService     appSettings,
         ILogger<SongsViewModel> logger)
     {
         _songService       = songService;
         _projectionService = projectionService;
         _dialogService     = dialogService;
         _songNotifier      = songNotifier;
+        _appSettings       = appSettings;
         _logger            = logger;
         EditViewModel      = editViewModel;
 
@@ -208,7 +212,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void ProjectSong(Song song)
     {
-        var slides = _songService.GenerateSlides(song);
+        var slides = _songService.GenerateSlides(song, ThemeCascade.ForSong(null, song.ThemeId, _appSettings.Current));
         if (slides.Count == 0)
         {
             SetError(L("Sched_ErrNoLyrics"));
@@ -235,7 +239,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private void UpdateLiveProjection(Song song)
     {
         if (!_projectionService.IsProjecting) return;
-        var slides = _songService.GenerateSlides(song);
+        var slides = _songService.GenerateSlides(song, ThemeCascade.ForSong(null, song.ThemeId, _appSettings.Current));
         if (_projectionService.TryUpdateSlides(ProjectionContextKeys.Song(song.Id), slides, song.Title))
             _logger.LogInformation("Live-updated projection for edited song {SongId}", song.Id);
     }

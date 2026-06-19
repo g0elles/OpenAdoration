@@ -30,7 +30,7 @@ All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentio
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
 | M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
-| M14 Content-level theming | 🔶 In progress — **14.1 done** (`Song.ThemeId` + per-content-type default themes in `AppSettings` + migration `AddSongThemeId`, all nullable/backward-compatible, nothing reads them yet). Next: 14.2 cascade resolver. Also pending: per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
+| M14 Content-level theming | 🔶 In progress — **14.1 + 14.2 done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver applied at every slide-gen site, standalone + service). Next: 14.3 UI (theme picker in song editor + per-content-type default pickers). Also pending: 14.4 VP-import folding, per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
 
 ---
 
@@ -641,9 +641,9 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Add nullable `ThemeId` where styling belongs to the content: `Song.ThemeId`; a per-**content-type** default theme (Songs / Scripture / Media); keep the existing app-wide default as the root. *(Bible-version-level theme can come later if a church needs different looks per version — YAGNI until asked.)*
 - One EF migration; all `ThemeId`s nullable so existing data is untouched (null = inherit from the level above).
 
-### 14.2 — Resolution cascade
-- Single resolver, most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → app default`.
-- Used **everywhere** projection renders, so standalone song/Bible projection honors it too (not just live service items).
+### 14.2 — Resolution cascade ✅
+- Single resolver `ThemeCascade` (Application/Common), most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → null`. The final `null` rung means "no explicit theme", which `ProjectionWindow.ResolveThemeAsync` already maps to the app-wide default — so app default is not duplicated in the resolver.
+- Applied at **every** slide-generation call site: service items (`ServiceScheduleViewModel`, incl. UP-NEXT previews + live song-edit refresh) **and** standalone `SongsViewModel` / `BibleViewModel` / `MediaViewModel`. `SongsViewModel` + `MediaViewModel` gained `IAppSettingsService`. Unit-tested (`ThemeCascadeTests`, +3 → 67 tests).
 
 ### 14.3 — UI
 - Theme picker in the song editor (inherit / pick).

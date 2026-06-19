@@ -195,6 +195,20 @@ IProjectionService.LoadSlides(slides, contextLabel)   ← Singleton
 
 ### 3.4 Theme Resolution (per slide)
 
+Two stages. **Upstream** (`ThemeCascade`, Application/Common) picks *which* `themeId` a slide
+carries; **downstream** (`ProjectionWindow.ResolveThemeAsync`) turns that id into a `Theme`.
+
+`ThemeCascade` runs at every slide-generation call site (standalone song/Bible/media projection
+**and** live service items), most-specific wins:
+
+```
+ScheduleItem.ThemeId  ??  content's own ThemeId (Song.ThemeId)  ??  per-content-type default
+   (Default{Song,Scripture,Media}ThemeId in settings.json)  →  null
+```
+
+A `null` result means "no explicit theme" and flows into the per-slide resolver below, whose
+`themeId null` branch supplies the app-wide default — so the app-default rung is **not** duplicated.
+
 ```
 ProjectionWindow.ResolveThemeAsync(themeId?)
   │
@@ -383,10 +397,10 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ Title          TEXT NOT NULL│ SongId       INT  FK → Songs   │
 │ Author         TEXT NULL    │ Type         INT  (SectionType)│
 │ Classification TEXT NULL    │ SectionNumber INT              │
-│ CreatedAt      DATETIME     │ Lyrics       TEXT NOT NULL     │
-│ UpdatedAt      DATETIME     │ Order        INT  NOT NULL     │
-│                             │ CreatedAt    DATETIME          │
-│                             │ UpdatedAt    DATETIME          │
+│ ThemeId  INT? FK→Themes     │ Lyrics       TEXT NOT NULL     │
+│           (SetNull)         │ Order        INT  NOT NULL     │
+│ CreatedAt      DATETIME     │ CreatedAt    DATETIME          │
+│ UpdatedAt      DATETIME     │ UpdatedAt    DATETIME          │
 │  1 Song ──< many Sections (Cascade delete)                   │
 └──────────────────────────────────────────────────────────────┘
 
@@ -469,9 +483,13 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `20260529011841_AddSongCopyrightAndCcli` | `Copyright` / `CcliNumber` on Songs |
 | `20260529012740_AddScheduleItemAutoAdvance` | `AutoAdvanceSeconds` on ScheduleItems |
 | `20260529210146_AddSongScheduleItemVerseOrderOverride` | `VerseOrderOverride` on song schedule items |
+| `20260616211931_AddVideoPsalmMigrationFields` | VideoPsalm-migration provenance fields (M12.1) |
+| `20260619011133_AddSongThemeId` | `ThemeId` FK (SetNull) + index on Songs — content-level theming (M14.1) |
 
 > Note: app **Settings** (church name/CCLI, default auto-advance, verses-per-slide,
-> announcement duration, transition ms) live in `settings.json`, **not** the database — no migration.
+> announcement duration, transition ms, **per-content-type default themes** —
+> `DefaultSongThemeId` / `DefaultScriptureThemeId` / `DefaultMediaThemeId`) live in
+> `settings.json`, **not** the database — no migration.
 
 ### 5.3 Table Per Hierarchy — ScheduleItems
 

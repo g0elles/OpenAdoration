@@ -3,6 +3,7 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
@@ -14,6 +15,7 @@ public partial class MediaViewModel : BaseViewModel
 {
     private readonly IMediaService       _mediaService;
     private readonly IProjectionService  _projectionService;
+    private readonly IAppSettingsService _appSettings;
     private readonly ILogger<MediaViewModel> _logger;
 
     private static readonly string MediaStore =
@@ -42,10 +44,12 @@ public partial class MediaViewModel : BaseViewModel
     public MediaViewModel(
         IMediaService       mediaService,
         IProjectionService  projectionService,
+        IAppSettingsService appSettings,
         ILogger<MediaViewModel> logger)
     {
         _mediaService      = mediaService;
         _projectionService = projectionService;
+        _appSettings       = appSettings;
         _logger            = logger;
     }
 
@@ -215,7 +219,7 @@ public partial class MediaViewModel : BaseViewModel
     {
         try
         {
-            var slide = _mediaService.GenerateSlide(file);
+            var slide = _mediaService.GenerateSlide(file, ThemeCascade.ForMedia(null, _appSettings.Current));
             _projectionService.LoadSlides(new[] { slide }, file.FileName);
             SelectedFile = file;
         }
