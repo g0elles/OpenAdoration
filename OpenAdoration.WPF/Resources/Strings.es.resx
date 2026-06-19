@@ -256,6 +256,8 @@
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>Ninguna imagen seleccionada</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>Ningún video seleccionado</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Usar como tema predeterminado para todas las diapositivas</value></data>
+  <data name="ThemeEdit_Transition" xml:space="preserve"><value>Transición de diapositiva</value></data>
+  <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Usar predeterminado global</value></data>
   <data name="ThemeEdit_HeaderFooter" xml:space="preserve"><value>ENCABEZADO / PIE</value></data>
   <data name="ThemeEdit_TokenNote1" xml:space="preserve"><value>Las zonas de fichas se ocultan automáticamente cuando las fichas no tienen valor para el tipo de diapositiva actual (p. ej. un encabezado bíblico en una diapositiva de canción). </value></data>
   <data name="ThemeEdit_TokenNote2" xml:space="preserve"><value>El texto fijo que escribas siempre aparecerá en cada diapositiva.</value></data>

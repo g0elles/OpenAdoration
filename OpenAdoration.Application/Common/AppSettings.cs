@@ -1,3 +1,5 @@
+using OpenAdoration.Domain.Common;
+
 namespace OpenAdoration.Application.Common;
 
 /// <summary>

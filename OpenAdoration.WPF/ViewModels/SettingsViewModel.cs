@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
+using OpenAdoration.Domain.Common;
 using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;

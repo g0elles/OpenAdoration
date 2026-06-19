@@ -256,6 +256,8 @@
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>No image selected</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>No video selected</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Use as default theme for all slides</value></data>
+  <data name="ThemeEdit_Transition" xml:space="preserve"><value>Slide transition</value></data>
+  <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Use global default</value></data>
   <data name="ThemeEdit_HeaderFooter" xml:space="preserve"><value>HEADER / FOOTER</value></data>
   <data name="ThemeEdit_TokenNote1" xml:space="preserve"><value>Token zones auto-hide when tokens have no value for the current slide type (e.g. a Bible header on a song slide). </value></data>
   <data name="ThemeEdit_TokenNote2" xml:space="preserve"><value>Any static text you type will always appear on every slide.</value></data>

@@ -68,7 +68,8 @@
                         <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Bible}"
                                 Command="{Binding NavigateToBibleCommand}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavThemesButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Themes}"
                                 Command="{Binding NavigateToThemesCommand}" />
                         <Button Style="{StaticResource NavButton}"
