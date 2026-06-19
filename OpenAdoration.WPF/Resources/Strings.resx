@@ -151,12 +151,6 @@
   <data name="Bible_NoVersion" xml:space="preserve"><value>No Bible version imported</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Import a Bible file to get started. Supported formats: Zefania XML, OSIS XML, USFX XML, and JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Import Bible File…</value></data>
-  <data name="Bible_SecondaryTooltip" xml:space="preserve"><value>Optional second version, stacked under the first on each slide</value></data>
-  <data name="Bible_ClearSecondary" xml:space="preserve"><value>Clear second version</value></data>
-  <data name="Bible_Keyword" xml:space="preserve"><value>≡ Keyword</value></data>
-  <data name="Bible_KeywordTooltip" xml:space="preserve"><value>Toggle keyword search mode</value></data>
-  <data name="Bible_Phrase" xml:space="preserve"><value>" " Phrase</value></data>
-  <data name="Bible_PhraseTooltip" xml:space="preserve"><value>Match the exact phrase instead of all words</value></data>
   <data name="Bible_Import" xml:space="preserve"><value>Import…</value></data>
   <data name="Bible_DeleteVersion" xml:space="preserve"><value>Delete Version</value></data>
   <data name="Bible_Freeze" xml:space="preserve"><value>🔒 Freeze</value></data>
@@ -164,9 +158,7 @@
   <data name="Bible_Project" xml:space="preserve"><value>▶▶ Project</value></data>
   <data name="Bible_SearchResults" xml:space="preserve"><value>Search results for "{0}"</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Select a book, then tap a chapter number</value></data>
-  <data name="Bible_PlaceholderPhrase" xml:space="preserve"><value>Type exact phrase to search…</value></data>
-  <data name="Bible_PlaceholderKeyword" xml:space="preserve"><value>Type keyword(s) to search…</value></data>
-  <data name="Bible_PlaceholderRef" xml:space="preserve"><value>e.g. John 3:16-18</value></data>
+  <data name="Bible_PlaceholderRef" xml:space="preserve"><value>e.g. John 3:16-18, or type keyword(s) to search</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Media Library</value></data>
   <data name="Media_Import" xml:space="preserve"><value>+ Import</value></data>
   <data name="Media_ImportFolder" xml:space="preserve"><value>+ Import Folder</value></data>
@@ -394,6 +386,7 @@ This action cannot be undone.</value></data>
   <data name="Themes_ErrDelete" xml:space="preserve"><value>Failed to delete theme.</value></data>
   <data name="Stage_ErrLoad" xml:space="preserve"><value>Stage view failed to load.</value></data>
   <data name="Settings_ErrSave" xml:space="preserve"><value>Could not save settings.</value></data>
+  <data name="Settings_LeaveUnsaved" xml:space="preserve"><value>You have unsaved changes. Save them before leaving?</value></data>
   <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Create Backup</value></data>
   <data name="Settings_BackupFilter" xml:space="preserve"><value>OpenAdoration backup (*.oabak)</value></data>
   <data name="Settings_BackupCreated" xml:space="preserve"><value>Backup created successfully.</value></data>

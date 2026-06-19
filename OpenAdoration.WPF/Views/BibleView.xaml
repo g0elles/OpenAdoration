@@ -182,11 +182,9 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Reference/keyword input with autocomplete -->
+                    <!-- One smart box: a reference ("John 3:16") jumps; anything else searches -->
                     <Grid Grid.Column="0" Margin="0,0,8,0">
                         <TextBox x:Name="ReferenceBox"
                                  Style="{StaticResource FieldTextBox}"
@@ -198,7 +196,7 @@
                             </TextBox.InputBindings>
                         </TextBox>
 
-                        <!-- Book autocomplete popup (reference mode only) -->
+                        <!-- Book autocomplete popup (shown while the input matches book names) -->
                         <Popup IsOpen="{Binding HasBookSuggestions, Mode=OneWay}"
                                PlacementTarget="{x:Reference ReferenceBox}"
                                Placement="Bottom"
@@ -238,56 +236,21 @@
                         </Popup>
                     </Grid>
 
-                    <!-- Version selector (+ optional secondary for dual-version projection) -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,0">
-                        <ComboBox ItemsSource="{Binding Versions}"
-                                  SelectedItem="{Binding SelectedVersion}"
-                                  Style="{StaticResource FieldComboBox}"
-                                  MinWidth="140">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <ComboBox ItemsSource="{Binding Versions}"
-                                  SelectedItem="{Binding SecondaryVersion}"
-                                  Style="{StaticResource FieldComboBox}"
-                                  MinWidth="120" Margin="6,0,0,0"
-                                  ToolTip="{loc:Loc Bible_SecondaryTooltip}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <Button Content="✕"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding ClearSecondaryVersionCommand}"
-                                Padding="8,4" Margin="4,0,0,0"
-                                ToolTip="{loc:Loc Bible_ClearSecondary}"
-                                Visibility="{Binding HasSecondaryVersion, Converter={StaticResource BoolToVis}}" />
-                    </StackPanel>
-
-                    <!-- Keyword mode toggle -->
-                    <ToggleButton Grid.Column="2"
-                                  Content="{loc:Loc Bible_Keyword}"
-                                  IsChecked="{Binding IsKeywordMode}"
-                                  Style="{StaticResource AlignToggleButton}"
-                                  Padding="10,6" Margin="0,0,6,0"
-                                  ToolTip="{loc:Loc Bible_KeywordTooltip}" />
-
-                    <!-- Phrase vs keyword (only meaningful in keyword search mode) -->
-                    <ToggleButton Grid.Column="3"
-                                  Content="{loc:Loc Bible_Phrase}"
-                                  IsChecked="{Binding IsPhraseSearch}"
-                                  Style="{StaticResource AlignToggleButton}"
-                                  Padding="10,6" Margin="0,0,6,0"
-                                  Visibility="{Binding IsKeywordMode, Converter={StaticResource BoolToVis}}"
-                                  ToolTip="{loc:Loc Bible_PhraseTooltip}" />
+                    <!-- Version selector -->
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding Versions}"
+                              SelectedItem="{Binding SelectedVersion}"
+                              Style="{StaticResource FieldComboBox}"
+                              MinWidth="140" Margin="0,0,6,0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <!-- Clear input -->
-                    <Button Grid.Column="4" Content="✕"
+                    <Button Grid.Column="2" Content="✕"
                             Style="{StaticResource IconButton}"
                             Command="{Binding ClearReferenceCommand}"
                             ToolTip="{loc:Loc Common_Clear}" />
@@ -497,7 +460,7 @@
                 <!-- ── Verses (checkable rows) ── -->
                 <Grid Grid.Column="2">
 
-                    <!-- Search results header (keyword mode) -->
+                    <!-- Search results header (shown while a keyword search is active) -->
                     <Border Background="{StaticResource PrimaryBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="0,0,0,1"

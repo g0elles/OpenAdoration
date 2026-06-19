@@ -58,9 +58,11 @@ public partial class MainWindow : Window
         }
     }
 
-    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    // Tunneling (Preview) so projection/nav shortcuts fire regardless of which
+    // control has focus — bubbling OnKeyDown is swallowed by focused lists/buttons.
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
-        base.OnKeyDown(e);
+        base.OnPreviewKeyDown(e);
 
         // Never steal keys from text inputs
         if (FocusManager.GetFocusedElement(this) is

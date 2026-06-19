@@ -38,6 +38,18 @@ public partial class SettingsViewModel : BaseViewModel
 
     public bool ShowSavedConfirmation => IsSaved;
 
+    /// <summary>True once the operator edits a field without saving. Drives the prompt-on-leave.</summary>
+    [ObservableProperty] private bool _hasUnsavedChanges;
+
+    private bool    _loading;             // suppresses dirty-marking while Load() populates fields
+    private string? _loadedLanguageCode;  // for reverting the live language preview on discard
+
+    private void MarkDirty()
+    {
+        IsSaved = false;
+        if (!_loading) HasUnsavedChanges = true;
+    }
+
     /// <summary>Hosted on the Settings → Plugins tab (resolved in the same nav scope).</summary>
     public PluginsViewModel Plugins { get; }
 
@@ -66,9 +78,11 @@ public partial class SettingsViewModel : BaseViewModel
     {
         if (IsBusy) return;
         IsBusy = true;
+        _loading = true;
         ClearError();
         try
         {
+            _loadedLanguageCode = _localization.CurrentLanguageCode;
             var current = _settings.Current;
             ChurchName                  = current.ChurchName ?? string.Empty;
             ChurchCcliNumber            = current.ChurchCcliNumber ?? string.Empty;
@@ -84,7 +98,25 @@ public partial class SettingsViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            _loading = false;
+            HasUnsavedChanges = false;
         }
+    }
+
+    /// <summary>
+    /// Called by <see cref="MainViewModel"/> before navigating away. If there are pending edits,
+    /// asks the operator to save them; declining reverts the live language preview to the saved one.
+    /// </summary>
+    public void OnLeaving()
+    {
+        if (!HasUnsavedChanges) return;
+
+        if (_dialog.Confirm(L("Settings_LeaveUnsaved"), L("Settings_Title")))
+            _ = SaveAsync(); // _settings is a singleton — completes even as this scoped VM is disposed
+        else if (_loadedLanguageCode is not null)
+            _localization.SetLanguage(_loadedLanguageCode); // undo the live preview
+
+        HasUnsavedChanges = false;
     }
 
     [RelayCommand]
@@ -114,6 +146,8 @@ public partial class SettingsViewModel : BaseViewModel
             // Church tokens may appear in the active theme's header/footer — re-render.
             _projectionService.NotifyThemeChanged();
 
+            _loadedLanguageCode = SelectedLanguage?.Code ?? _loadedLanguageCode;
+            HasUnsavedChanges = false;
             IsSaved = true;
             _logger.LogInformation("Settings saved");
         }
@@ -221,20 +255,20 @@ public partial class SettingsViewModel : BaseViewModel
         finally { IsBusy = false; }
     }
 
-    partial void OnCheckForUpdatesOnStartupChanged(bool value) => IsSaved = false;
-    partial void OnSelectedTransitionChanged(SlideTransitionKind value) => IsSaved = false;
+    partial void OnCheckForUpdatesOnStartupChanged(bool value) => MarkDirty();
+    partial void OnSelectedTransitionChanged(SlideTransitionKind value) => MarkDirty();
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)
     {
         if (value is null) return;
         _localization.SetLanguage(value.Code); // live preview; persisted on Save
-        IsSaved = false;
+        MarkDirty();
     }
 
-    partial void OnChurchNameChanged(string value) => IsSaved = false;
-    partial void OnChurchCcliNumberChanged(string value) => IsSaved = false;
-    partial void OnDefaultAutoAdvanceSecondsChanged(int value) => IsSaved = false;
-    partial void OnDefaultBibleVersesPerSlideChanged(int value) => IsSaved = false;
-    partial void OnAnnouncementDurationSecondsChanged(int value) => IsSaved = false;
-    partial void OnSlideTransitionMillisecondsChanged(int value) => IsSaved = false;
+    partial void OnChurchNameChanged(string value) => MarkDirty();
+    partial void OnChurchCcliNumberChanged(string value) => MarkDirty();
+    partial void OnDefaultAutoAdvanceSecondsChanged(int value) => MarkDirty();
+    partial void OnDefaultBibleVersesPerSlideChanged(int value) => MarkDirty();
+    partial void OnAnnouncementDurationSecondsChanged(int value) => MarkDirty();
+    partial void OnSlideTransitionMillisecondsChanged(int value) => MarkDirty();
 }

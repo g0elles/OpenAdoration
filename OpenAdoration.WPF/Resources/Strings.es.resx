@@ -93,7 +93,7 @@
   <data name="Projection_Clear" xml:space="preserve"><value>Borrar</value></data>
   <data name="Projection_OpenScreen" xml:space="preserve"><value>Abrir pantalla</value></data>
   <data name="Projection_CloseScreen" xml:space="preserve"><value>Cerrar pantalla</value></data>
-  <data name="Projection_Blank" xml:space="preserve"><value>Negro</value></data>
+  <data name="Projection_Blank" xml:space="preserve"><value>Limpiar</value></data>
   <data name="Projection_Stop" xml:space="preserve"><value>Detener</value></data>
   <data name="Projection_Restart" xml:space="preserve"><value>Reiniciar video</value></data>
   <data name="Projection_Back" xml:space="preserve"><value>Retroceder 10 segundos</value></data>
@@ -151,12 +151,6 @@
   <data name="Bible_NoVersion" xml:space="preserve"><value>No hay ninguna versión de la Biblia importada</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Importa un archivo de la Biblia para empezar. Formatos admitidos: Zefania XML, OSIS XML, USFX XML y JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Importar archivo de la Biblia…</value></data>
-  <data name="Bible_SecondaryTooltip" xml:space="preserve"><value>Segunda versión opcional, debajo de la primera en cada diapositiva</value></data>
-  <data name="Bible_ClearSecondary" xml:space="preserve"><value>Quitar segunda versión</value></data>
-  <data name="Bible_Keyword" xml:space="preserve"><value>≡ Palabra clave</value></data>
-  <data name="Bible_KeywordTooltip" xml:space="preserve"><value>Alternar el modo de búsqueda por palabra clave</value></data>
-  <data name="Bible_Phrase" xml:space="preserve"><value>" " Frase</value></data>
-  <data name="Bible_PhraseTooltip" xml:space="preserve"><value>Buscar la frase exacta en lugar de todas las palabras</value></data>
   <data name="Bible_Import" xml:space="preserve"><value>Importar…</value></data>
   <data name="Bible_DeleteVersion" xml:space="preserve"><value>Eliminar versión</value></data>
   <data name="Bible_Freeze" xml:space="preserve"><value>🔒 Congelar</value></data>
@@ -164,9 +158,7 @@
   <data name="Bible_Project" xml:space="preserve"><value>▶▶ Proyectar</value></data>
   <data name="Bible_SearchResults" xml:space="preserve"><value>Resultados de búsqueda para "{0}"</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Selecciona un libro y luego toca el número de capítulo</value></data>
-  <data name="Bible_PlaceholderPhrase" xml:space="preserve"><value>Escribe la frase exacta a buscar…</value></data>
-  <data name="Bible_PlaceholderKeyword" xml:space="preserve"><value>Escribe palabra(s) clave a buscar…</value></data>
-  <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18</value></data>
+  <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18, o escribe palabra(s) clave para buscar</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
   <data name="Media_Import" xml:space="preserve"><value>+ Importar</value></data>
   <data name="Media_ImportFolder" xml:space="preserve"><value>+ Importar carpeta</value></data>
@@ -394,6 +386,7 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Themes_ErrDelete" xml:space="preserve"><value>No se pudo eliminar el tema.</value></data>
   <data name="Stage_ErrLoad" xml:space="preserve"><value>No se pudo cargar la vista de escenario.</value></data>
   <data name="Settings_ErrSave" xml:space="preserve"><value>No se pudo guardar la configuración.</value></data>
+  <data name="Settings_LeaveUnsaved" xml:space="preserve"><value>Tienes cambios sin guardar. ¿Guardarlos antes de salir?</value></data>
   <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Crear copia de seguridad</value></data>
   <data name="Settings_BackupFilter" xml:space="preserve"><value>Copia de OpenAdoration (*.oabak)</value></data>
   <data name="Settings_BackupCreated" xml:space="preserve"><value>Copia de seguridad creada correctamente.</value></data>

@@ -207,6 +207,7 @@
                            Text="{TemplateBinding Tag}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
                            IsHitTestVisible="False"
                            Visibility="Collapsed" />
                 <ScrollViewer x:Name="PART_ContentHost"

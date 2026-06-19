@@ -22,7 +22,7 @@ M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
 | M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`) |
 | M10.1 Transition library | 🔶 Partial — Fade + Cut only (no Slide/Zoom) |
 | M10.2 Persistent lower-thirds | ❌ Not started (only the auto-dismiss announcement banner) |
-| M10.3 Dual-version scripture | ❌ Not started |
+| M10.3 Dual-version scripture | 🚫 Dropped (2026-06-18 QA — operator found the secondary picker confusing; built then removed) |
 | M10.4 Clean livestream output | ❌ Not started (stretch) |
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
 | M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
@@ -505,8 +505,8 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 ### 10.2 — Lower-thirds / persistent overlays
 - Beyond the announcement banner: named overlays (speaker, sermon title, scripture ref) that **persist across slide changes** until cleared, rendered by `ProjectionWindow` + Stage View. Managed from a small overlays panel. Builds on the existing `AnnouncementChanged` overlay plumbing.
 
-### 10.3 — Dual-version scripture
-- Project two Bible versions on one slide (e.g. heart-language + lingua-franca). `IBibleService.GenerateSlides` gains an optional secondary `BibleVersion`; theme layout gains a two-zone body. Reuses the verses-per-slide chunking.
+### 10.3 — Dual-version scripture 🚫 DROPPED (2026-06-18)
+- Was built (stacked secondary verses + secondary version picker) but **removed during the v2.0 QA pass**: the operator found the extra picker/toggles confusing and didn't want the feature. Service params, VM members, the picker UI, and the dual-version tests were deleted. Revisit only if a church actually requests it — likely as a proper two-zone theme layout, not a stacked body.
 
 ### 10.4 — Clean output for livestream *(stretch)*
 - A second **clean** output (slide content only, no operator overlays) for OBS capture; optional **NDI** sender if a clean managed/native path exists. Start with a clean borderless output window before committing to NDI (native SDK).

@@ -131,6 +131,9 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         if (CurrentView is T)
             return;
 
+        // Prompt to save/discard pending Settings edits before tearing down its scope.
+        (CurrentView as SettingsViewModel)?.OnLeaving();
+
         var oldScope = _currentScope;
 
         // If leaving a live service, park the VM + scope instead of destroying them.
@@ -233,6 +236,7 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     {
         StopAnnouncementTimer();
         _projectionService.ClearAnnouncement();
+        AnnouncementText = string.Empty;
     }
 
     [RelayCommand]
@@ -243,7 +247,11 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     }
 
     [RelayCommand]
-    private void ClearLowerThird() => _projectionService.ClearLowerThird();
+    private void ClearLowerThird()
+    {
+        _projectionService.ClearLowerThird();
+        LowerThirdText = string.Empty;
+    }
 
     private void StartAnnouncementTimer()
     {

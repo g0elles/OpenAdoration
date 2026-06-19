@@ -50,7 +50,7 @@ public sealed class PluginBibleImporterTests
         public Task<BibleVerse?> GetVerseAsync(int versionId, string book, int chapter, int verse, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<BibleVerse>> SearchAsync(int versionId, string term, BibleSearchMode mode = BibleSearchMode.Keyword, int maxResults = 100, CancellationToken ct = default) => throw new NotImplementedException();
         public Task DeleteVersionAsync(int versionId, CancellationToken ct = default) => throw new NotImplementedException();
-        public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null, IReadOnlyList<BibleVerse>? secondaryVerses = null, BibleVersion? secondaryVersion = null) => throw new NotImplementedException();
-        public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null, IReadOnlyList<BibleVerse>? secondaryVerses = null, BibleVersion? secondaryVersion = null) => throw new NotImplementedException();
+        public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null) => throw new NotImplementedException();
+        public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null) => throw new NotImplementedException();
     }
 }

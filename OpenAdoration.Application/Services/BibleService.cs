@@ -150,8 +150,7 @@ public sealed class BibleService : IBibleService
         }
     }
 
-    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null,
-                               IReadOnlyList<BibleVerse>? secondaryVerses = null, BibleVersion? secondaryVersion = null)
+    public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null)
     {
         ArgumentNullException.ThrowIfNull(verses);
 
@@ -161,14 +160,6 @@ public sealed class BibleService : IBibleService
         var content = new StringBuilder();
         foreach (var verse in verses)
             content.AppendLine($"{verse.Verse} {verse.Text}");
-
-        var hasSecondary = secondaryVerses is { Count: > 0 };
-        if (hasSecondary)
-        {
-            content.AppendLine();
-            foreach (var verse in secondaryVerses!)
-                content.AppendLine($"{verse.Verse} {verse.Text}");
-        }
 
         string label = verses.Count == 1
             ? verses[0].Reference
@@ -182,17 +173,14 @@ public sealed class BibleService : IBibleService
                                    ? verses[0].Verse.ToString()
                                    : $"{verses[0].Verse}-{verses[^1].Verse}",
             BibleReference   = label,
-            BibleDescription = hasSecondary && secondaryVersion is not null
-                                   ? $"{version?.Name} · {secondaryVersion.Name}"
-                                   : version?.Name
+            BibleDescription = version?.Name
         };
 
         return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId, context: context);
     }
 
     public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null,
-                               BibleVersion? version = null, IReadOnlyList<BibleVerse>? secondaryVerses = null,
-                               BibleVersion? secondaryVersion = null)
+                               BibleVersion? version = null)
     {
         ArgumentNullException.ThrowIfNull(verses);
 
@@ -205,16 +193,7 @@ public sealed class BibleService : IBibleService
         for (var i = 0; i < verses.Count; i += chunkSize)
         {
             var chunk = verses.Skip(i).Take(chunkSize).ToList();
-
-            // Pair the second version's verses by number (handles versification gaps gracefully).
-            List<BibleVerse>? secondaryChunk = null;
-            if (secondaryVerses is { Count: > 0 })
-            {
-                var numbers = chunk.Select(v => v.Verse).ToHashSet();
-                secondaryChunk = secondaryVerses.Where(v => numbers.Contains(v.Verse)).ToList();
-            }
-
-            slides.Add(GenerateSlide(chunk, themeId, version, secondaryChunk, secondaryVersion));
+            slides.Add(GenerateSlide(chunk, themeId, version));
         }
 
         return slides;

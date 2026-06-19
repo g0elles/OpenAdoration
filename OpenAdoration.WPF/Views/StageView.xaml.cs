@@ -25,6 +25,20 @@ public partial class StageView : System.Windows.Controls.UserControl
     {
         if (e.PropertyName is nameof(StageViewModel.CurrentPreview) or nameof(StageViewModel.NextPreview))
             Dispatcher.InvokeAsync(SyncVideoSources);
+        else if (e.PropertyName is nameof(StageViewModel.IsPreviewVideoPlaying))
+            Dispatcher.InvokeAsync(SyncVideoPlayback);
+    }
+
+    // Mirror the projector's play/pause onto the current-slide preview (UP NEXT keeps looping).
+    private async void SyncVideoPlayback()
+    {
+        if (_vm is null) return;
+        try
+        {
+            if (_vm.IsPreviewVideoPlaying) await CurrentVideoMedia.Play();
+            else await CurrentVideoMedia.Pause();
+        }
+        catch { /* preview transport is best-effort */ }
     }
 
     private void SyncVideoSources()

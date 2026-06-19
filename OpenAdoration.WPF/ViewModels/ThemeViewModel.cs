@@ -12,6 +12,7 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
 {
     private readonly IThemeService           _themeService;
     private readonly IDialogService          _dialogService;
+    private readonly IProjectionService      _projectionService;
     private readonly ILogger<ThemeViewModel> _logger;
 
     public AddEditThemeViewModel EditViewModel { get; }
@@ -23,13 +24,15 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
     public ThemeViewModel(
         IThemeService           themeService,
         IDialogService          dialogService,
+        IProjectionService      projectionService,
         AddEditThemeViewModel   editViewModel,
         ILogger<ThemeViewModel> logger)
     {
-        _themeService  = themeService;
-        _dialogService = dialogService;
-        _logger        = logger;
-        EditViewModel  = editViewModel;
+        _themeService      = themeService;
+        _dialogService     = dialogService;
+        _projectionService = projectionService;
+        _logger            = logger;
+        EditViewModel      = editViewModel;
 
         EditViewModel.Saved     += OnThemeSaved;
         EditViewModel.Cancelled += OnEditCancelled;
@@ -84,6 +87,8 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
         try
         {
             await _themeService.SetDefaultAsync(theme.Id);
+            // Invalidate cached default in live projection + stage preview (G22-style refresh).
+            _projectionService.NotifyThemeChanged();
             _logger.LogInformation("Theme {ThemeId} set as default", theme.Id);
         }
         catch (Exception ex)
