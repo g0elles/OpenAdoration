@@ -27,9 +27,12 @@ public partial class App : WpfApp
     {
         base.OnStartup(e);
 
-        var appDataDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenAdoration");
+        // OA_DATA_DIR overrides the data location (e2e isolation, portable installs);
+        // falls back to %LOCALAPPDATA%\OpenAdoration.
+        var appDataDir = Environment.GetEnvironmentVariable("OA_DATA_DIR")
+            ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OpenAdoration");
 
         var dbPath       = Path.Combine(appDataDir, "openadoration.db");
         var settingsPath = Path.Combine(appDataDir, "settings.json");
