@@ -658,6 +658,22 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
 - **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
 
+### 14.x — G27 Runtime theme swapping (Light/Dark) — PLANNED (drafted 2026-06-19)
+Converts the app chrome from a single hardcoded dark palette to runtime-swappable Light/Dark, flipping G27 from ⚠️ASPIRATION to ✅ENFORCED. App chrome only — projection *content* is theme-entity driven and out of scope.
+
+**Measured state:** `Styles/Colors.xaml` = 10 `Color` + 10 `SolidColorBrush`, merged in `App.xaml`. **393** `StaticResource …Brush` refs, **0** DynamicResource (736 total StaticResource — the other ~343 are styles/converters/templates and stay static). No appearance field in `AppSettings`. 43 inline-hex colors in 10 files bypass the palette.
+
+**Decisions (with user 2026-06-19):** Light palette = *I propose a table, user approves* (same accent `#7C6AF7`). **No "follow system"** — explicit Light/Dark only, **default Dark** (no change for existing users). Persist as `AppSettings.Appearance`.
+
+**Phases:**
+1. **Mechanical (low-risk, independently shippable):** surgical regex `{StaticResource (\w*Brush)}` → `{DynamicResource \1}` — the `Brush` suffix touches only the 393 brush refs, never styles/converters or the `…Color`→brush refs inside `Colors.xaml`. Verify: `oa-e2e` screenshot every view, must be pixel-identical (still dark).
+2. **Palette + swap:** rename `Colors.xaml`→`Colors.Dark.xaml`, add `Colors.Light.xaml` (same 10 keys); `IAppThemeService` (singleton) merges the right palette at startup and swaps the dictionary instance on change — DynamicResource consumers re-resolve live.
+3. **Setting + UI:** `AppSettings.Appearance` (enum Dark/Light, default Dark, JSON); Settings→General toggle (en/es), wired through the service, dirty+save.
+4. **Inline-hex cleanup (scoped):** convert only chrome hex that looks wrong in Light (~10–15 in views); leave `ProjectionWindow` overlay hex + deliberate fixed colors; flag the rest accepted.
+5. **Verify both themes:** `oa-e2e` capture every view in Dark *and* Light (OA_DATA_DIR-seeded settings.json per appearance); resx parity; update `ARCHITECTURE.md`; flip G27 in CLAUDE.md to ✅ENFORCED.
+
+**Risks:** a few brush refs may sit where DynamicResource is awkward (frozen Freezables/GradientStops) — Phase 1 screenshot-diff catches them. Light-palette contrast is the real design work, not the wiring. **Effort:** ~3 focused sessions; Phase 1 independently shippable.
+
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
 
 ---
