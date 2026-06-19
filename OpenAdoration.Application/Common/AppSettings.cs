@@ -42,6 +42,9 @@ public sealed class AppSettings
     /// </summary>
     public SlideTransitionKind SlideTransition { get; set; } = SlideTransitionKind.Fade;
 
+    /// <summary>App-chrome appearance (Light/Dark). Default Dark — projection output is unaffected.</summary>
+    public AppearanceMode Appearance { get; set; } = AppearanceMode.Dark;
+
     /// <summary>
     /// UI language as a two-letter ISO code (e.g. "en", "es"). Null/empty = follow the
     /// operating system language when supported, otherwise English.

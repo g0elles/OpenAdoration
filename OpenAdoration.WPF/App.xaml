@@ -9,7 +9,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Styles/Colors.xaml" />
+                <!-- Default palette; AppThemeService swaps this at startup per AppSettings.Appearance. -->
+                <ResourceDictionary Source="Styles/Colors.Dark.xaml" />
                 <ResourceDictionary Source="Styles/Base.xaml" />
             </ResourceDictionary.MergedDictionaries>
 

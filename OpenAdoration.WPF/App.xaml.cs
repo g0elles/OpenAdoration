@@ -133,6 +133,10 @@ public partial class App : WpfApp
         // frame renders in the correct language (the service applies it in its ctor).
         _host.Services.GetRequiredService<ILocalizationService>();
 
+        // Apply the saved app-chrome appearance (Light/Dark) before the first window renders.
+        _host.Services.GetRequiredService<IAppThemeService>()
+            .Apply(_host.Services.GetRequiredService<IAppSettingsService>().Current.Appearance);
+
         // Discover + load installed plugins (each isolated; failures are logged, not fatal).
         _host.Services.GetRequiredService<PluginManager>().LoadAll();
 
@@ -211,6 +215,7 @@ public partial class App : WpfApp
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
+        services.AddSingleton<IAppThemeService, AppThemeService>();
         services.AddSingleton(sp => new PluginManager(
             Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0),
             sp.GetRequiredService<ILoggerFactory>(),

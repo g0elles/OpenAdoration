@@ -666,9 +666,9 @@ Converts the app chrome from a single hardcoded dark palette to runtime-swappabl
 **Decisions (with user 2026-06-19):** Light palette = *I propose a table, user approves* (same accent `#7C6AF7`). **No "follow system"** — explicit Light/Dark only, **default Dark** (no change for existing users). Persist as `AppSettings.Appearance`.
 
 **Phases:**
-1. **Mechanical (low-risk, independently shippable):** surgical regex `{StaticResource (\w*Brush)}` → `{DynamicResource \1}` — the `Brush` suffix touches only the 393 brush refs, never styles/converters or the `…Color`→brush refs inside `Colors.xaml`. Verify: `oa-e2e` screenshot every view, must be pixel-identical (still dark).
-2. **Palette + swap:** rename `Colors.xaml`→`Colors.Dark.xaml`, add `Colors.Light.xaml` (same 10 keys); `IAppThemeService` (singleton) merges the right palette at startup and swaps the dictionary instance on change — DynamicResource consumers re-resolve live.
-3. **Setting + UI:** `AppSettings.Appearance` (enum Dark/Light, default Dark, JSON); Settings→General toggle (en/es), wired through the service, dirty+save.
+1. ✅ **DONE (2026-06-19):** surgical regex `{StaticResource (\w*Brush)}` → `{DynamicResource \1}` — 393 brush refs converted, 2 converter false-positives (`ColorToBrush`/`HexToBrush`) reverted. GUI-verified unchanged dark.
+2. ✅ **DONE (2026-06-19):** `Colors.Dark.xaml` (renamed) + `Colors.Light.xaml` (approved palette); `IAppThemeService`/`AppThemeService` (WPF singleton) replaces the palette merged-dict in `Application.Current.Resources` (finds the dict containing `PrimaryBrush`); applied at startup from `AppSettings.Appearance`. **`AppSettings.Appearance` (enum Dark/Light, default Dark) pulled forward from phase 3** so the swap is verifiable. GUI-verified: seeded `Appearance:1`→Light, default→Dark, both legible.
+3. **Setting UI (remaining):** Settings→General appearance toggle (en/es), wired through `IAppThemeService.Apply` for **live** swap (no restart), dirty+save. (Field + service already exist.)
 4. **Inline-hex cleanup (scoped):** convert only chrome hex that looks wrong in Light (~10–15 in views); leave `ProjectionWindow` overlay hex + deliberate fixed colors; flag the rest accepted.
 5. **Verify both themes:** `oa-e2e` capture every view in Dark *and* Light (OA_DATA_DIR-seeded settings.json per appearance); resx parity; update `ARCHITECTURE.md`; flip G27 in CLAUDE.md to ✅ENFORCED.
 
