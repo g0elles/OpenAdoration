@@ -7,28 +7,30 @@
 
 ---
 
-## v2.0 progress snapshot — real state (verified against code 2026-06-17)
+## v2.0 progress snapshot — real state (verified against code 2026-06-18)
 
 Milestones were **not** done in order — church priorities pulled M12 (VideoPsalm),
 M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
+All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentionally unshipped**
+— no version tag / MSI / GitHub release until the remaining roadmap items are done.
 
 | Item | Verdict |
 |---|---|
 | M8.1 Backup/Restore (`.oabak`) | ✅ Done — `IBackupService`/`ZipBackupService`, Settings UI, staged DB swap on restart |
-| M8.2 Auto-update (`IUpdateService`) | ❌ Not started (releases are published, but **no in-app updater consumes them yet**) |
-| M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions) |
-| M9.1 More song importers | ❌ Not started (only OpenLyrics/OpenSong/PlainText/VideoPsalm) |
-| M9.2 Image-folder / PDF / pptx decks | ❌ Not started |
-| M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`) |
-| M10.1 Transition library | 🔶 Partial — Fade + Cut only (no Slide/Zoom) |
-| M10.2 Persistent lower-thirds | ❌ Not started (only the auto-dismiss announcement banner) |
+| M8.2 Auto-update (`IUpdateService`) | ✅ Done — `GitHubUpdateService` (releases/latest → SemVer → MSI), opt-in startup check, Settings UPDATES |
+| M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions: ci/release/codeql) |
+| M9.1 More song importers | 🔶 ChordPro done (`.cho/.crd/.chopro/.chordpro`); EasyWorship + ProPresenter **moved to backlog** (blocked — need real export samples; see Backlog below) |
+| M9.2 Image-folder / PDF / pptx decks | 🔶 Image-folder import done; PDF + pptx decks deferred (native dep: Docnet/PDFium) |
+| M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`; consolidated to one smart search box 2026-06-18) |
+| M10.1 Transition library | ✅ Done — Cut / Fade / Slide / Zoom (`SlideTransitionKind`) |
+| M10.2 Persistent lower-thirds | ✅ Done — `ShowLowerThird`/`ClearLowerThird`, flush-bottom bar, operator controls |
 | M10.3 Dual-version scripture | 🚫 Dropped (2026-06-18 QA — operator found the secondary picker confusing; built then removed) |
-| M10.4 Clean livestream output | ❌ Not started (stretch) |
+| M10.4 Clean livestream output | ❌ Not started (stretch — clean output window, optional NDI) |
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
-| M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
+| M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
-| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX); 13.4 api.bible connector is a separate repo |
-| M14 Content-level theming | ❌ Not started |
+| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
+| M14 Content-level theming | 🔶 In progress — **14.1 done** (`Song.ThemeId` + per-content-type default themes in `AppSettings` + migration `AddSongThemeId`, all nullable/backward-compatible, nothing reads them yet). Next: 14.2 cascade resolver. Also pending: per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
 
 ---
 
@@ -655,6 +657,21 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
 
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
+
+---
+
+## Backlog (deferred — not blocking v2.0)
+
+Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a church asks.
+
+| Item | Why parked |
+|---|---|
+| M9.1 EasyWorship import | Needs a **real EW7 export** to validate the SQLite schema — can't build blind. |
+| M9.1 ProPresenter import | Needs a real `.pro`/bundle sample. |
+| M9.2 PDF / pptx deck import | Native dependency decision (Docnet/PDFium for PDF; pptx unzip) — heavyweight, defer. |
+| M10.4 Clean output / NDI *(stretch)* | Clean borderless output is doable later; NDI needs a native SDK. |
+| ChordPro in import tooltip/format string | 2-line cosmetic copy fix (both langs) — fold into the next i18n touch. |
+| **NU1903** — `SQLitePCLRaw.lib.e_sqlite3 2.1.11` high-severity advisory (transitive via `EFCore.Sqlite 10.0.9`) | Fix is a **major** SQLitePCLRaw 2.x→3.x bump that changes native SQLite loading (single-file publish risk). Needs a dedicated bump + GUI/publish verification — let dependabot propose it on `dev` and verify, don't blind-bump. Surfaced 2026-06-18. |
 
 ---
 

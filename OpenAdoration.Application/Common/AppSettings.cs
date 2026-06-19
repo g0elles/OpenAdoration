@@ -51,4 +51,17 @@ public sealed class AppSettings
     /// the only outbound network call the app makes.
     /// </summary>
     public bool CheckForUpdatesOnStartup { get; set; }
+
+    // ── Per-content-type default themes (M14 cascade) ────────────────────────────
+    // Null = fall back to the app-wide default theme (Theme.IsDefault). These sit between
+    // the content's own theme and the app default in the resolution cascade.
+
+    /// <summary>Default theme for songs that don't carry their own <c>Song.ThemeId</c>.</summary>
+    public int? DefaultSongThemeId { get; set; }
+
+    /// <summary>Default theme for scripture slides.</summary>
+    public int? DefaultScriptureThemeId { get; set; }
+
+    /// <summary>Default theme for media slides.</summary>
+    public int? DefaultMediaThemeId { get; set; }
 }
