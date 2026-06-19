@@ -71,7 +71,8 @@
                             </TextBox.InputBindings>
                         </TextBox>
                         <Button Grid.Column="1"
-                                Content="🔍"
+                                Content="&#xE721;"
+                                FontFamily="Segoe Fluent Icons"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding SearchCommand}"
                                 Padding="8,6" />

@@ -30,7 +30,7 @@ All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentio
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
 | M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
-| M14 Content-level theming | 🔶 In progress — **14.1–14.4 + per-theme `SlideTransition` done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified). Remaining: DynamicResource (G27), M14.5 Fluent icons |
+| M14 Content-level theming | 🔶 In progress — **14.1–14.4 + per-theme `SlideTransition` done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified; M14.5 color-emoji → Segoe Fluent Icons (🔍🖼🎬📖, GUI-verified)). Remaining: DynamicResource (G27); M14.5 optional full geometric-glyph unification (✕✎★▲▼◀▶+− render consistently already — deferred as churn/risk) |
 
 ---
 

@@ -61,7 +61,8 @@
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="{Binding HasMedia, Converter={StaticResource InverseBoolToVis}}">
-                    <TextBlock Text="🖼"
+                    <TextBlock Text="&#xE91B;"
+                               FontFamily="Segoe Fluent Icons"
                                FontSize="56"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,16" />
@@ -132,7 +133,8 @@
                                                        Stretch="UniformToFill" />
 
                                                 <!-- Video icon overlay — visible only when Type is Video -->
-                                                <TextBlock Text="🎬"
+                                                <TextBlock Text="&#xE714;"
+                                                           FontFamily="Segoe Fluent Icons"
                                                            FontSize="32"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center">

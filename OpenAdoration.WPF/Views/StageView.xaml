@@ -105,9 +105,11 @@
                         <!-- Layer 3: video background placeholder -->
                         <Border Background="#CC000000"
                                 Visibility="{Binding CurrentPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="🎬  Video background active"
-                                       Foreground="#AAFFFFFF" FontSize="60"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Foreground="#AAFFFFFF" FontSize="60"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
+                                <Run Text="  Video background active" />
+                            </TextBlock>
                         </Border>
 
                         <!-- Layer 4: Song / Bible 3-zone text layout -->
@@ -249,9 +251,11 @@
 
                             <Border Background="#CC000000"
                                     Visibility="{Binding NextPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="🎬  Video background active"
-                                           Foreground="#AAFFFFFF" FontSize="60"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <TextBlock Foreground="#AAFFFFFF" FontSize="60"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
+                                    <Run Text="  Video background active" />
+                                </TextBlock>
                             </Border>
 
                             <Grid Visibility="{Binding NextPreview.IsText, Converter={StaticResource BoolToVis}}">
