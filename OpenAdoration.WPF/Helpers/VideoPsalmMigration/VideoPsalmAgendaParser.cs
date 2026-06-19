@@ -32,7 +32,7 @@ public static partial class VideoPsalmAgendaParser
         if (items.Count == 0)
             throw new InvalidDataException("The VideoPsalm agenda contains no recognizable items.");
 
-        return new VpAgenda(items);
+        return new VpAgenda(items) { RootStyle = styles.Root };
     }
 
     private static VpAgendaItem? TryBuildItem(
@@ -133,14 +133,14 @@ public static partial class VideoPsalmAgendaParser
     /// Pre-merged style bases per content type: <c>RootStyle ← &lt;Type&gt;Style</c>. A per-item
     /// <c>Style</c> (songs only) merges on top later. See VIDEOPSALM_REFERENCE.md §8b.
     /// </summary>
-    private sealed record VpStyleBases(VpStyle SongBase, VpStyle ScriptureBase);
+    private sealed record VpStyleBases(VpStyle Root, VpStyle SongBase, VpStyle ScriptureBase);
 
     private static VpStyleBases ParseStyleBases(ZipArchive archive)
     {
         var root = VpStyleReader.Read(ReadDict(archive.GetEntry("RootStyle.json")));
         var songType = VpStyleReader.Read(ReadDict(archive.GetEntry("SongBookStyle.json")));
         var bibleType = VpStyleReader.Read(ReadDict(archive.GetEntry("BibleStyle.json")));
-        return new VpStyleBases(root.Merge(songType), root.Merge(bibleType));
+        return new VpStyleBases(root, root.Merge(songType), root.Merge(bibleType));
     }
 
     private static IReadOnlyList<VpItemProperties> ParseProperties(ZipArchive archive)

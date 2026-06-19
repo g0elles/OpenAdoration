@@ -12,9 +12,12 @@ namespace OpenAdoration.WPF.Helpers.VideoPsalmMigration;
 /// Builds a <see cref="WorshipService"/> from a VideoPsalm <c>.vpagd</c> agenda in true
 /// (zip) order: songs (dedup by <see cref="Song.SourceGuid"/>), scripture as <b>references
 /// only</b> (verse text never harvested — licensed), media (dedup by content hash, bytes
-/// extracted to the media store). Song/scripture items also get a reconstructed
-/// <see cref="Theme"/> (font, color, background, scripture templates) deduped within the import.
-/// Re-importing the same archive is detected and skipped. See ROADMAP.md M12.3/M12.4.
+/// extracted to the media store). Reconstructed <see cref="Theme"/>s (font, color, background,
+/// scripture templates) are assigned at <b>content level</b> per the M14 cascade (M14.4): a song's
+/// style → its own <c>Song.ThemeId</c>; BibleStyle → the Scripture content-type default; RootStyle →
+/// the app-default theme — defaults set only when unset, never clobbering operator choices, so schedule
+/// items stay theme-null and inherit. Re-importing the same archive is detected and skipped. See
+/// ROADMAP.md M12.3/M12.4 + M14.4.
 /// </summary>
 public sealed class VideoPsalmServiceImporter
 {
@@ -32,17 +35,20 @@ public sealed class VideoPsalmServiceImporter
     private readonly IWorshipServiceService _services;
     private readonly IBibleService _bible;
     private readonly IThemeService _themes;
+    private readonly IAppSettingsService _settings;
     private readonly ILogger<VideoPsalmServiceImporter> _logger;
 
     public VideoPsalmServiceImporter(
         ISongService songs, IMediaService media, IWorshipServiceService services,
-        IBibleService bible, IThemeService themes, ILogger<VideoPsalmServiceImporter> logger)
+        IBibleService bible, IThemeService themes, IAppSettingsService settings,
+        ILogger<VideoPsalmServiceImporter> logger)
     {
         _songs = songs;
         _media = media;
         _services = services;
         _bible = bible;
         _themes = themes;
+        _settings = settings;
         _logger = logger;
     }
 
@@ -83,6 +89,9 @@ public sealed class VideoPsalmServiceImporter
                 ct.ThrowIfCancellationRequested();
                 await ImportItemAsync(service.Id, item, ctx, ct);
             }
+
+            // VP RootStyle → OA app-default theme (cascade's lowest rung). Once, never clobbering.
+            await ApplyRootDefaultAsync(agenda.RootStyle, ctx, ct);
         }
         catch
         {
@@ -135,11 +144,19 @@ public sealed class VideoPsalmServiceImporter
         var existing = item.Song.SourceGuid is { } guid ? await _songs.GetBySourceGuidAsync(guid, ct) : null;
         int songId;
         if (existing is not null) { songId = existing.Id; ctx.Counters.SongsReused++; }
-        else { songId = (await _songs.CreateAsync(item.Song, ct)).Id; ctx.Counters.SongsImported++; }
+        else
+        {
+            // M14.4: the song's VP style becomes the song's own content theme (Song.ThemeId), so it
+            // travels with the song everywhere — standalone or in any service. Templates in VP are
+            // operator scratch text, not tokens — skip them; keep font + background. New songs only;
+            // a reused song keeps whatever theme it already had.
+            item.Song.ThemeId = await ResolveThemeAsync(item.Style, includeTemplates: false, "Songs", ctx, ct);
+            songId = (await _songs.CreateAsync(item.Song, ct)).Id;
+            ctx.Counters.SongsImported++;
+        }
 
-        // Song templates in VP are operator scratch text, not tokens — skip them; keep font + background.
-        var themeId = await ResolveThemeAsync(item.Style, includeTemplates: false, "Songs", ctx, ct);
-        await _services.AddSongItemAsync(serviceId, songId, themeId, autoAdvance, ct);
+        // Schedule item carries no theme — it inherits Song.ThemeId through the cascade.
+        await _services.AddSongItemAsync(serviceId, songId, themeId: null, autoAdvance, ct);
     }
 
     private async Task ImportScriptureAsync(int serviceId, VpAgendaItem item, int? autoAdvance, ImportContext ctx, CancellationToken ct)
@@ -147,11 +164,15 @@ public sealed class VideoPsalmServiceImporter
         var s = item.Scripture!;
         int? versionId = ctx.Versions.TryGetValue(s.VersionAbbreviation.ToUpperInvariant(), out var id) ? id : null;
 
+        // M14.4: VP's BibleStyle → OA's Scripture content-type default (set once per import, only
+        // when the user has none). All scripture in a VP agenda shares one base style, so this is
+        // one theme instead of one-per-item.
+        await EnsureScriptureDefaultAsync(item.Style, ctx, ct);
+
         // Reference only — verse text is licensed and intentionally not stored; it resolves
         // at projection time from whatever version the church has legally installed.
-        var themeId = await ResolveThemeAsync(item.Style, includeTemplates: true, "Scripture", ctx, ct);
         await _services.AddBibleItemAsync(
-            serviceId, s.BookName, s.Chapter, s.VerseStart, s.VerseEnd, versionId, themeId, autoAdvance, ct);
+            serviceId, s.BookName, s.Chapter, s.VerseStart, s.VerseEnd, versionId, themeId: null, autoAdvance, ct);
         ctx.Counters.ScriptureReferences++;
     }
 
@@ -195,6 +216,31 @@ public sealed class VideoPsalmServiceImporter
         ctx.Counters.ThemesCreated++;
         ctx.ThemeCache[signature] = theme.Id;
         return theme.Id;
+    }
+
+    /// <summary>VP BibleStyle → Scripture content-type default. Only when the user has none set.</summary>
+    private async Task EnsureScriptureDefaultAsync(VpStyle? style, ImportContext ctx, CancellationToken ct)
+    {
+        if (style is null || style == VpStyle.Empty) return;
+        if (_settings.Current.DefaultScriptureThemeId is not null) return; // never clobber an existing choice
+
+        _settings.Current.DefaultScriptureThemeId =
+            await ResolveThemeAsync(style, includeTemplates: true, "Scripture", ctx, ct);
+        await _settings.SaveAsync(_settings.Current, ct);
+    }
+
+    /// <summary>VP RootStyle → the app-default theme. Only when the current default was never hand-edited.</summary>
+    private async Task ApplyRootDefaultAsync(VpStyle root, ImportContext ctx, CancellationToken ct)
+    {
+        if (root == VpStyle.Empty) return;
+
+        // "Unset" = the default theme has never been modified since creation (seed, or a prior
+        // auto-import). The moment the operator edits it, UpdatedAt advances and imports leave it be.
+        var current = await _themes.GetDefaultAsync(ct);
+        if (current.UpdatedAt != current.CreatedAt) return;
+
+        if (await ResolveThemeAsync(root, includeTemplates: true, "Root", ctx, ct) is { } themeId)
+            await _themes.SetDefaultAsync(themeId, ct);
     }
 
     /// <summary>Extracts a style background (image/video) by basename to the media store; cached per import.</summary>

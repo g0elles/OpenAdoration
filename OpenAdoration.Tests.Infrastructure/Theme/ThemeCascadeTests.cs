@@ -1,7 +1,7 @@
 using OpenAdoration.Application.Common;
 using Xunit;
 
-namespace OpenAdoration.Tests.Infrastructure.Theme;
+namespace OpenAdoration.Tests.Infrastructure.Theming;
 
 public sealed class ThemeCascadeTests
 {

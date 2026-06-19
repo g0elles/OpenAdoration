@@ -30,7 +30,7 @@ All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentio
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
 | M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
-| M14 Content-level theming | 🔶 In progress — **14.1 + 14.2 + 14.3 done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor theme picker + Settings "Content themes" default pickers). Next: 14.4 fold VP import into the cascade. Also pending: per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
+| M14 Content-level theming | 🔶 In progress — **14.1–14.4 done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded). Remaining: per-theme `SlideTransition`, DynamicResource (G27), M14.5 Fluent icons |
 
 ---
 
@@ -650,8 +650,9 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - "Content themes" section in Settings → General: Songs / Scripture / Media default-theme pickers ("App default" sentinel) → `AppSettings.Default{Song,Scripture,Media}ThemeId`. Save fires `NotifyThemeChanged()` so a changed default refreshes a live projection. App-wide default stays the existing Themes-page "Set default".
 - Shared `ThemeOption` record drives both pickers (null Id = inherit sentinel). New en/es resx keys (`SongEdit_Theme*`, `Settings_*Theme*`). Build 0/0, tests 67/67.
 
-### 14.4 — Fold M12.4 into the cascade
-- VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
+### 14.4 — Fold M12.4 into the cascade ✅
+- VideoPsalm import now targets the right cascade level instead of minting a per-schedule-item theme: a song's style → its own `Song.ThemeId` (new songs only; reused songs keep theirs); `BibleStyle` → `DefaultScriptureThemeId`; `RootStyle` → the app-default theme. Schedule items are left theme-null and inherit. Collapses theme proliferation and matches VP's model.
+- **Guarded ("set defaults only if unset", agreed 2026-06-19):** Scripture default applied only when `DefaultScriptureThemeId is null`; RootStyle→app-default applied only when the current default theme was never hand-edited (`UpdatedAt == CreatedAt`) — so an import never clobbers an operator's deliberate theme choices. Parser now surfaces `VpAgenda.RootStyle` (was internal-only); `VideoPsalmServiceImporter` gained `IAppSettingsService`. +1 parser test (68 total).
 
 ### 14.5 — Icon system: emoji → Fluent font, decoupled from resx
 - Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
