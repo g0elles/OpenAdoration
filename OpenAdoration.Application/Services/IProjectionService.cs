@@ -67,6 +67,25 @@ public interface IProjectionService
     /// <summary>Fires when <see cref="CurrentAnnouncement"/> changes (shown, replaced, or cleared).</summary>
     event EventHandler? AnnouncementChanged;
 
+    /// <summary>
+    /// Shows a persistent lower-third overlay (speaker, sermon title, scripture ref) that
+    /// stays across slide changes until cleared. Unlike an announcement it never auto-dismisses.
+    /// No-op when not projecting; replaces any lower-third already showing.
+    /// </summary>
+    void ShowLowerThird(string text);
+
+    /// <summary>Removes the lower-third overlay. The underlying slide is unaffected.</summary>
+    void ClearLowerThird();
+
+    /// <summary>The current lower-third text, or null when none is showing.</summary>
+    string? CurrentLowerThird { get; }
+
+    /// <summary>True while a lower-third overlay is showing.</summary>
+    bool IsLowerThirdActive { get; }
+
+    /// <summary>Fires when <see cref="CurrentLowerThird"/> changes (shown, replaced, or cleared).</summary>
+    event EventHandler? LowerThirdChanged;
+
     /// <summary>Stops projection and clears state.</summary>
     void Stop();
 

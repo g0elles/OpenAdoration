@@ -137,6 +137,27 @@ public partial class App : WpfApp
         mainWindow.Show();
 
         _logger.LogInformation("Startup complete");
+
+        // Opt-in, non-blocking: never delays the first frame.
+        _ = MaybeCheckForUpdatesAsync();
+    }
+
+    private async Task MaybeCheckForUpdatesAsync()
+    {
+        if (!_host.Services.GetRequiredService<IAppSettingsService>().Current.CheckForUpdatesOnStartup)
+            return;
+
+        var info = await _host.Services.GetRequiredService<IUpdateService>().CheckAsync();
+        if (info is null) return;
+
+        var dialog = _host.Services.GetRequiredService<IDialogService>();
+        if (!dialog.Confirm(
+                $"Version {info.Version} is available. Download and install now? The app will close to finish.",
+                "Update Available"))
+            return;
+
+        await _host.Services.GetRequiredService<IUpdateService>().DownloadAndApplyAsync(info);
+        Shutdown();
     }
 
     protected override async void OnExit(ExitEventArgs e)

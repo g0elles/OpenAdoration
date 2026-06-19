@@ -33,5 +33,6 @@ public interface IBibleService
     /// <paramref name="versesPerSlide"/> consecutive verses (minimum 1). Each chunk becomes
     /// its own slide via <see cref="GenerateSlide"/> with its own reference label/context.
     /// </summary>
-    IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null);
+    IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null,
+                        BibleVersion? version = null);
 }

@@ -179,7 +179,8 @@ public sealed class BibleService : IBibleService
         return new Slide(content.ToString().TrimEnd(), SlideType.Bible, label, themeId: themeId, context: context);
     }
 
-    public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null)
+    public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null,
+                               BibleVersion? version = null)
     {
         ArgumentNullException.ThrowIfNull(verses);
 

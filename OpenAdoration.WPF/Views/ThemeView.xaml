@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:views="clr-namespace:OpenAdoration.WPF.Views"
+             xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -28,12 +29,12 @@
                     BorderThickness="0,0,1,1"
                     Padding="12,12,12,10">
                 <Grid>
-                    <TextBlock Text="Themes"
+                    <TextBlock Text="{loc:Loc Themes_Title}"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontSize="16"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" />
-                    <Button Content="+ New"
+                    <Button Content="{loc:Loc Common_New}"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding NewThemeCommand}"
                             HorizontalAlignment="Right"
@@ -47,7 +48,7 @@
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <!-- Loading -->
-                    <TextBlock Text="Loading…"
+                    <TextBlock Text="{loc:Loc Common_Loading}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
@@ -64,7 +65,7 @@
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
 
                     <!-- Empty state -->
-                    <TextBlock Text="No themes yet. Click + New to add one."
+                    <TextBlock Text="{loc:Loc Themes_Empty}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
@@ -121,31 +122,44 @@
 
                                             <!-- Name + action buttons -->
                                             <Grid Grid.Row="0">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}"
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Name (trims) + default badge, bounded so it never runs under the icons -->
+                                                <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding Name}"
+                                                               ToolTip="{Binding Name}"
                                                                Foreground="{StaticResource TextPrimaryBrush}"
                                                                FontSize="13"
                                                                FontWeight="SemiBold"
                                                                VerticalAlignment="Center"
                                                                TextTrimming="CharacterEllipsis" />
                                                     <!-- Default badge -->
-                                                    <Border Background="{StaticResource AccentBrush}"
+                                                    <Border Grid.Column="1"
+                                                            Background="{StaticResource AccentBrush}"
                                                             CornerRadius="2"
                                                             Padding="5,1"
                                                             Margin="6,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="DEFAULT"
+                                                        <TextBlock Text="{loc:Loc Themes_DefaultBadge}"
                                                                    Foreground="White"
                                                                    FontSize="9"
                                                                    FontWeight="Bold" />
                                                     </Border>
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal"
+                                                </Grid>
+                                                <StackPanel Grid.Column="1"
+                                                            Orientation="Horizontal"
                                                             HorizontalAlignment="Right">
                                                     <Button Content="★"
                                                             Style="{StaticResource IconButton}"
-                                                            ToolTip="Set as default theme"
+                                                            ToolTip="{loc:Loc Themes_SetDefault}"
                                                             Visibility="{Binding IsDefault, Converter={StaticResource InverseBoolToVis}}"
                                                             Command="{Binding DataContext.SetDefaultCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -153,14 +167,14 @@
                                                             Margin="0,0,2,0" />
                                                     <Button Content="✎"
                                                             Style="{StaticResource IconButton}"
-                                                            ToolTip="Edit"
+                                                            ToolTip="{loc:Loc Common_Edit}"
                                                             Command="{Binding DataContext.EditThemeCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
                                                             Margin="0,0,2,0" />
                                                     <Button Content="✕"
                                                             Style="{StaticResource IconDangerButton}"
-                                                            ToolTip="Cannot delete the default theme"
+                                                            ToolTip="{loc:Loc Themes_DeleteTooltip}"
                                                             Command="{Binding DataContext.DeleteThemeCommand,
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}" />
@@ -188,14 +202,14 @@
                                                         BorderBrush="{StaticResource BorderBrush}"
                                                         BorderThickness="1"
                                                         Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}"
-                                                        ToolTip="Background color" />
+                                                        ToolTip="{loc:Loc Themes_BgColor}" />
                                                 <Border Width="16" Height="16"
                                                         CornerRadius="2"
                                                         BorderBrush="{StaticResource BorderBrush}"
                                                         BorderThickness="1"
                                                         Background="{Binding FontColor, Converter={StaticResource HexToBrush}}"
                                                         Margin="4,0,0,0"
-                                                        ToolTip="Font color" />
+                                                        ToolTip="{loc:Loc Themes_FontColor}" />
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -218,11 +232,11 @@
               Background="{StaticResource SurfaceBrush}"
               Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Select a theme from the list"
+                <TextBlock Text="{loc:Loc Themes_SelectPrompt}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="or click + New to create one"
+                <TextBlock Text="{loc:Loc Themes_SelectPromptSub}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13"
                            HorizontalAlignment="Center"

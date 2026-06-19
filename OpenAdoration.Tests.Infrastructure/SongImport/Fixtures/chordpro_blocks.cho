@@ -1,0 +1,16 @@
+{title: Block Test}
+{artist: Tester}
+
+{start_of_abc spread=32 width="700"}
+X: 1
+K: G
+"G"GGG | "Em"G<BG
+{end_of_abc}
+
+First %{nope} verse line
+second line
+
+{start_of_textblock align=right}
+Textblock lyric one
+Textblock lyric two
+{end_of_textblock}

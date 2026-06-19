@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenAdoration.Domain.Enums;
+using OpenAdoration.WPF.Localization;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -24,9 +25,9 @@ public partial class SongSectionViewModel : ObservableObject
 
     public string Label => Type switch
     {
-        SectionType.Verse  => $"Verse {SectionNumber}",
-        SectionType.Bridge => $"Bridge {SectionNumber}",
-        _                  => Type.ToString()
+        SectionType.Verse  => $"{TranslationSource.Instance["Section_Verse"]} {SectionNumber}",
+        SectionType.Bridge => $"{TranslationSource.Instance["Section_Bridge"]} {SectionNumber}",
+        _                  => TranslationSource.Instance[$"Section_{Type}"]
     };
 
     /// <summary>Verse-order token for this section (e.g. "V1", "C", "B"). Matches the VerseOrder string syntax.</summary>

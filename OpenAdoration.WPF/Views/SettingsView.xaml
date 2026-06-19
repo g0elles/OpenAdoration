@@ -23,9 +23,11 @@
                        VerticalAlignment="Center" />
         </Border>
 
-        <!-- Form -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
+        <!-- Tabs: General settings + Plugins -->
+        <TabControl Grid.Row="1">
+            <TabItem Header="{loc:Loc Settings_TabGeneral}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
 
                 <TextBlock Text="{loc:Loc Settings_LanguageSection}"
                            Foreground="{StaticResource TextSecondaryBrush}"
@@ -111,7 +113,18 @@
                          Tag="300"
                          Text="{Binding SlideTransitionMilliseconds, UpdateSourceTrigger=PropertyChanged}"
                          Width="120" HorizontalAlignment="Left"
-                         Margin="0,0,0,4" />
+                         Margin="0,0,0,8" />
+                <ComboBox Style="{StaticResource FieldComboBox}"
+                          Width="220" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableTransitions}"
+                          SelectedItem="{Binding SelectedTransition}"
+                          Margin="0,0,0,4">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <TextBlock Text="{loc:Loc Settings_TransitionHelp}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
@@ -133,6 +146,21 @@
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
+                <TextBlock Text="{loc:Loc Settings_UpdatesSection}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+                <Button Content="{loc:Loc Settings_CheckUpdates}"
+                        Style="{StaticResource SecondaryButton}"
+                        HorizontalAlignment="Left"
+                        Command="{Binding CheckForUpdatesCommand}" Margin="0,0,0,8" />
+                <CheckBox Content="{loc:Loc Settings_CheckUpdatesStartup}"
+                          Foreground="{StaticResource TextPrimaryBrush}"
+                          IsChecked="{Binding CheckForUpdatesOnStartup}" Margin="0,0,0,4" />
+                <TextBlock Text="{loc:Loc Settings_UpdatesHelp}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
                 <StackPanel Orientation="Horizontal">
                     <Button Content="{loc:Loc Settings_Save}"
                             Style="{StaticResource PrimaryButton}"
@@ -145,8 +173,14 @@
                                Visibility="{Binding ShowSavedConfirmation, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-            </StackPanel>
-        </ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="{loc:Loc Plugins_Title}">
+                <ContentControl Content="{Binding Plugins}" />
+            </TabItem>
+        </TabControl>
 
         <!-- Error banner -->
         <Border Grid.Row="2"

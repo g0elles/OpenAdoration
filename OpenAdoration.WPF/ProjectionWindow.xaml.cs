@@ -61,6 +61,7 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged += OnProjectionStateChanged;
         _projectionService.ThemeChanged           += OnThemeChanged;
         _projectionService.AnnouncementChanged    += OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      += OnLowerThirdChanged;
         _projectionService.MediaCommandRequested  += OnMediaCommandRequested;
         _projectionService.MediaSeekRequested     += OnMediaSeekRequested;
     }
@@ -199,6 +200,25 @@ public partial class ProjectionWindow : Window
             {
                 AnnouncementText.Text = text;
                 AnnouncementBanner.Visibility = Visibility.Visible;
+            }
+        });
+    }
+
+    // Persistent overlay — stays across slide changes until the operator clears it.
+    private void OnLowerThirdChanged(object? sender, EventArgs e)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            var text = _projectionService.CurrentLowerThird;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                LowerThirdBar.Visibility = Visibility.Collapsed;
+                LowerThirdText.Text = string.Empty;
+            }
+            else
+            {
+                LowerThirdText.Text = text;
+                LowerThirdBar.Visibility = Visibility.Visible;
             }
         });
     }
@@ -497,24 +517,51 @@ public partial class ProjectionWindow : Window
         PlayTransition();
     }
 
-    // Fades the foreground content in on each slide change. Theme background stays static.
+    // Animates the foreground content in on each slide change (Fade/Slide/Zoom).
+    // Theme background stays static so it never flickers between slides.
     private void PlayTransition()
     {
-        var ms = _appSettings.Current.SlideTransitionMilliseconds;
-        if (ms <= 0)
-        {
-            ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
-            ContentLayers.Opacity = 1;
-            return;
-        }
+        // Reset any prior animation so transitions never stack or leave residue.
+        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+        ContentLayers.Opacity = 1;
+        ContentLayers.RenderTransform = System.Windows.Media.Transform.Identity;
 
-        var fade = new System.Windows.Media.Animation.DoubleAnimation
+        var ms = _appSettings.Current.SlideTransitionMilliseconds;
+        if (ms <= 0) return; // Cut
+
+        var duration = TimeSpan.FromMilliseconds(ms);
+        var ease = new System.Windows.Media.Animation.CubicEase
         {
-            From     = 0,
-            To       = 1,
-            Duration = TimeSpan.FromMilliseconds(ms)
+            EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
         };
-        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, fade);
+
+        switch (_appSettings.Current.SlideTransition)
+        {
+            case Application.Common.SlideTransitionKind.Slide:
+                var translate = new System.Windows.Media.TranslateTransform();
+                ContentLayers.RenderTransform = translate;
+                translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(ContentLayers.ActualWidth, 0, duration)
+                    { EasingFunction = ease });
+                break;
+
+            case Application.Common.SlideTransitionKind.Zoom:
+                ContentLayers.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+                var scale = new System.Windows.Media.ScaleTransform(0.85, 0.85);
+                ContentLayers.RenderTransform = scale;
+                scale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.85, 1, duration) { EasingFunction = ease });
+                scale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.85, 1, duration) { EasingFunction = ease });
+                ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+                break;
+
+            default: // Fade
+                ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+                break;
+        }
     }
 
     private void ShowText(string content, SlideContext context)
@@ -621,9 +668,10 @@ public partial class ProjectionWindow : Window
 
     private void StopAndHide()
     {
-        // Drop any in-flight fade so the next session starts fully opaque.
+        // Drop any in-flight transition so the next session starts clean.
         ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
         ContentLayers.Opacity = 1;
+        ContentLayers.RenderTransform = System.Windows.Media.Transform.Identity;
 
         StopThemeVideo();
         StopContentVideo();
@@ -706,6 +754,7 @@ public partial class ProjectionWindow : Window
         _projectionService.ProjectionStateChanged -= OnProjectionStateChanged;
         _projectionService.ThemeChanged           -= OnThemeChanged;
         _projectionService.AnnouncementChanged    -= OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged      -= OnLowerThirdChanged;
         _projectionService.MediaCommandRequested  -= OnMediaCommandRequested;
         _projectionService.MediaSeekRequested     -= OnMediaSeekRequested;
         base.OnClosed(e);

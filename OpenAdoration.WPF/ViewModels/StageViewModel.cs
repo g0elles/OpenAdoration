@@ -75,6 +75,9 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private bool         _hasNextSlide;
     [ObservableProperty] private SlidePreview _nextPreview = SlidePreview.Empty;
 
+    // Mirrors the projector's transport so the preview pauses when the operator pauses.
+    [ObservableProperty] private bool _isPreviewVideoPlaying = true;
+
     // Announcement banner (overlays the current-slide preview)
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAnnouncement))]
@@ -117,6 +120,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             _projectionService.ServiceScheduleActiveChanged   += OnServiceScheduleActiveChanged;
             _projectionService.NextScheduleItemPreviewChanged += OnNextScheduleItemPreviewChanged;
             _projectionService.AnnouncementChanged            += OnAnnouncementChanged;
+            _projectionService.MediaTransportChanged          += OnMediaTransportChanged;
 
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty;
             await RefreshAsync();
@@ -124,7 +128,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Stage view load failed");
-            SetError("Stage view failed to load.");
+            SetError(L("Stage_ErrLoad"));
         }
         finally { IsBusy = false; }
     }
@@ -166,6 +170,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty);
+    }
+
+    private void OnMediaTransportChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            IsPreviewVideoPlaying = _projectionService.MediaTransport.IsPlaying);
     }
 
     // ── Core refresh ──────────────────────────────────────────────────────────
@@ -338,5 +348,6 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         _projectionService.ServiceScheduleActiveChanged   -= OnServiceScheduleActiveChanged;
         _projectionService.NextScheduleItemPreviewChanged -= OnNextScheduleItemPreviewChanged;
         _projectionService.AnnouncementChanged            -= OnAnnouncementChanged;
+        _projectionService.MediaTransportChanged          -= OnMediaTransportChanged;
     }
 }

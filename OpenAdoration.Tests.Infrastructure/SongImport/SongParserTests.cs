@@ -71,6 +71,44 @@ public sealed class SongParserTests
     }
 
     [Fact]
+    public void ChordPro_ParsesMetadata_StripsChords_DelimitsSections()
+    {
+        var song = SongFormatDispatcher.Import(FixturePath("chordpro_minimal.cho"));
+
+        Assert.Equal("Amazing Grace", song.Title);
+        Assert.Equal("John Newton", song.Author);
+        Assert.Equal("Public Domain", song.Copyright);
+        Assert.Equal("22025", song.CcliNumber);
+
+        Assert.Equal(3, song.Sections.Count);
+        Assert.Equal(
+            new[] { SectionType.Verse, SectionType.Chorus, SectionType.Verse },
+            song.Sections.Select(s => s.Type));
+        Assert.Equal(new[] { 1, 1, 2 }, song.Sections.Select(s => s.SectionNumber));
+
+        Assert.DoesNotContain("[", song.Sections[0].Lyrics);
+        Assert.Contains("Amazing grace how sweet the sound", song.Sections[0].Lyrics);
+        Assert.Equal("Praise the Lord", song.Sections[1].Lyrics);
+    }
+
+    [Fact]
+    public void ChordPro_SkipsNotationBlocks_StripsMeta_KeepsTextblockLyrics()
+    {
+        var song = SongFormatDispatcher.Import(FixturePath("chordpro_blocks.cho"));
+
+        Assert.Equal("Block Test", song.Title);
+        Assert.Equal(2, song.Sections.Count); // abc block skipped, verse + textblock kept
+
+        // ABC notation (with space-separated directive attributes) must not leak into lyrics.
+        Assert.DoesNotContain(song.Sections, s => s.Lyrics.Contains("X:") || s.Lyrics.Contains("GGG"));
+        // %{...} metadata substitution stripped.
+        Assert.DoesNotContain("%{", song.Sections[0].Lyrics);
+        Assert.Contains("verse line", song.Sections[0].Lyrics);
+        // {start_of_textblock} body is real lyric content, not skipped.
+        Assert.Equal("Textblock lyric one\nTextblock lyric two", song.Sections[1].Lyrics);
+    }
+
+    [Fact]
     public void Dispatcher_RoutesOpenLyricsByNamespace()
     {
         var song = SongFormatDispatcher.Import(FixturePath("openlyrics_minimal.xml"));

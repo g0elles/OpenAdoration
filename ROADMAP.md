@@ -22,7 +22,7 @@ M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
 | M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`) |
 | M10.1 Transition library | 🔶 Partial — Fade + Cut only (no Slide/Zoom) |
 | M10.2 Persistent lower-thirds | ❌ Not started (only the auto-dismiss announcement banner) |
-| M10.3 Dual-version scripture | ❌ Not started |
+| M10.3 Dual-version scripture | 🚫 Dropped (2026-06-18 QA — operator found the secondary picker confusing; built then removed) |
 | M10.4 Clean livestream output | ❌ Not started (stretch) |
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
 | M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
@@ -505,8 +505,8 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 ### 10.2 — Lower-thirds / persistent overlays
 - Beyond the announcement banner: named overlays (speaker, sermon title, scripture ref) that **persist across slide changes** until cleared, rendered by `ProjectionWindow` + Stage View. Managed from a small overlays panel. Builds on the existing `AnnouncementChanged` overlay plumbing.
 
-### 10.3 — Dual-version scripture
-- Project two Bible versions on one slide (e.g. heart-language + lingua-franca). `IBibleService.GenerateSlides` gains an optional secondary `BibleVersion`; theme layout gains a two-zone body. Reuses the verses-per-slide chunking.
+### 10.3 — Dual-version scripture 🚫 DROPPED (2026-06-18)
+- Was built (stacked secondary verses + secondary version picker) but **removed during the v2.0 QA pass**: the operator found the extra picker/toggles confusing and didn't want the feature. Service params, VM members, the picker UI, and the dual-version tests were deleted. Revisit only if a church actually requests it — likely as a proper two-zone theme layout, not a stacked body.
 
 ### 10.4 — Clean output for livestream *(stretch)*
 - A second **clean** output (slide content only, no operator overlays) for OBS capture; optional **NDI** sender if a clean managed/native path exists. Start with a clean borderless output window before committing to NDI (native SDK).
@@ -649,6 +649,10 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 
 ### 14.4 — Fold M12.4 into the cascade
 - VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
+
+### 14.5 — Icon system: emoji → Fluent font, decoupled from resx
+- Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
+- **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
 
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
 

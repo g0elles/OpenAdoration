@@ -98,7 +98,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load songs");
-            SetError("Failed to load songs.");
+            SetError(L("Songs_ErrLoad"));
         }
         finally
         {
@@ -133,8 +133,8 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private async Task DeleteSongAsync(Song song)
     {
         if (!_dialogService.Confirm(
-                $"Delete \"{song.Title}\"?\n\nThis action cannot be undone.",
-                "Delete Song"))
+                L("Songs_ConfirmDelete", song.Title),
+                L("Songs_DeleteTitle")))
             return;
 
         if (IsBusy) return;
@@ -149,7 +149,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete song {SongId}", song.Id);
-            SetError("Failed to delete song.");
+            SetError(L("Songs_ErrDelete"));
             return;
         }
         finally
@@ -165,7 +165,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title  = "Import Song",
+            Title  = L("Songs_ImportTitle"),
             Filter = SongFormatDispatcher.FileDialogFilter,
             Multiselect = false
         };
@@ -189,8 +189,8 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         {
             _logger.LogError(ex, "Failed to import song from {File}", dialog.FileName);
             _dialogService.Inform(
-                "Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), plain text.",
-                "Import Songs");
+                L("Songs_ImportFailed"),
+                L("Songs_ImportResultTitle"));
             return;
         }
         finally
@@ -201,8 +201,8 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         // Reached only on success — IsBusy already reset by finally, so LoadAsync can run (G4).
         await LoadAsync();
         _dialogService.Inform(
-            imported == 1 ? "Imported 1 song." : $"Imported {imported} songs.",
-            "Import Songs");
+            imported == 1 ? L("Songs_ImportedOne") : L("Songs_ImportedMany", imported),
+            L("Songs_ImportResultTitle"));
     }
 
     [RelayCommand]
@@ -211,7 +211,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         var slides = _songService.GenerateSlides(song);
         if (slides.Count == 0)
         {
-            SetError("This song has no lyrics to project.");
+            SetError(L("Sched_ErrNoLyrics"));
             return;
         }
         _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));

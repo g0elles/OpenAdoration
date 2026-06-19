@@ -32,7 +32,7 @@
         <!-- ── Content area (sidebar + page) ── -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="220" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -61,6 +61,7 @@
                                Margin="16,0" />
 
                     <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0">
+                        <TextBlock Text="{loc:Loc Nav_Group_Content}" Style="{StaticResource NavGroupHeader}" />
                         <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Songs}"
                                 Command="{Binding NavigateToSongsCommand}" />
@@ -68,20 +69,21 @@
                                 Content="{loc:Loc Nav_Bible}"
                                 Command="{Binding NavigateToBibleCommand}" />
                         <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Schedule}"
-                                Command="{Binding NavigateToScheduleCommand}" />
-                        <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Media}"
-                                Command="{Binding NavigateToMediaCommand}" />
-                        <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Themes}"
                                 Command="{Binding NavigateToThemesCommand}" />
                         <Button Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Media}"
+                                Command="{Binding NavigateToMediaCommand}" />
+
+                        <TextBlock Text="{loc:Loc Nav_Group_Present}" Style="{StaticResource NavGroupHeader}" />
+                        <Button Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Schedule}"
+                                Command="{Binding NavigateToScheduleCommand}" />
+                        <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Stage}"
                                 Command="{Binding NavigateToStageCommand}" />
-                        <Button Style="{StaticResource NavButton}"
-                                Content="{loc:Loc Nav_Plugins}"
-                                Command="{Binding NavigateToPluginsCommand}" />
+
+                        <TextBlock Text="{loc:Loc Nav_Group_Setup}" Style="{StaticResource NavGroupHeader}" />
                         <Button Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Settings}"
                                 Command="{Binding NavigateToSettingsCommand}" />
@@ -160,6 +162,25 @@
                             Padding="10,8"
                             Margin="0,0,10,0"
                             Visibility="{Binding IsAnnouncementActive, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Persistent lower-third -->
+                    <TextBox Style="{StaticResource FieldTextBox}"
+                             Tag="{loc:Loc Projection_LowerThirdPlaceholder}"
+                             Width="170"
+                             VerticalAlignment="Center"
+                             Margin="0,0,6,0"
+                             Text="{Binding LowerThirdText, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="{loc:Loc Projection_LowerThird}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowLowerThirdCommand}"
+                            Padding="10,8"
+                            Margin="0,0,6,0" />
+                    <Button Content="{loc:Loc Projection_Clear}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ClearLowerThirdCommand}"
+                            Padding="10,8"
+                            Margin="0,0,10,0"
+                            Visibility="{Binding IsLowerThirdActive, Converter={StaticResource BoolToVis}}" />
 
                     <Button Content="{loc:Loc Projection_OpenScreen}"
                             Style="{StaticResource SecondaryButton}"

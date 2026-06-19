@@ -13,6 +13,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IProjectionService _projectionService;
     private readonly ILocalizationService _localization;
     private readonly IBackupService _backup;
+    private readonly IUpdateService _update;
     private readonly IDialogService _dialog;
     private readonly ILogger<SettingsViewModel> _logger;
 
@@ -22,6 +23,10 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _defaultBibleVersesPerSlide = 1;
     [ObservableProperty] private int _announcementDurationSeconds = 25;
     [ObservableProperty] private int _slideTransitionMilliseconds = 300;
+    [ObservableProperty] private SlideTransitionKind _selectedTransition = SlideTransitionKind.Fade;
+    [ObservableProperty] private bool _checkForUpdatesOnStartup;
+
+    public IReadOnlyList<SlideTransitionKind> AvailableTransitions { get; } = Enum.GetValues<SlideTransitionKind>();
 
     public IReadOnlyList<LanguageOption> AvailableLanguages => _localization.AvailableLanguages;
 
@@ -33,19 +38,38 @@ public partial class SettingsViewModel : BaseViewModel
 
     public bool ShowSavedConfirmation => IsSaved;
 
+    /// <summary>True once the operator edits a field without saving. Drives the prompt-on-leave.</summary>
+    [ObservableProperty] private bool _hasUnsavedChanges;
+
+    private bool    _loading;             // suppresses dirty-marking while Load() populates fields
+    private string? _loadedLanguageCode;  // for reverting the live language preview on discard
+
+    private void MarkDirty()
+    {
+        IsSaved = false;
+        if (!_loading) HasUnsavedChanges = true;
+    }
+
+    /// <summary>Hosted on the Settings → Plugins tab (resolved in the same nav scope).</summary>
+    public PluginsViewModel Plugins { get; }
+
     public SettingsViewModel(
         IAppSettingsService settings,
         IProjectionService projectionService,
         ILocalizationService localization,
         IBackupService backup,
+        IUpdateService update,
         IDialogService dialog,
+        PluginsViewModel plugins,
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
         _projectionService = projectionService;
         _localization      = localization;
         _backup            = backup;
+        _update            = update;
         _dialog            = dialog;
+        Plugins            = plugins;
         _logger            = logger;
     }
 
@@ -54,9 +78,11 @@ public partial class SettingsViewModel : BaseViewModel
     {
         if (IsBusy) return;
         IsBusy = true;
+        _loading = true;
         ClearError();
         try
         {
+            _loadedLanguageCode = _localization.CurrentLanguageCode;
             var current = _settings.Current;
             ChurchName                  = current.ChurchName ?? string.Empty;
             ChurchCcliNumber            = current.ChurchCcliNumber ?? string.Empty;
@@ -64,13 +90,33 @@ public partial class SettingsViewModel : BaseViewModel
             DefaultBibleVersesPerSlide  = current.DefaultBibleVersesPerSlide;
             AnnouncementDurationSeconds = current.AnnouncementDurationSeconds;
             SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
+            SelectedTransition          = current.SlideTransition;
+            CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
         }
         finally
         {
             IsBusy = false;
+            _loading = false;
+            HasUnsavedChanges = false;
         }
+    }
+
+    /// <summary>
+    /// Called by <see cref="MainViewModel"/> before navigating away. If there are pending edits,
+    /// asks the operator to save them; declining reverts the live language preview to the saved one.
+    /// </summary>
+    public void OnLeaving()
+    {
+        if (!HasUnsavedChanges) return;
+
+        if (_dialog.Confirm(L("Settings_LeaveUnsaved"), L("Settings_Title")))
+            _ = SaveAsync(); // _settings is a singleton — completes even as this scoped VM is disposed
+        else if (_loadedLanguageCode is not null)
+            _localization.SetLanguage(_loadedLanguageCode); // undo the live preview
+
+        HasUnsavedChanges = false;
     }
 
     [RelayCommand]
@@ -90,7 +136,9 @@ public partial class SettingsViewModel : BaseViewModel
                 DefaultBibleVersesPerSlide  = DefaultBibleVersesPerSlide < 1 ? 1 : DefaultBibleVersesPerSlide,
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
-                UiCulture                   = SelectedLanguage?.Code
+                SlideTransition             = SelectedTransition,
+                UiCulture                   = SelectedLanguage?.Code,
+                CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup
             };
 
             await _settings.SaveAsync(updated);
@@ -98,13 +146,15 @@ public partial class SettingsViewModel : BaseViewModel
             // Church tokens may appear in the active theme's header/footer — re-render.
             _projectionService.NotifyThemeChanged();
 
+            _loadedLanguageCode = SelectedLanguage?.Code ?? _loadedLanguageCode;
+            HasUnsavedChanges = false;
             IsSaved = true;
             _logger.LogInformation("Settings saved");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save settings");
-            SetError("Could not save settings.");
+            SetError(L("Settings_ErrSave"));
         }
         finally
         {
@@ -117,8 +167,8 @@ public partial class SettingsViewModel : BaseViewModel
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Create Backup",
-            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            Title = L("Settings_CreateBackupTitle"),
+            Filter = L("Settings_BackupFilter") + "|*.oabak",
             FileName = $"OpenAdoration-backup-{DateTime.Now:yyyy-MM-dd}.oabak"
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
@@ -128,12 +178,12 @@ public partial class SettingsViewModel : BaseViewModel
         try
         {
             await _backup.CreateAsync(dialog.FileName);
-            _dialog.Inform("Backup created successfully.", "Create Backup");
+            _dialog.Inform(L("Settings_BackupCreated"), L("Settings_CreateBackupTitle"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Backup failed");
-            SetError("Could not create the backup.");
+            SetError(L("Settings_ErrCreateBackup"));
         }
         finally { IsBusy = false; }
     }
@@ -143,15 +193,13 @@ public partial class SettingsViewModel : BaseViewModel
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Restore Backup",
-            Filter = "OpenAdoration backup (*.oabak)|*.oabak",
+            Title = L("Settings_RestoreBackupTitle"),
+            Filter = L("Settings_BackupFilter") + "|*.oabak",
             Multiselect = false
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
 
-        if (!_dialog.Confirm(
-                "Restoring replaces your current library (songs, Bibles, themes, services, media) " +
-                "and closes the app to finish. Continue?", "Restore Backup"))
+        if (!_dialog.Confirm(L("Settings_RestoreConfirm"), L("Settings_RestoreBackupTitle")))
             return;
 
         IsBusy = true;
@@ -161,7 +209,7 @@ public partial class SettingsViewModel : BaseViewModel
             var result = await _backup.RestoreAsync(dialog.FileName);
             if (result.Outcome == RestoreOutcome.Compatible)
             {
-                _dialog.Inform(result.Message, "Restore Backup");
+                _dialog.Inform(result.Message, L("Settings_RestoreBackupTitle"));
                 System.Windows.Application.Current.Shutdown();
                 return;
             }
@@ -170,22 +218,57 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Restore failed");
-            SetError("Could not restore the backup.");
+            SetError(L("Settings_ErrRestore"));
         }
         finally { IsBusy = false; }
     }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var info = await _update.CheckAsync();
+            if (info is null)
+            {
+                _dialog.Inform(L("Settings_UpToDate"), L("Settings_CheckUpdatesTitle"));
+                return;
+            }
+
+            var sizeMb = info.MsiSizeBytes / 1024d / 1024d;
+            if (!_dialog.Confirm(
+                    L("Settings_UpdateConfirm", info.Version, sizeMb.ToString("0.#")),
+                    L("Settings_UpdateAvailableTitle")))
+                return;
+
+            await _update.DownloadAndApplyAsync(info);
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update failed");
+            SetError(L("Settings_ErrUpdate"));
+        }
+        finally { IsBusy = false; }
+    }
+
+    partial void OnCheckForUpdatesOnStartupChanged(bool value) => MarkDirty();
+    partial void OnSelectedTransitionChanged(SlideTransitionKind value) => MarkDirty();
 
     partial void OnSelectedLanguageChanged(LanguageOption? value)
     {
         if (value is null) return;
         _localization.SetLanguage(value.Code); // live preview; persisted on Save
-        IsSaved = false;
+        MarkDirty();
     }
 
-    partial void OnChurchNameChanged(string value) => IsSaved = false;
-    partial void OnChurchCcliNumberChanged(string value) => IsSaved = false;
-    partial void OnDefaultAutoAdvanceSecondsChanged(int value) => IsSaved = false;
-    partial void OnDefaultBibleVersesPerSlideChanged(int value) => IsSaved = false;
-    partial void OnAnnouncementDurationSecondsChanged(int value) => IsSaved = false;
-    partial void OnSlideTransitionMillisecondsChanged(int value) => IsSaved = false;
+    partial void OnChurchNameChanged(string value) => MarkDirty();
+    partial void OnChurchCcliNumberChanged(string value) => MarkDirty();
+    partial void OnDefaultAutoAdvanceSecondsChanged(int value) => MarkDirty();
+    partial void OnDefaultBibleVersesPerSlideChanged(int value) => MarkDirty();
+    partial void OnAnnouncementDurationSecondsChanged(int value) => MarkDirty();
+    partial void OnSlideTransitionMillisecondsChanged(int value) => MarkDirty();
 }

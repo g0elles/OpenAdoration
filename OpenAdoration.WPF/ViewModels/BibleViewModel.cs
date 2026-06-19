@@ -47,6 +47,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanDeleteVersion))]
     private BibleVersion? _selectedVersion;
+
     public bool CanDeleteVersion => SelectedVersion is not null;
     public bool HasVersions   => Versions.Count > 0;
     public bool NoVersionsYet => Versions.Count == 0 && !IsBusy;
@@ -80,20 +81,9 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     // ── Mode ──────────────────────────────────────────────────────────────
     [ObservableProperty] private bool _isFrozen;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSearchActive))]
-    [NotifyPropertyChangedFor(nameof(ReferenceBarPlaceholder))]
-    private bool _isKeywordMode;
-
-    // False = keyword (all words, prefix); True = exact phrase. Only relevant in keyword search mode.
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ReferenceBarPlaceholder))]
-    private bool _isPhraseSearch;
-
-    public bool   IsSearchActive         => IsKeywordMode && _searchResults.Count > 0;
-    public string ReferenceBarPlaceholder => IsKeywordMode
-        ? (IsPhraseSearch ? "Type exact phrase to search…" : "Type keyword(s) to search…")
-        : "e.g. John 3:16-18";
+    // True while keyword-search results are showing instead of a browsed chapter.
+    public bool   IsSearchActive          => _searchResults.Count > 0;
+    public string ReferenceBarPlaceholder => L("Bible_PlaceholderRef");
 
     // ── Import ────────────────────────────────────────────────────────────
     public bool   IsImporting           => _importService.IsImporting;
@@ -307,6 +297,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             if (ct.IsCancellationRequested) return;
 
             _chapterVerses = list.ToList();
+
             foreach (var item in CheckableVerses) UnsubscribeItem(item);
             CheckableVerses.Clear();
             foreach (var v in _chapterVerses)
@@ -371,16 +362,10 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         if (SelectedVersion is null || Books.Count == 0) return;
 
-        if (IsKeywordMode)
-        {
-            _ = RunSearchAsync();
-            return;
-        }
-
         var parsed = BibleReferenceParser.TryParse(ReferenceInput, Books);
         if (parsed is null)
         {
-            // Didn't match a reference — treat as implicit keyword search.
+            // Didn't match a reference — treat as a keyword search.
             _ = RunSearchAsync();
             return;
         }
@@ -388,6 +373,9 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         var book = Books.FirstOrDefault(b =>
             b.Name.Equals(parsed.BookName, StringComparison.OrdinalIgnoreCase));
         if (book is null) return;
+
+        // Leaving any prior search results behind so the browse view shows.
+        ExitSearch();
 
         var verseNums = parsed.IsFullChapter
             ? new HashSet<int>()
@@ -409,13 +397,16 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     {
         ReferenceInput = string.Empty;
         BookSuggestions.Clear();
+        ExitSearch();
+    }
 
-        if (IsKeywordMode)
-        {
-            _searchResults.Clear();
-            RebuildCheckableVersesFromChapter();
-            OnPropertyChanged(nameof(IsSearchActive));
-        }
+    // Drops keyword-search results (if any) and restores the browsed chapter.
+    private void ExitSearch()
+    {
+        if (_searchResults.Count == 0) return;
+        _searchResults.Clear();
+        RebuildCheckableVersesFromChapter();
+        OnPropertyChanged(nameof(IsSearchActive));
     }
 
     // ── Projection commands ───────────────────────────────────────────────
@@ -458,13 +449,13 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         ClearError();
         try
         {
-            var mode = IsPhraseSearch
-                ? OpenAdoration.Application.Common.BibleSearchMode.Phrase
-                : OpenAdoration.Application.Common.BibleSearchMode.Keyword;
             var results = (await _bibleService.SearchAsync(
-                SelectedVersion.Id, ReferenceInput, mode, maxResults: 200, ct: ct)).ToList();
+                SelectedVersion.Id, ReferenceInput,
+                OpenAdoration.Application.Common.BibleSearchMode.Keyword,
+                maxResults: 200, ct: ct)).ToList();
             if (ct.IsCancellationRequested) return;
 
+            _isChapterProjection = false;
             _searchResults = results;
             foreach (var item in CheckableVerses) UnsubscribeItem(item);
             CheckableVerses.Clear();
@@ -516,7 +507,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     partial void OnReferenceInputChanged(string value)
     {
-        if (IsKeywordMode || Books.Count == 0) { BookSuggestions.Clear(); return; }
+        if (Books.Count == 0) { BookSuggestions.Clear(); return; }
 
         var words = value.TrimStart().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (words.Length == 0) { BookSuggestions.Clear(); return; }
@@ -531,24 +522,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     partial void OnIsFrozenChanged(bool value)
     {
         if (!value) ProjectCurrentSelection();
-    }
-
-    partial void OnIsKeywordModeChanged(bool value)
-    {
-        ReferenceInput = string.Empty;
-        _searchResults.Clear();
-        BookSuggestions.Clear();
-        _isChapterProjection = false;
-
-        if (!value)
-            RebuildCheckableVersesFromChapter();
-    }
-
-    partial void OnIsPhraseSearchChanged(bool value)
-    {
-        // Re-run the active keyword search under the new interpretation.
-        if (IsKeywordMode && !string.IsNullOrWhiteSpace(ReferenceInput))
-            _ = RunSearchAsync();
     }
 
     // ── Checkbox subscription helpers ─────────────────────────────────────
@@ -580,11 +553,12 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         if (selected.Count == 0) return;
         try
         {
-            if (!IsKeywordMode && _chapterVerses.Count > 0 && selected.Count == 1)
+            if (!IsSearchActive && _chapterVerses.Count > 0 && selected.Count == 1)
             {
                 // Single verse in chapter mode: load the full chapter as individual slides so the
                 // main-window ◀/▶ can navigate verse-by-verse — same as songs navigate section-by-section.
-                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(new[] { v }, version: SelectedVersion)).ToArray();
+                var slides   = _chapterVerses.Select(v => _bibleService.GenerateSlide(
+                                   new[] { v }, version: SelectedVersion)).ToArray();
                 var label    = $"{selected[0].Book} {selected[0].Chapter}";
                 var startIdx = _chapterVerses.FindIndex(v => v.Verse == selected[0].Verse);
                 if (startIdx < 0) startIdx = 0;

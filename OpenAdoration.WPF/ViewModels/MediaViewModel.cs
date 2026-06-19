@@ -64,7 +64,7 @@ public partial class MediaViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load media files");
-            SetError("Could not load media files.");
+            SetError(L("Sched_ErrLoadMedia"));
         }
         finally { IsBusy = false; }
     }
@@ -85,16 +85,31 @@ public partial class MediaViewModel : BaseViewModel
         // G1: Microsoft.Win32.OpenFileDialog — not System.Windows.Forms.OpenFileDialog
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title       = "Import Media",
-            Filter      = "Images|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp" +
-                          "|Videos|*.mp4;*.avi;*.wmv;*.mov;*.mkv;*.m4v" +
-                          "|All supported|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp;*.mp4;*.avi;*.wmv;*.mov;*.mkv;*.m4v",
+            Title       = L("Media_ImportTitle"),
+            Filter      = L("Media_FilterImages") + "|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp" +
+                          "|" + L("Media_FilterVideos") + "|*.mp4;*.avi;*.wmv;*.mov;*.mkv;*.m4v" +
+                          "|" + L("Media_FilterAll") + "|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp;*.mp4;*.avi;*.wmv;*.mov;*.mkv;*.m4v",
             FilterIndex = 3,
             Multiselect = true
         };
 
         if (dlg.ShowDialog() != true) return;
+        await ImportPathsAsync(dlg.FileNames);
+    }
 
+    [RelayCommand]
+    private async Task ImportFolderAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = L("Media_ImportFolderTitle") };
+        if (dlg.ShowDialog() != true) return;
+
+        // Top-level only; the per-file loop filters out non-media by extension/signature.
+        var paths = Directory.EnumerateFiles(dlg.FolderName, "*", SearchOption.TopDirectoryOnly).ToList();
+        await ImportPathsAsync(paths);
+    }
+
+    private async Task ImportPathsAsync(IReadOnlyList<string> paths)
+    {
         IsBusy = true;
         ClearError();
         try
@@ -102,7 +117,7 @@ public partial class MediaViewModel : BaseViewModel
             Directory.CreateDirectory(MediaStore);
 
             var skipped = 0;
-            foreach (var sourcePath in dlg.FileNames)
+            foreach (var sourcePath in paths)
             {
                 var ext = Path.GetExtension(sourcePath);
                 if (!AllowedExtensions.Contains(ext))
@@ -145,12 +160,12 @@ public partial class MediaViewModel : BaseViewModel
             await LoadCoreAsync();
 
             if (skipped > 0)
-                SetError($"{skipped} file(s) were skipped — unsupported type, too large, or not a valid image/video.");
+                SetError(L("Media_Skipped", skipped));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to import media");
-            SetError("Import failed. Please try again.");
+            SetError(L("Media_ImportFailed"));
         }
         finally { IsBusy = false; }
     }
@@ -188,7 +203,7 @@ public partial class MediaViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete media file {Id}", file.Id);
-            SetError("Delete failed.");
+            SetError(L("Media_DeleteFailed"));
         }
         finally { IsBusy = false; }
     }
@@ -207,7 +222,7 @@ public partial class MediaViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to project media file {Id}", file.Id);
-            SetError("Could not project file.");
+            SetError(L("Media_ProjectFailed"));
         }
     }
 
