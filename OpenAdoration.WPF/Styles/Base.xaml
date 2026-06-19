@@ -241,9 +241,8 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="SearchTextBox" TargetType="TextBox" BasedOn="{StaticResource FieldTextBox}">
-        <Setter Property="Tag" Value="Search songs…" />
-    </Style>
+    <!-- Placeholder (Tag) is set per-view so it can be localized (Base.xaml has no loc namespace). -->
+    <Style x:Key="SearchTextBox" TargetType="TextBox" BasedOn="{StaticResource FieldTextBox}" />
 
     <!-- Multiline lyrics editor -->
     <ControlTemplate x:Key="LyricsTextBoxTemplate" TargetType="TextBox">

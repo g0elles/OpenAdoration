@@ -157,6 +157,7 @@
                 <TextBlock Text="{loc:Loc Bible_NoVersion}"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            FontSize="18" FontWeight="SemiBold"
+                           TextAlignment="Center" TextWrapping="Wrap"
                            HorizontalAlignment="Center" Margin="0,0,0,8" />
                 <TextBlock Text="{loc:Loc Bible_NoVersionHelp}"
                            Foreground="{StaticResource TextSecondaryBrush}"

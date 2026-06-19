@@ -108,7 +108,8 @@
                             <TextBlock Foreground="#AAFFFFFF" FontSize="60"
                                        HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
-                                <Run Text="  Video background active" />
+                                <Run Text="  " />
+                                <Run Text="{loc:Loc Stage_VideoBgActive}" />
                             </TextBlock>
                         </Border>
 
@@ -254,7 +255,8 @@
                                 <TextBlock Foreground="#AAFFFFFF" FontSize="60"
                                            HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
-                                    <Run Text="  Video background active" />
+                                    <Run Text="  " />
+                                    <Run Text="{loc:Loc Stage_VideoBgActive}" />
                                 </TextBlock>
                             </Border>
 
