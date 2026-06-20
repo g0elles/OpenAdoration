@@ -1,12 +1,13 @@
 # OpenAdoration — Architecture & Developer Reference
 
-> Last updated: 2026-06-01
-> Status: **v1.0 released** — all milestones (M0–M7) complete, including keyboard shortcuts and packaging.
-> v2.0 (M8–M10) is in planning — see `ROADMAP.md`.
+> Last updated: 2026-06-19
+> Status: **v2.0 released** — v1.0 (M0–M7) shipped 2026-06-01; v2.0 (M8–M14) shipped as `v2.0.0`.
+> See `ROADMAP.md` / `CHANGELOG.md`.
 >
 > **Scope note:** the core architecture below (layers, DI, projection engine, theme resolution, DB,
-> Bible import) is current. Subsystems added during the v1.0 finishing batch are summarised in
-> [§12](#12-subsystems-added-after-the-core-diagrams); for exhaustive detail see `CLAUDE.md`.
+> Bible import) is current. Subsystems added after §3's diagrams — v1.0 finishing batch **and** the
+> v2.0 line — are summarised in [§12](#12-subsystems-added-after-the-core-diagrams); for exhaustive
+> detail see `CLAUDE.md`.
 
 ---
 
@@ -91,9 +92,11 @@ Infrastructure  →  Application  →  Domain
 
 | Decision | Choice | Reason |
 |---|---|---|
-| UI framework | WPF (.NET 10) | Rich desktop controls, proven multi-monitor support |
-| DB | SQLite via EF Core 9 | Zero-install, single file, offline-first |
+| UI framework | WPF (.NET 10); runtime Light/Dark via `DynamicResource` (G27) | Rich desktop controls, proven multi-monitor support |
+| DB | SQLite via EF Core 10 | Zero-install, single file, offline-first |
 | MVVM | CommunityToolkit.Mvvm 8 | Source-generated commands/properties, no boilerplate |
+| Video | FFmpeg via FFME (FFME.Windows) | Plays any codec incl. HEVC without OS codecs; also frame-grabs thumbnails |
+| i18n | resx + `{loc:Loc}` + live `TranslationSource` (en/es) | Operator-switchable UI language without restart |
 | Navigation | ContentControl + DataTemplates | No navigation framework needed; ViewModel-first |
 | DbContext lifetime | `IDbContextFactory` (one ctx per operation) | Avoids long-lived tracking bugs, safe in async code |
 | Projection | Singleton `ProjectionService` | Owns state machine for the app's lifetime |
@@ -359,17 +362,16 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 ### `IProjectionService` (Singleton)
 | Method / Event | Description |
 |---|---|
-| `LoadSlides(slides, contextLabel)` | Start projection with a slide list |
-| `Next()` | Advance one slide |
-| `Previous()` | Go back one slide |
-| `GoTo(index)` | Jump to specific slide by index |
+| `LoadSlides(slides, contextLabel, contextKey?)` | Start projection with a slide list; `contextKey` tags the source for in-place updates |
+| `TryUpdateSlides(contextKey, slides, contextLabel)` | Replace slides in place (clamps index) if projecting and the key matches — live song/service edits |
+| `Next()` / `Previous()` / `GoTo(index)` | Advance / go back / jump to a slide |
 | `ShowBlank()` | Show black screen without stopping |
+| `ShowAnnouncement(text)` / `ClearAnnouncement()` | Blue banner overlay over the current slide (auto-dismiss); not a slide type |
+| `ShowLowerThird(text)` / `ClearLowerThird()` | Persistent flush-bottom overlay; stays until cleared |
 | `Stop()` | End projection, clear all state |
-| `NotifyThemeChanged()` | Fires `ThemeChanged` event — triggers cache clear + re-render |
+| `NotifyThemeChanged()` | Fires `ThemeChanged` — triggers cache clear + re-render |
 | `RefreshCurrentSlide()` | Re-fires `SlideChanged` with the current slide |
-| Event: `SlideChanged(Slide?)` | Fires on every slide transition |
-| Event: `ProjectionStateChanged(bool)` | Fires when projection starts/stops |
-| Event: `ThemeChanged` | Fires when a theme is saved |
+| Events | `SlideChanged(Slide?)`, `ProjectionStateChanged(bool)`, `ThemeChanged`, `AnnouncementChanged`, `LowerThirdChanged` |
 
 ### `IThemeService`
 | Method | Description |
@@ -408,7 +410,7 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 ## 5. Database
 
 **Engine**: SQLite (file at `%LocalAppData%\OpenAdoration\openadoration.db`)
-**ORM**: Entity Framework Core 9, Fluent API configuration
+**ORM**: Entity Framework Core 10, Fluent API configuration
 **Migrations**: auto-applied at startup via `MigrateAsync()`
 
 ### 5.1 Schema Overview
@@ -487,7 +489,8 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ Id        INT   PK                                           │
 │ FileName  TEXT  NOT NULL                                     │
 │ FilePath  TEXT  NOT NULL  (absolute path in managed store)   │
-│ Type      INT   (MediaType: Image=0, Video=1)                │
+│ Type      TEXT  (MediaType enum name: "Image" / "Video")     │
+│ ContentHash TEXT NULL  (SHA-256; dedup across import sources)│
 │ CreatedAt / UpdatedAt DATETIME                               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -509,11 +512,13 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `20260529210146_AddSongScheduleItemVerseOrderOverride` | `VerseOrderOverride` on song schedule items |
 | `20260616211931_AddVideoPsalmMigrationFields` | VideoPsalm-migration provenance fields (M12.1) |
 | `20260619011133_AddSongThemeId` | `ThemeId` FK (SetNull) + index on Songs — content-level theming (M14.1) |
+| `20260619211758_AddThemeSlideTransition` | `SlideTransition` (nullable) on Themes — per-theme transition override (M14.3) |
 
 > Note: app **Settings** (church name/CCLI, default auto-advance, verses-per-slide,
-> announcement duration, transition ms, **per-content-type default themes** —
-> `DefaultSongThemeId` / `DefaultScriptureThemeId` / `DefaultMediaThemeId`) live in
-> `settings.json`, **not** the database — no migration.
+> announcement duration, transition ms + kind, **per-content-type default themes**
+> `DefaultSongThemeId`/`DefaultScriptureThemeId`/`DefaultMediaThemeId`, **UI language**
+> `UiCulture`, and **Light/Dark** `Appearance`) live in `settings.json`, **not** the
+> database — no migration.
 
 ### 5.3 Table Per Hierarchy — ScheduleItems
 
@@ -590,10 +595,16 @@ ThemeBackgroundImage ← Image; theme BackgroundImagePath; Collapsed if no image
 ThemeBackgroundVideo ← MediaElement; IsMuted=True; loops via MediaEnded; Collapsed if no video
 BackgroundImage      ← Image; media slides (images); Collapsed otherwise
 ContentVideo         ← MediaElement; media slides (videos); plays with audio; Collapsed otherwise
-TextViewbox          ← Viewbox+TextBlock; song/Bible text; Collapsed otherwise
+TextViewbox          ← Viewbox+TextBlock; song/Bible text; 3-zone Header/Body/Footer; Collapsed otherwise
 BlankOverlay         ← Rectangle (black fill); shown on blank slide — covers all layers
+LowerThird           ← persistent flush-bottom banner; shown via ShowLowerThird, stays until cleared
+Announcement         ← blue banner overlay; shown via ShowAnnouncement; auto-dismisses
 CornerLabel          ← ZIndex=100; song title · section label; top-left; Collapsed if no label
 ```
+
+Slide changes animate with the configured transition (Cut/Fade/Slide/Zoom; per-theme override falls
+back to the global `SlideTransition` setting). The app-chrome Light/Dark theme does **not** affect this
+window — projection colours come from the `Theme` entity only.
 
 **Blank slide behaviour**: `ShowBlankOverlay()` calls `HideAllLayers()` then sets `BlankOverlay.Visibility = Visible`. The opaque black fill covers all layers — including theme backgrounds — giving a fully black screen.
 
@@ -609,10 +620,11 @@ No runtime network dependencies. All data is local.
 
 | Package | Version | Purpose |
 |---|---|---|
-| `Microsoft.Extensions.Hosting` | 9.0.4 | DI container, generic host |
-| `Microsoft.EntityFrameworkCore` | 9.0.4 | ORM |
-| `Microsoft.EntityFrameworkCore.Sqlite` | 9.0.4 | SQLite provider |
+| `Microsoft.Extensions.Hosting` | 10.x | DI container, generic host |
+| `Microsoft.EntityFrameworkCore` | 10.x | ORM |
+| `Microsoft.EntityFrameworkCore.Sqlite` | 10.x | SQLite provider (SQLitePCLRaw native bundle) |
 | `CommunityToolkit.Mvvm` | 8.4.0 | Source-generated MVVM |
+| `FFME.Windows` | 4.4.350 | FFmpeg-backed video (any codec, incl. HEVC) + frame-grab thumbnails (FFmpeg.AutoGen) |
 | `Extended.Wpf.Toolkit` | 5.0.0 | `xctk:ColorPicker` in theme editor |
 | `Serilog` | 4.2.0 | Structured logging core |
 | `Serilog.Extensions.Logging` | 9.0.0 | MEL → Serilog bridge |
@@ -632,6 +644,8 @@ No runtime network dependencies. All data is local.
 | Windows 10+ | WPF requirement |
 | .NET 10 Runtime | Target framework |
 | `UseWindowsForms=true` | `System.Windows.Forms.Screen.AllScreens` — only reliable multi-monitor API |
+| FFmpeg 4.4 LGPL DLLs (in `ffmpeg/`, not git) | FFME playback + thumbnails; fetched/SHA256-verified by `installer/fetch-ffmpeg.ps1`, bundled by the MSI |
+| VC++ 2015–2022 runtime | Needed by the FFmpeg DLLs; ships with Win10/11; app warns (non-fatal) at startup if absent |
 
 ---
 
@@ -693,10 +707,20 @@ OpenAdoration.WPF/
       ThiagobodrukJsonParser.cs, OpenADorationJsonParser.cs
       BibleSuperSearchJsonParser.cs, BibleSuperSearchZipParser.cs, BibleSuperSearchSqliteParser.cs
   Converters/
-    FilePathToImageSourceConverter.cs ← Decodes image at 400px; returns null for video/missing
+    FilePathToImageSourceConverter.cs ← Decodes image at 400px (theme backgrounds, full images)
     IntEqualityConverter.cs           ← IMultiValueConverter; used for chapter/card selected-state highlights
     InverseBoolToVisibilityConverter.cs
     HexColorToBrushConverter.cs, ColorToBrushConverter.cs, TestamentToLabelConverter.cs
+  Behaviors/
+    ThumbnailImage.cs           ★     ← attached Image.Source: disk cache → shell thumbnail → FFmpeg (bg)
+  Helpers/
+    ShellThumbnail.cs                 ← IShellItemImageFactory (images + most videos)
+    FfmpegThumbnail.cs                ← FFmpeg.AutoGen frame grab (HEVC etc. the OS can't thumbnail)
+    ThumbnailCache.cs                 ← on-disk PNG cache under {OA_DATA}/thumbcache
+    MediaEngine.cs                    ← loads FFmpeg shared libs at startup for FFME
+  Services/ (WPF)
+    IAppThemeService / AppThemeService.cs ← runtime Light/Dark palette swap (G27)
+    LocalizationService.cs            ← applies UiCulture; backs {loc:Loc} / TranslationSource
   ViewModels/
     BaseViewModel.cs                  ← IsBusy, ErrorMessage, HasError, SetError(), ClearError()
     MainViewModel.cs            ★     ← Scope-per-navigation, projection controls, state sync
@@ -720,7 +744,7 @@ OpenAdoration.WPF/
     MediaView.xaml              ★     ← Import toolbar + wrap grid of media cards
     ServiceScheduleView.xaml    ★     ← Service list / builder / live mode (3 panels)
   Styles/
-    Colors.xaml                       ← All color/brush resources
+    Colors.Dark.xaml / Colors.Light.xaml ← palette per appearance (same keys); swapped at runtime
     Base.xaml                   ★     ← All control styles (Button, TextBox, ComboBox, Cards, etc.)
 
 OpenAdoration.Tests.Infrastructure/
@@ -728,9 +752,11 @@ OpenAdoration.Tests.Infrastructure/
     BibleParserTests.cs         ← 8-format tests + ZIP guards, via BibleFormatDispatcher
     Fixtures/                   ← Minimal XML/JSON/ZIP/SQLite fixtures
   SongImport/
-    SongParserTests.cs          ← OpenLyrics / OpenSong / plain-text tests via SongFormatDispatcher
+    SongParserTests.cs          ← OpenLyrics / OpenSong / ChordPro / plain-text via SongFormatDispatcher
     Fixtures/                   ← Minimal song fixtures
-  (43/43 tests total)
+  Architecture/
+    LayerDependencyTests.cs     ← NetArchTest layer-boundary enforcement (G28)
+  (70/70 tests total — incl. theme cascade, VideoPsalm, en/es resx parity)
 
 ★ = highest-leverage files; start here when debugging
 ```
@@ -817,10 +843,10 @@ Get-Content "$env:LOCALAPPDATA\OpenAdoration\logs\openadoration-$(Get-Date -Form
 ### Run tests
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# Expected: 43/43 pass — Bible parsers (Zefania, OSIS, USFX, thiagobodruk /
+# Expected: 70/70 pass — Bible parsers (Zefania, OSIS, USFX, thiagobodruk /
 #   OpenAdoration / BibleSuperSearch JSON / ZIP / SQLite + ZIP guards + sanity check),
-#   song import (OpenLyrics, OpenSong, plain text), VideoPsalm agenda + DRM detector,
-#   and localization resources
+#   song import (OpenLyrics, OpenSong, ChordPro, plain text), VideoPsalm agenda + DRM
+#   detector, theme cascade, layer boundaries (NetArchTest), en/es resx parity
 ```
 
 ### Debug projection issues
@@ -835,17 +861,22 @@ dotnet test OpenAdoration.Tests.Infrastructure
 |---|---|---|---|---|---|
 | Songs | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Bible | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Themes | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Service Schedule | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Media | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Projection engine | — | ✅ | — | ✅ | ✅ |
+| Themes (+ content cascade, per-theme transition) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Service Schedule (+ drag-reorder, VideoPsalm import) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Media (+ thumbnails, transport) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Projection engine (+ announcements, lower-thirds, transitions) | — | ✅ | — | ✅ | ✅ |
+| Stage View | — | ✅ | — | ✅ | ✅ |
+| Internationalization (en/es) | — | ✅ | — | — | ✅ |
+| App appearance (Light/Dark, G27) | — | ✅ | — | ✅ | ✅ |
+| Backup/restore · auto-update | — | ✅ | — | ✅ | ✅ |
+| Plugins (foundation; UI hidden) | — | ✅ | — | ✅ | ✅ |
 
 ---
 
 ## 12. Subsystems added after the core diagrams
 
-These shipped during the v1.0 finishing batch (after §3's data-flow diagrams were written).
-They follow the same layering and patterns. Full detail in `CLAUDE.md`.
+These shipped after §3's data-flow diagrams were written — the v1.0 finishing batch **and** the
+v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in `CLAUDE.md`.
 
 - **Token system** — `ITokenResolver` (singleton, `[GeneratedRegex]`) resolves `[SongTitle]`,
   `[BibleReference]`, `[ChurchName]`, etc. in theme Header/Footer templates. 12 tokens
@@ -857,18 +888,37 @@ They follow the same layering and patterns. Full detail in `CLAUDE.md`.
   themed 1920×1080 previews of the current slide + UP NEXT (including the first slide of the next
   schedule item), Prev/Next item, real video preview. Subscribes to the extended
   `IProjectionService` event bus.
-- **Announcements** — `IProjectionService.ShowAnnouncement/ClearAnnouncement` + `CurrentAnnouncement`
-  / `AnnouncementChanged`. A blue lower-third **banner overlay** over the untouched slide; auto-dismisses
-  after `AnnouncementDurationSeconds`. Not a slide type.
+- **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
+  overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
+- **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**
+  flush-bottom overlay (e.g. a speaker name) that stays until cleared; independent of the slide.
 - **Auto-advance** — `ScheduleItem.AutoAdvanceSeconds`; `DispatcherTimer` (one-shot, resets on every
   `SlideChanged`, stopped on every exit path — G19).
-- **Slide transition** — configurable opacity fade on the projection `ContentLayers`
-  (`SlideTransitionMilliseconds`; 0 = off).
-- **Settings** — `IAppSettingsService` (singleton) over `settings.json` (not the DB).
-- **Song import** — `SongFormatDispatcher` (OpenLyrics / OpenSong / plain text), mirroring the
-  Bible import dispatcher pattern.
-- **Packaging** — self-contained single-file publish (`win-x64.pubxml`) + WiX v5 MSI
-  (`installer/`). See `docs/RELEASE.md`.
+- **Slide transitions (M10)** — Cut / Fade / Slide / Zoom (`SlideTransitionKind`, in `Domain.Common`).
+  Global default in settings (`SlideTransition` + `SlideTransitionMilliseconds`, 0 = off); a theme may
+  override the kind (`Theme.SlideTransition`, null = inherit).
+- **Settings** — `IAppSettingsService` (singleton) over `settings.json` (church/CCLI, defaults,
+  per-content default themes, `UiCulture` language, `Appearance` Light/Dark) — not the DB.
+- **Song import** — `SongFormatDispatcher` (OpenLyrics / OpenSong / ChordPro / plain text), mirroring
+  the Bible import dispatcher.
 
-For the v2.0 plan (M8 Reliability & Releases, M9 Content & Imports, M10 Presentation Richness
-incl. video transport controls), see `ROADMAP.md`.
+### v2.0 subsystems
+- **Internationalization (M11)** — resx (en/es) + `{loc:Loc}` markup extension + live
+  `TranslationSource`; `LocalizationService` applies `UiCulture`; resx parity is unit-tested.
+- **App-chrome appearance (G27)** — runtime Light/Dark via `{DynamicResource}` + `IAppThemeService`
+  (see [§3.5b](#35b-app-chrome-appearance-lightdark--g27)).
+- **Media thumbnails** — `ThumbnailImage` attached property: disk cache → `ShellThumbnail`
+  (`IShellItemImageFactory`) → `FfmpegThumbnail` (FFmpeg.AutoGen frame grab) for HEVC etc.; cached on disk.
+- **Schedule drag-reorder** — hand-rolled drag in the builder list → `MoveItemAsync` →
+  `ReorderItemsAsync` (the same persistence as the ▲▼ arrows).
+- **VideoPsalm migration (M12)** — `.vpagd` full-agenda import (songs/scripture/media/schedule/themes);
+  references-only scripture (licensed verse text omitted); encrypted `.vpc` Bibles detected and refused.
+- **Reliability (M8)** — backup/restore to a portable `.oabak` (staged DB swap on restart);
+  opt-in GitHub auto-update (`IUpdateService`, UAC-aware); pre-migration DB snapshot (G26).
+- **Plugins (M13)** — `.oaplugin` contract + isolated loader (`PluginManager`); UI hidden until the
+  first connector module ships.
+- **Packaging** — self-contained single-file publish (`win-x64.pubxml`) + WiX v5 MSI; FFmpeg binaries
+  fetched + SHA256-verified by `installer/fetch-ffmpeg.ps1`. See `docs/RELEASE.md`.
+
+v2.0 shipped as `v2.0.0` (2026-06-19); see `ROADMAP.md` / `CHANGELOG.md`. Deferred backlog: EasyWorship/
+ProPresenter import, PDF/pptx decks, clean-output/NDI, the api.bible plugin (separate repo).
