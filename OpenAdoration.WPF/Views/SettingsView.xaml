@@ -50,6 +50,23 @@
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
+                <TextBlock Text="{loc:Loc Settings_Appearance}" Style="{StaticResource FieldLabel}" />
+                <ComboBox x:Name="AppearanceCombo"
+                          Style="{StaticResource FieldComboBox}"
+                          Width="220" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableAppearances}"
+                          SelectedItem="{Binding SelectedAppearance}"
+                          Margin="0,0,0,4">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{loc:Loc Settings_AppearanceHelp}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
                 <TextBlock Text="{loc:Loc Settings_ChurchSection}"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
@@ -203,7 +220,8 @@
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="{loc:Loc Settings_Save}"
+                    <Button x:Name="SaveSettingsButton"
+                            Content="{loc:Loc Settings_Save}"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding SaveCommand}" />
                     <TextBlock Text="{loc:Loc Settings_Saved}"

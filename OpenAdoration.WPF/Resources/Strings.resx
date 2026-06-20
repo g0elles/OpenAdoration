@@ -145,6 +145,10 @@
   <data name="Settings_LanguageSection" xml:space="preserve"><value>LANGUAGE</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Application language</value></data>
   <data name="Settings_LanguageHelp" xml:space="preserve"><value>Changes the language of the application interface.</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_AppearanceHelp" xml:space="preserve"><value>Light or dark theme for the application interface. The projected output is unaffected.</value></data>
+  <data name="Settings_AppearanceDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_AppearanceLight" xml:space="preserve"><value>Light</value></data>
   <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
   <data name="Settings_Saved" xml:space="preserve"><value>✓ Saved</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Loading…</value></data>

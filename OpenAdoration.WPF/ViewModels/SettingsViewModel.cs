@@ -9,9 +9,16 @@ using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
+/// <summary>App-chrome appearance picker item; <see cref="ToString"/> drives combo display + UI Automation.</summary>
+public sealed record AppearanceOption(AppearanceMode Mode, string Label)
+{
+    public override string ToString() => Label;
+}
+
 public partial class SettingsViewModel : BaseViewModel
 {
     private readonly IAppSettingsService _settings;
+    private readonly IAppThemeService _appTheme;
     private readonly IThemeService _themeService;
     private readonly IProjectionService _projectionService;
     private readonly ILocalizationService _localization;
@@ -35,6 +42,11 @@ public partial class SettingsViewModel : BaseViewModel
 
     [ObservableProperty] private LanguageOption? _selectedLanguage;
 
+    /// <summary>App-chrome appearance options (Light/Dark); rebuilt per Load so labels follow the UI language.</summary>
+    public ObservableCollection<AppearanceOption> AvailableAppearances { get; } = [];
+
+    [ObservableProperty] private AppearanceOption? _selectedAppearance;
+
     /// <summary>Per-content-type default-theme pickers; index 0 is the "app default" (null) sentinel.</summary>
     public ObservableCollection<ThemeOption> AvailableThemes { get; } = [];
 
@@ -51,8 +63,9 @@ public partial class SettingsViewModel : BaseViewModel
     /// <summary>True once the operator edits a field without saving. Drives the prompt-on-leave.</summary>
     [ObservableProperty] private bool _hasUnsavedChanges;
 
-    private bool    _loading;             // suppresses dirty-marking while Load() populates fields
-    private string? _loadedLanguageCode;  // for reverting the live language preview on discard
+    private bool           _loading;            // suppresses dirty-marking while Load() populates fields
+    private string?        _loadedLanguageCode; // for reverting the live language preview on discard
+    private AppearanceMode _loadedAppearance;   // for reverting the live appearance preview on discard
 
     private void MarkDirty()
     {
@@ -65,6 +78,7 @@ public partial class SettingsViewModel : BaseViewModel
 
     public SettingsViewModel(
         IAppSettingsService settings,
+        IAppThemeService appTheme,
         IThemeService themeService,
         IProjectionService projectionService,
         ILocalizationService localization,
@@ -75,6 +89,7 @@ public partial class SettingsViewModel : BaseViewModel
         ILogger<SettingsViewModel> logger)
     {
         _settings          = settings;
+        _appTheme          = appTheme;
         _themeService      = themeService;
         _projectionService = projectionService;
         _localization      = localization;
@@ -106,6 +121,7 @@ public partial class SettingsViewModel : BaseViewModel
             CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
+            LoadAppearances(current);
             await LoadThemesAsync(current);
         }
         finally
@@ -114,6 +130,16 @@ public partial class SettingsViewModel : BaseViewModel
             _loading = false;
             HasUnsavedChanges = false;
         }
+    }
+
+    private void LoadAppearances(AppSettings current)
+    {
+        AvailableAppearances.Clear();
+        AvailableAppearances.Add(new AppearanceOption(AppearanceMode.Dark, L("Settings_AppearanceDark")));
+        AvailableAppearances.Add(new AppearanceOption(AppearanceMode.Light, L("Settings_AppearanceLight")));
+
+        _loadedAppearance = current.Appearance;
+        SelectedAppearance = AvailableAppearances.First(o => o.Mode == current.Appearance);
     }
 
     private async Task LoadThemesAsync(AppSettings current)
@@ -139,9 +165,15 @@ public partial class SettingsViewModel : BaseViewModel
         if (!HasUnsavedChanges) return;
 
         if (_dialog.Confirm(L("Settings_LeaveUnsaved"), L("Settings_Title")))
+        {
             _ = SaveAsync(); // _settings is a singleton — completes even as this scoped VM is disposed
-        else if (_loadedLanguageCode is not null)
-            _localization.SetLanguage(_loadedLanguageCode); // undo the live preview
+        }
+        else
+        {
+            if (_loadedLanguageCode is not null)
+                _localization.SetLanguage(_loadedLanguageCode); // undo the live language preview
+            _appTheme.Apply(_loadedAppearance);                 // undo the live appearance preview
+        }
 
         HasUnsavedChanges = false;
     }
@@ -164,6 +196,7 @@ public partial class SettingsViewModel : BaseViewModel
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
                 SlideTransition             = SelectedTransition,
+                Appearance                  = SelectedAppearance?.Mode ?? AppearanceMode.Dark,
                 UiCulture                   = SelectedLanguage?.Code,
                 CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup,
                 DefaultSongThemeId          = SelectedSongTheme?.Id,
@@ -177,6 +210,7 @@ public partial class SettingsViewModel : BaseViewModel
             _projectionService.NotifyThemeChanged();
 
             _loadedLanguageCode = SelectedLanguage?.Code ?? _loadedLanguageCode;
+            _loadedAppearance = updated.Appearance;
             HasUnsavedChanges = false;
             IsSaved = true;
             _logger.LogInformation("Settings saved");
@@ -295,6 +329,13 @@ public partial class SettingsViewModel : BaseViewModel
     {
         if (value is null) return;
         _localization.SetLanguage(value.Code); // live preview; persisted on Save
+        MarkDirty();
+    }
+
+    partial void OnSelectedAppearanceChanged(AppearanceOption? value)
+    {
+        if (value is null) return;
+        _appTheme.Apply(value.Mode); // live preview; persisted on Save
         MarkDirty();
     }
 

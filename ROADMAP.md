@@ -668,7 +668,7 @@ Converts the app chrome from a single hardcoded dark palette to runtime-swappabl
 **Phases:**
 1. ✅ **DONE (2026-06-19):** surgical regex `{StaticResource (\w*Brush)}` → `{DynamicResource \1}` — 393 brush refs converted, 2 converter false-positives (`ColorToBrush`/`HexToBrush`) reverted. GUI-verified unchanged dark.
 2. ✅ **DONE (2026-06-19):** `Colors.Dark.xaml` (renamed) + `Colors.Light.xaml` (approved palette); `IAppThemeService`/`AppThemeService` (WPF singleton) replaces the palette merged-dict in `Application.Current.Resources` (finds the dict containing `PrimaryBrush`); applied at startup from `AppSettings.Appearance`. **`AppSettings.Appearance` (enum Dark/Light, default Dark) pulled forward from phase 3** so the swap is verifiable. GUI-verified: seeded `Appearance:1`→Light, default→Dark, both legible.
-3. **Setting UI (remaining):** Settings→General appearance toggle (en/es), wired through `IAppThemeService.Apply` for **live** swap (no restart), dirty+save. (Field + service already exist.)
+3. ✅ **DONE (2026-06-19):** Settings→General appearance picker (`AppearanceCombo`, en/es `Settings_Appearance*`), wired through `IAppThemeService.Apply` for **live** swap (no restart), dirty+save, reverts the preview on discard-leave. GUI-verified live swap to Light + settings.json round-trip (`e2e/test_appearance_toggle.py`).
 4. **Inline-hex cleanup (scoped):** convert only chrome hex that looks wrong in Light (~10–15 in views); leave `ProjectionWindow` overlay hex + deliberate fixed colors; flag the rest accepted.
 5. **Verify both themes:** `oa-e2e` capture every view in Dark *and* Light (OA_DATA_DIR-seeded settings.json per appearance); resx parity; update `ARCHITECTURE.md`; flip G27 in CLAUDE.md to ✅ENFORCED.
 
