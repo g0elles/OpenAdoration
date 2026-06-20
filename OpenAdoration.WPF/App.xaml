@@ -19,6 +19,7 @@
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
             <converters:HexColorToBrushConverter x:Key="HexToBrush" />
             <converters:FilePathToImageSourceConverter x:Key="FilePathToImage" />
+            <converters:FilePathToThumbnailConverter x:Key="FilePathToThumbnail" />
             <converters:ColorToBrushConverter x:Key="ColorToBrush" />
             <converters:TestamentToLabelConverter x:Key="TestamentToLabel" />
             <converters:IntEqualityConverter x:Key="IntEquality" />

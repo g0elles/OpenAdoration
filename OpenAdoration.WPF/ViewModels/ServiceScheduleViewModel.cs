@@ -834,6 +834,18 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         await PersistOrderAsync();
     }
 
+    /// <summary>Drag-and-drop reorder: move <paramref name="source"/> to <paramref name="target"/>'s slot.</summary>
+    public async Task MoveItemAsync(ScheduleItemViewModel source, ScheduleItemViewModel target)
+    {
+        if (OpenedService is null || ReferenceEquals(source, target)) return;
+        var from = ScheduleItems.IndexOf(source);
+        var to   = ScheduleItems.IndexOf(target);
+        if (from < 0 || to < 0 || from == to) return;
+
+        ScheduleItems.Move(from, to);
+        await PersistOrderAsync();
+    }
+
     private async Task PersistOrderAsync()
     {
         if (OpenedService is null) return;

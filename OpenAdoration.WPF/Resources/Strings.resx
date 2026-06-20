@@ -338,6 +338,7 @@
   <data name="Sched_ImportFolderTitle" xml:space="preserve"><value>Import Folder</value></data>
   <data name="Sched_DeleteServiceTitle" xml:space="preserve"><value>Delete Service</value></data>
   <data name="Sched_RemoveItemTitle" xml:space="preserve"><value>Remove Item</value></data>
+  <data name="Sched_DragHint" xml:space="preserve"><value>Drag to reorder (or use the ▲▼ arrows)</value></data>
   <data name="Sched_ErrImportVp" xml:space="preserve"><value>Could not import this VideoPsalm agenda. It may be corrupt or an unsupported file.</value></data>
   <data name="Sched_ErrNoAgendas" xml:space="preserve"><value>No VideoPsalm agendas (*.vpagd) were found in that folder.</value></data>
   <data name="Sched_ErrImportFolder" xml:space="preserve"><value>Could not import this folder.</value></data>

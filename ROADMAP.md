@@ -20,7 +20,7 @@ All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentio
 | M8.2 Auto-update (`IUpdateService`) | ✅ Done — `GitHubUpdateService` (releases/latest → SemVer → MSI), opt-in startup check, Settings UPDATES |
 | M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions: ci/release/codeql) |
 | M9.1 More song importers | 🔶 ChordPro done (`.cho/.crd/.chopro/.chordpro`); EasyWorship + ProPresenter **moved to backlog** (blocked — need real export samples; see Backlog below) |
-| M9.2 Image-folder / PDF / pptx decks | 🔶 Image-folder import done; PDF + pptx decks deferred (native dep: Docnet/PDFium) |
+| M9.2 Image-folder / PDF / pptx decks | 🔶 Image-folder import done; PDF + pptx decks deferred (native dep: Docnet/PDFium). **Media thumbnails added 2026-06-19** — Windows Shell thumbnails (images + videos) in the media library tiles and the schedule add-media picker (`FilePathToThumbnailConverter`, no new dep) |
 | M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`; consolidated to one smart search box 2026-06-18) |
 | M10.1 Transition library | ✅ Done — Cut / Fade / Slide / Zoom (`SlideTransitionKind`) |
 | M10.2 Persistent lower-thirds | ✅ Done — `ShowLowerThird`/`ClearLowerThird`, flush-bottom bar, operator controls |
@@ -702,7 +702,7 @@ Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a c
 | Multi-user / network sync | Out — one PC per service is universal in small churches. |
 | **Cloud** backup / sync | Out — violates offline-first. (Note: **local** backup/restore is in scope as M8.1 — a portable file, no cloud.) |
 | CCLI licence tracking / reporting | Out for now — useful but not blocking. |
-| Drag-to-reorder in schedule | Out — Up/Down buttons are sufficient. |
+| Drag-to-reorder in schedule | ✅ **Done 2026-06-19** — reversed (Up/Down alone is tedious past ~20 items). Hand-rolled drag (no dep) on the builder list → `MoveItemAsync` → existing `PersistOrderAsync`; ▲▼ arrows kept. GUI-verified (drag flips persisted order). |
 
 ---
 

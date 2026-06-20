@@ -76,7 +76,8 @@
                                FontSize="13"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,24" />
-                    <Button Content="{loc:Loc Media_ImportCta}"
+                    <Button x:Name="ImportMediaCtaButton"
+                            Content="{loc:Loc Media_ImportCta}"
                             Style="{StaticResource PrimaryButton}"
                             Padding="20,9"
                             HorizontalAlignment="Center"
@@ -128,8 +129,8 @@
                                                 ClipToBounds="True"
                                                 Background="#2A2A3E">
                                             <Grid>
-                                                <!-- Image thumbnail (null for videos — FilePathToImage returns null) -->
-                                                <Image Source="{Binding FilePath, Converter={StaticResource FilePathToImage}}"
+                                                <!-- Shell thumbnail — works for images AND videos -->
+                                                <Image Source="{Binding FilePath, Converter={StaticResource FilePathToThumbnail}}"
                                                        Stretch="UniformToFill" />
 
                                                 <!-- Video icon overlay — visible only when Type is Video -->
