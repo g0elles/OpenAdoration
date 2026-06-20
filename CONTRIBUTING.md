@@ -33,6 +33,25 @@ false in the code. Out-of-order is fine. **Unverified truth is not.**
 4. **Release ritual.** Before any `X.0`, run [`docs/V2_RELEASE_GATE.md`](docs/V2_RELEASE_GATE.md):
    reconcile the roadmap, run the integration "Big Test", clear ship-safety items.
 
+## Memory & cross-references (so context stays cheap to load)
+
+Knowledge is **typed** and lives in exactly one home; notes **point** to it instead of restating it.
+
+- **Where each kind lives.** Policy/rules → `CLAUDE.md` (+ G-gotchas). Working preferences & durable
+  facts → `.claude/memory/` (typed frontmatter) and `ROADMAP.md` (milestone status). Episodic "what we
+  did" → `SESSION_STATUS.md`. The repo + git history is the raw trace.
+- **`SESSION_STATUS.md` is a *recent* working log**, not an archive: keep ~6–8 newest entries; roll older
+  ones into `SESSION_STATUS_ARCHIVE.md` (grep by date). When a fact in a session note becomes durable,
+  **promote it** to the right typed home and let the raw entry age out. (Both files are local-only — never committed.)
+- **Every session entry ends with a `↳ Refs` footer** pointing to where the work lives, graded by scope:
+  - *pinpoint* (a fix): the exact file(s) `path:line` + the one milestone/gotcha ID it touches;
+  - *feature*: a block — milestone ID, the key files, CHANGELOG, ARCH section **only if** it adds design
+    rationale the code can't show (code is the source of truth for "what/how");
+  - *cross-cutting*: link the whole file(s).
+- **Reference by stable ID / heading / filename — never bare line numbers** (they rot). Use `M10.1`, `G27`,
+  `§12`, `[2.0.1]`, `[[memory-file]]`, `path/to/File.cs::Symbol`. See [`docs/CONTEXT_MAP.md`](docs/CONTEXT_MAP.md)
+  for the subsystem → (roadmap ID · files · arch §) lookup.
+
 ## Branch flow
 
 - Active work → `dev` (public repo; commit/push here). Pair every commit with a `SESSION_STATUS.md`
