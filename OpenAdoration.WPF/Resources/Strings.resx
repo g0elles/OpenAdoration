@@ -181,7 +181,6 @@
   <data name="Stage_NotProjecting" xml:space="preserve"><value>Not projecting</value></data>
   <data name="Stage_UpNext" xml:space="preserve"><value>UP NEXT</value></data>
   <data name="Stage_EndOfItem" xml:space="preserve"><value>End of item</value></data>
-  <data name="Stage_VideoBgActive" xml:space="preserve"><value>Video background active</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Songs</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Search songs…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Import</value></data>

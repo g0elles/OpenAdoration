@@ -1,5 +1,11 @@
 # OpenAdoration — v2.0 "Big Test" QA Checklist
 
+> **✅ v2.0 shipped 2026-06-19.** This is the **historical QA record** for the v2.0 cut, not a live
+> checklist. The raw operator findings captured in the **Notes** blocks (e.g. §A) were the input to the
+> ship/defer triage; some drove fixes, some features were dropped (dual-version scripture), and any
+> still-open items are tracked in `ROADMAP.md` Backlog / `SESSION_STATUS.md`. Kept as a regression
+> reference for the next release.
+
 The integration pass from [V2_RELEASE_GATE.md](V2_RELEASE_GATE.md) Gate 2. Walk it top to bottom.
 Mark each item and jot findings in the **Notes** block under each area — that's the organized feedback
 loop. We triage the notes afterward (fix now vs defer vs won't-fix).
