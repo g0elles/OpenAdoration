@@ -31,11 +31,11 @@ and creates the GitHub release with the MSI attached — no local build needed.
 4. **Tag and push:**
 
    ```powershell
-   git tag v1.1.0
-   git push origin v1.1.0
+   git tag v2.0.0
+   git push origin v2.0.0
    ```
 
-   `release.yml` builds `OpenAdoration-1.1.0-win-x64.msi` and publishes the release
+   `release.yml` builds `OpenAdoration-2.0.0-win-x64.msi` and publishes the release
    with auto-generated notes. The MSI **asset name** keeps the
    `OpenAdoration-<version>-win-x64.msi` pattern that auto-update (8.2) will parse.
 5. **Smoke-test** the published MSI on a clean Windows machine: install, launch,
@@ -46,18 +46,20 @@ and creates the GitHub release with the MSI attached — no local build needed.
 To produce the MSI without tagging (e.g. to test the installer):
 
 ```powershell
-pwsh installer/build.ps1 -Version 1.1.0
+pwsh installer/build.ps1 -Version 2.0.0
 ```
 
-Produces `installer/out/OpenAdoration-1.1.0-win-x64.msi` (self-contained, no .NET
-prerequisite). This is exactly what `release.yml` runs.
+Produces `installer/out/OpenAdoration-2.0.0-win-x64.msi` (self-contained, no .NET
+prerequisite). This is exactly what `release.yml` runs. `fetch-ffmpeg.ps1` (run by the
+build if FFmpeg is missing) verifies each binary against a pinned SHA256.
 
 ## What auto-update expects (Milestone 8.2)
 
 - A GitHub release whose **tag** is `vX.Y.Z` (SemVer).
 - Exactly one `.msi` asset matching `OpenAdoration-*-win-x64.msi`.
 - `IUpdateService` compares the release tag against the running assembly version,
-  downloads the MSI, then launches `msiexec /i` and exits.
+  downloads the MSI, then launches `msiexec /i`. The app exits only if the installer
+  actually starts; if the operator cancels the UAC prompt it keeps running.
 
 ## Conventions
 
