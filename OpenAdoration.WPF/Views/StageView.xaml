@@ -102,16 +102,15 @@
                                Stretch="UniformToFill"
                                Visibility="{Binding CurrentPreview.HasBgImage, Converter={StaticResource BoolToVis}}" />
 
-                        <!-- Layer 3: video background placeholder -->
-                        <Border Background="#CC000000"
-                                Visibility="{Binding CurrentPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Foreground="#AAFFFFFF" FontSize="60"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
-                                <Run Text="  " />
-                                <Run Text="{loc:Loc Stage_VideoBgActive}" />
-                            </TextBlock>
-                        </Border>
+                        <!-- Layer 3: theme background video — mirrors the projector (muted, looping,
+                             any codec via FFME). The body text in Layer 4 overlays it. -->
+                        <ffme:MediaElement x:Name="CurrentBgVideo"
+                                           LoadedBehavior="Play"
+                                           UnloadedBehavior="Manual"
+                                           IsMuted="True"
+                                           Stretch="UniformToFill"
+                                           MediaEnded="OnCurrentBgVideoEnded"
+                                           Visibility="{Binding CurrentPreview.HasBgVideo, Converter={StaticResource BoolToVis}}" />
 
                         <!-- Layer 4: Song / Bible 3-zone text layout -->
                         <Grid Visibility="{Binding CurrentPreview.IsText, Converter={StaticResource BoolToVis}}">
@@ -250,15 +249,13 @@
                                    Stretch="UniformToFill"
                                    Visibility="{Binding NextPreview.HasBgImage, Converter={StaticResource BoolToVis}}" />
 
-                            <Border Background="#CC000000"
-                                    Visibility="{Binding NextPreview.HasBgVideo, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Foreground="#AAFFFFFF" FontSize="60"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
-                                    <Run Text="  " />
-                                    <Run Text="{loc:Loc Stage_VideoBgActive}" />
-                                </TextBlock>
-                            </Border>
+                            <ffme:MediaElement x:Name="NextBgVideo"
+                                               LoadedBehavior="Play"
+                                               UnloadedBehavior="Manual"
+                                               IsMuted="True"
+                                               Stretch="UniformToFill"
+                                               MediaEnded="OnNextBgVideoEnded"
+                                               Visibility="{Binding NextPreview.HasBgVideo, Converter={StaticResource BoolToVis}}" />
 
                             <Grid Visibility="{Binding NextPreview.IsText, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>

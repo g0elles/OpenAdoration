@@ -1,5 +1,11 @@
 # OpenAdoration — v2.0 Release Gate
 
+> **✅ v2.0 shipped 2026-06-19** (tag `v2.0.0`, GitHub release + MSI published). This document is
+> retained as the **historical record** of the gate that governed the cut — it is not a live checklist.
+> The Gate 2 "Big Test" was run as the manual QA pass (see `V2_QA_CHECKLIST.md`); a couple of items
+> below stayed unchecked because the feature was **dropped** (dual-version scripture) or **deferred to
+> backlog** (clean output, VC++ check) rather than blocking the release.
+
 A pre-release checklist for cutting v2.0 from `dev`. Derived from the engineering-lead
 review (out-of-order execution risk) plus a code-verification pass on 2026-06-17.
 
@@ -19,12 +25,13 @@ bottom; don't start a new milestone until they pass.
 
 ## Gate 2 — The "Big Test" (integration QA, features frozen)
 One full, real service that deliberately combines features that landed separately:
-- [ ] Dual-version scripture **+** persistent lower-third **+** a slide transition, in one service.
-- [ ] VideoPsalm agenda import → project its songs, scripture (ref-only) and media (HEVC) live.
-- [ ] Auto-advance crossing song → scripture → media item boundaries.
-- [ ] **Full Spanish pass** (flag is now ON): every view, dialog and VM message in `es`.
-- [ ] Backup create + restore round-trip on a second machine/profile.
-- [ ] Fix the dual-version minor bugs that were deferred to this pass.
+- [-] Dual-version scripture **+** persistent lower-third **+** a slide transition, in one service.
+      *(Dual-version scripture was **dropped** in QA; lower-third + transition verified — see `V2_QA_CHECKLIST.md` §A.)*
+- [x] VideoPsalm agenda import → project its songs, scripture (ref-only) and media (HEVC) live.
+- [x] Auto-advance crossing song → scripture → media item boundaries.
+- [x] **Full Spanish pass** (flag is now ON): every view, dialog and VM message in `es`.
+- [x] Backup create + restore round-trip on a second machine/profile.
+- [-] Fix the dual-version minor bugs that were deferred to this pass. *(Moot — feature dropped.)*
 
 ## Gate 3 — Ship-safety (data + supply chain)
 - [x] **Migration rollback snapshot** — `{db}.oabak.auto` taken before `MigrateAsync`, restored
@@ -36,7 +43,8 @@ One full, real service that deliberately combines features that landed separatel
 - [x] Auto-updater handles UAC cancel / non-admin denial gracefully — _Done 2026-06-19._
       `DownloadAndApplyAsync` returns bool; `Win32Exception 1223` (ERROR_CANCELLED) → false, caller
       stays running (Settings shows "update cancelled", startup path just continues). No crash.
-- [ ] (Optional) VC++ 2015–2022 runtime presence check at startup → friendly dialog if missing.
+- [x] (Optional) VC++ 2015–2022 runtime presence check at startup → friendly dialog if missing.
+      *(Done — `App.WarnIfVcRuntimeMissing()`, non-blocking info dialog + log.)*
 
 ## Enforcement going forward (cheap, high value)
 - [x] **Architecture test** (NetArchTest) locking layer boundaries — _Done._ `LayerDependencyTests`
@@ -60,5 +68,6 @@ One full, real service that deliberately combines features that landed separatel
   overlap planned M14.
 
 ## Release mechanics (every version)
-- [ ] GitHub release with tag `vX.Y.Z` + MSI asset — the in-app auto-updater parses releases.
-- [ ] Consider GitVersion to retire the hand-edited `<Version>` in the WPF `.csproj`.
+- [x] GitHub release with tag `vX.Y.Z` + MSI asset — the in-app auto-updater parses releases.
+      *(v2.0.0 published 2026-06-19.)*
+- [ ] Consider GitVersion to retire the hand-edited `<Version>` in the WPF `.csproj`. *(Still open — nice-to-have.)*

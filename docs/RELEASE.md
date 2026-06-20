@@ -26,7 +26,7 @@ and creates the GitHub release with the MSI attached — no local build needed.
 1. **Bump the version** in `OpenAdoration.WPF.csproj` (`<Version>`/`<FileVersion>`/
    `<AssemblyVersion>`). The workflow **fails fast if `<Version>` ≠ the tag**, so this
    must match before tagging.
-2. **Update `CHANGELOG.md`** — move `[Unreleased]` items into a dated `[x.y.z]` section.
+2. **Update `CHANGELOG.md`** — add a dated `[x.y.z]` section (Added/Changed/Fixed) and a compare link at the bottom.
 3. **Merge to `master`** (via PR — `master` is branch-protected; CI must pass).
 4. **Tag and push:**
 

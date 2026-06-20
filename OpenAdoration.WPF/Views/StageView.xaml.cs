@@ -46,6 +46,8 @@ public partial class StageView : System.Windows.Controls.UserControl
         if (_vm is null) return;
         SyncVideo(CurrentVideoMedia, _vm.CurrentPreview);
         SyncVideo(NextVideoMedia, _vm.NextPreview);
+        SyncBgVideo(CurrentBgVideo, _vm.CurrentPreview);
+        SyncBgVideo(NextBgVideo, _vm.NextPreview);
     }
 
     // FFME opens + plays via LoadedBehavior="Play"; Open/Close are async and set/clear Source.
@@ -70,9 +72,34 @@ public partial class StageView : System.Windows.Controls.UserControl
         }
     }
 
+    // Theme background video: opens BgVideoPath so the preview mirrors the projector's ambient loop.
+    private static async void SyncBgVideo(Unosquare.FFME.MediaElement element, SlidePreview preview)
+    {
+        try
+        {
+            if (preview.HasBgVideo && !string.IsNullOrEmpty(preview.BgVideoPath))
+            {
+                var uri = new Uri(preview.BgVideoPath, UriKind.Absolute);
+                if (element.Source != uri) await element.Open(uri);
+            }
+            else if (element.Source is not null)
+            {
+                await element.Close();
+            }
+        }
+        catch
+        {
+            // Preview is non-critical; a decode failure must not crash the stage view.
+        }
+    }
+
     private async void OnCurrentVideoEnded(object? sender, EventArgs e) => await LoopAsync(CurrentVideoMedia);
 
     private async void OnNextVideoEnded(object? sender, EventArgs e) => await LoopAsync(NextVideoMedia);
+
+    private async void OnCurrentBgVideoEnded(object? sender, EventArgs e) => await LoopAsync(CurrentBgVideo);
+
+    private async void OnNextBgVideoEnded(object? sender, EventArgs e) => await LoopAsync(NextBgVideo);
 
     private static async Task LoopAsync(Unosquare.FFME.MediaElement element)
     {

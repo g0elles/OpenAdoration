@@ -66,8 +66,8 @@ The database is created and migrated automatically on first launch.
 # Requires the WiX v5 CLI once per machine:
 dotnet tool install --global wix --version 5.0.2
 
-pwsh installer/build.ps1 -Version 2.0.0
-# → installer/out/OpenAdoration-2.0.0-win-x64.msi
+pwsh installer/build.ps1 -Version 2.0.1
+# → installer/out/OpenAdoration-2.0.1-win-x64.msi
 #   (and a single self-contained OpenAdoration.exe that needs no .NET install)
 ```
 

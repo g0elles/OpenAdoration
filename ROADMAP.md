@@ -30,7 +30,7 @@ GitHub release + `OpenAdoration-2.0.0-win-x64.msi` published. Ship-safety gates 
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
 | M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
-| M14 Content-level theming | 🔶 In progress — **14.1–14.4 + per-theme `SlideTransition` done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified; M14.5 color-emoji → Segoe Fluent Icons (🔍🖼🎬📖, GUI-verified); **G27 runtime Light/Dark theme swap done (phases 1–5, ✅ENFORCED)** — DynamicResource brushes, `Colors.{Dark,Light}.xaml`, `IAppThemeService` live swap, Settings toggle, all views verified both themes). Remaining: M14.5 optional full geometric-glyph unification (✕✎★▲▼◀▶+− render consistently already — deferred as churn/risk) |
+| M14 Content-level theming | ✅ Done — **14.1–14.4 + per-theme `SlideTransition`** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified; M14.5 color-emoji → Segoe Fluent Icons (🔍🖼🎬📖, GUI-verified); **G27 runtime Light/Dark theme swap done (phases 1–5, ✅ENFORCED)** — DynamicResource brushes, `Colors.{Dark,Light}.xaml`, `IAppThemeService` live swap, Settings toggle, all views verified both themes). Remaining: M14.5 optional full geometric-glyph unification (✕✎★▲▼◀▶+− render consistently already — deferred as churn/risk) |
 
 ---
 
@@ -430,14 +430,16 @@ Accessible from a `?` button in the toolbar.
 ---
 ---
 
-# Version 2.0 — planning
+# Version 2.0 — shipped (2026-06-19)
 
-> v1.0 is feature-complete and shipping for church testing. v2.0 adds four themes:
-> **Reliability & Releases**, **Content & Imports**, **Presentation Richness**, and
-> **Internationalization** (multi-language UI).
-> Same rules apply: offline-first, operator-safe, nothing ships unless it's trustworthy live.
+> v2.0 shipped as tag `v2.0.0`. It delivered six themes:
+> **Reliability & Releases**, **Content & Imports**, **Presentation Richness**,
+> **Internationalization** (multi-language UI), **VideoPsalm Migration**, **Plugins core**,
+> and **Content-level theming** (with runtime Light/Dark chrome).
+> Same rules applied: offline-first, operator-safe, nothing shipped unless it was trustworthy live.
 > Each milestone respects Clean Architecture — new behaviour enters as Application interfaces +
 > Infrastructure implementations + WPF VMs/Views, never by crossing layer boundaries.
+> The milestone sections below are retained as the design record; the ✅ markers reflect what shipped.
 
 ## Milestone 8 — Reliability & Releases
 
@@ -454,8 +456,10 @@ Accessible from a `?` button in the toolbar.
 - **WPF:** Settings → "Create Backup…" / "Restore Backup…" with file dialogs + a confirm dialog. Restore writes the files then prompts an app restart (DB swapped before `AppDbContext` is in heavy use).
 - **Done when:** export on PC A, restore on a fresh PC B, all songs/Bibles/themes/services/media present.
 
-### 8.2 — Auto-update (opt-in)
+### 8.2 — Auto-update (opt-in) ✅ DONE
 **Goal:** the app can tell the operator a newer version exists and install it in one click.
+
+**Built:** `GitHubUpdateService` (`releases/latest` → SemVer compare → download MSI → `msiexec /i`); opt-in startup check + Settings → UPDATES. UAC cancel / non-admin handled gracefully (`DownloadAndApplyAsync` returns bool; the app keeps running on cancel).
 
 - **Application:** `IUpdateService { Task<UpdateInfo?> CheckAsync(CancellationToken ct); Task DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct); }`. `UpdateInfo` = version, notes URL, MSI asset URL, size.
 - **Infrastructure:** `GitHubUpdateService` — `HttpClient` GET `releases/latest`, SemVer-compare against the assembly version, download the `.msi` asset to temp, then launch `msiexec /i` and exit. Fails silently when offline.
@@ -469,7 +473,7 @@ Accessible from a `?` button in the toolbar.
 - Single source of version truth (`Version` in the WPF csproj) flowed into the MSI and the update check.
 - **CI/CD (2026-06-17):** GitHub Actions — `ci.yml` (build+test on push/PR), `release.yml` (tag `vX.Y.Z` → build MSI via `installer/build.ps1` → publish release; guards csproj `<Version>` == tag), `codeql.yml` (C# scanning), grouped `dependabot.yml`. `master` is branch-protected (PR + `build-test`/`analyze` required).
 
-**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it. **(8.1 ✅, 8.3 ✅; 8.2 auto-update still pending.)**
+**Milestone 8 done when:** an operator can back up and restore their whole library, and update the app from within it. **✅ DONE (8.1 ✅, 8.2 ✅, 8.3 ✅).**
 
 ---
 
@@ -479,7 +483,7 @@ Accessible from a `?` button in the toolbar.
 
 ### 9.1 — More song importers
 Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain text):
-- **ChordPro / SongPro** (`.cho`, `.crd`, `.pro`) — text-based, directive `{title}`/`{c:}`; strip chords to lyrics. *(Easy — do first.)*
+- **ChordPro / SongPro** (`.cho`, `.crd`, `.chopro`, `.chordpro`) — text-based, directive `{title}`/`{c:}`; strip chords to lyrics. *(Easy — done.)* ✅
 - **EasyWorship** — EW7 stores songs in a bundled SQLite DB; read songs + slides. *(Medium.)*
 - **ProPresenter** — best-effort text extraction from `.pro` bundles (RTF inside). *(Hard — best-effort, clearly labelled.)*
 - Each new format → a fixture + a `SongParserTests` case; the dispatcher's file filter grows.
@@ -501,10 +505,10 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 **Why:** stronger visuals and livestream support without compromising the operator's live reliability.
 
-### 10.1 — Transition library 🔶 PARTIAL
-- Extend the single Fade into a small, named set: **Cut** (instant) ✅, **Fade** ✅ (done), **Slide/Push** ❌, **Zoom** ❌. WPF animations on the existing `ContentLayers`; pick per-theme or global; `0 ms`/Cut always available as the safe default.
+### 10.1 — Transition library ✅ DONE
+- Extended the single Fade into a small, named set: **Cut** (instant) ✅, **Fade** ✅, **Slide/Push** ✅, **Zoom** ✅ (`SlideTransitionKind`). WPF animations on the existing `ContentLayers`; picked per-theme (`Theme.SlideTransition`) or global; `0 ms`/Cut always available as the safe default.
 
-### 10.2 — Lower-thirds / persistent overlays
+### 10.2 — Lower-thirds / persistent overlays ✅ DONE
 - Beyond the announcement banner: named overlays (speaker, sermon title, scripture ref) that **persist across slide changes** until cleared, rendered by `ProjectionWindow` + Stage View. Managed from a small overlays panel. Builds on the existing `AnnouncementChanged` overlay plumbing.
 
 ### 10.3 — Dual-version scripture 🚫 DROPPED (2026-06-18)
@@ -529,13 +533,12 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 
 **Why:** the app ships English-only, but the primary congregations are Spanish-speaking (and others may follow). Operators should run the whole app in their own language. The Spanish **user guide** (`docs/GUIA-USUARIO.md`) already exists and is the terminology reference for the translation.
 
-> **Status — in progress (2026-06-01):** the localization **foundation is built and verified**
-> (resx en+es, `TranslationSource`, `{loc:Loc}` extension, `ILocalizationService`,
-> `AppSettings.UiCulture`, startup culture, live language dropdown in Settings).
-> Localized so far: the app chrome (nav, projection bar, Help/About menu), the About window,
-> and the Settings page. **Remaining:** externalize strings in the Songs, Bible, Themes, Media,
-> Service Schedule and Stage views, the dialogs, and ViewModel error/validation messages.
-> Adding a language later = drop in a new `Strings.<code>.resx` + register it in `LocalizationService`.
+> **Status — ✅ DONE (shipped in v2.0):** full English + Spanish UI.
+> Foundation (resx en+es, `TranslationSource`, `{loc:Loc}` extension, `ILocalizationService`,
+> `AppSettings.UiCulture`, startup culture, live language dropdown in Settings) plus the complete
+> Spanish translation across **every** view (Songs, Bible, Themes, Media, Service Schedule, Stage),
+> dialogs, empty-state CTAs, and ViewModel error/validation messages. en/es resx parity is test-enforced.
+> `MultiLanguageEnabled` is ON. Adding a language later = drop in a new `Strings.<code>.resx` + register it in `LocalizationService`.
 
 ### 11.1 — Localization infrastructure ✅ done
 - Externalize **every** user-facing WPF string into `.resx` resource files: `Strings.resx` (English, neutral) + `Strings.es.resx` (Spanish). No hard-coded UI strings left in XAML or ViewModels.
@@ -546,9 +549,8 @@ Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain t
 - `AppSettings.UiCulture` (in `settings.json`); applied at startup. Default = OS culture when supported, else English.
 - Settings page: a language dropdown (English / Español). Switching applies **live** via `TranslationSource` (no restart).
 
-### 11.3 — Spanish translation (first locale) 🔶 in progress
-- Done: navigation, projection bar, Help/About menu, the About window, and Settings labels.
-- Remaining: Songs, Bible, Themes, Media, Service Schedule, Stage views; dialogs; empty-state CTAs; ViewModel validation/error messages.
+### 11.3 — Spanish translation (first locale) ✅ DONE
+- Complete: navigation, projection bar, Help/About menu, the About window, Settings, **and** the Songs, Bible, Themes, Media, Service Schedule and Stage views; dialogs; empty-state CTAs; ViewModel validation/error messages.
 - **Do not** translate template **tokens** (`[SongTitle]`…) or Bible book names (those come from the imported Bible data, already localized per version).
 - Use `docs/GUIA-USUARIO.md` as the canonical Spanish terminology.
 
@@ -658,8 +660,8 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
 - **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
 
-### 14.x — G27 Runtime theme swapping (Light/Dark) — PLANNED (drafted 2026-06-19)
-Converts the app chrome from a single hardcoded dark palette to runtime-swappable Light/Dark, flipping G27 from ⚠️ASPIRATION to ✅ENFORCED. App chrome only — projection *content* is theme-entity driven and out of scope.
+### 14.x — G27 Runtime theme swapping (Light/Dark) — ✅ DONE (2026-06-19)
+Converted the app chrome from a single hardcoded dark palette to runtime-swappable Light/Dark, flipping G27 from ⚠️ASPIRATION to ✅ENFORCED. App chrome only — projection *content* is theme-entity driven and out of scope. All 5 phases below shipped.
 
 **Measured state:** `Styles/Colors.xaml` = 10 `Color` + 10 `SolidColorBrush`, merged in `App.xaml`. **393** `StaticResource …Brush` refs, **0** DynamicResource (736 total StaticResource — the other ~343 are styles/converters/templates and stay static). No appearance field in `AppSettings`. 43 inline-hex colors in 10 files bypass the palette.
 
@@ -718,7 +720,7 @@ Milestone 4     Milestone 5     Milestone 6     Milestone 7
 Media      →    Shortcuts   →   Preview     →   Polish + ship
                                 (Stage View)    (installer)
 
-── v2.0 (planning) ─────────────────────────────────────────────────────────
+── v2.0 (shipped 2026-06-19) ───────────────────────────────────────────────
 Milestone 8         Milestone 9          Milestone 10         Milestone 11
 Reliability    →    Content &       →    Presentation    →    i18n
 & Releases          Imports              Richness             (multi-language)
@@ -750,13 +752,13 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **6 — Preview** | Operator preview (delivered as Stage View) | ✅ |
 | **7 — Polish & Release** | Validation, error states, first-run UX, installer | ✅ |
 
-### v2.0 — planning
-| Milestone | Goal | Effort |
+### v2.0 — shipped (2026-06-19)
+| Milestone | Goal | Status |
 |---|---|---|
-| **8 — Reliability & Releases** | Backup/restore, opt-in auto-update, release infra | Medium |
-| **9 — Content & Imports** | More song formats, image/PDF decks, Bible ref-jump | Large |
-| **10 — Presentation Richness** | Transition library, overlays, dual scripture, clean output, video transport controls | Large |
-| **11 — Internationalization** | Multi-language UI (.resx infra, language setting, Spanish translation) | Medium |
-| **12 — VideoPsalm Migration** | Full-agenda import (songs/scripture/media/schedule/themes), references-only scripture (verse text omitted as licensed), centralized enrichable Bible, batch + dedup | Large |
-| **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); api.bible bring-your-own-key Bible connector as the first plugin | Medium |
-| **14 — Content-level theming** | Theme on content (Song + per-type defaults) resolved by one cascade everywhere; standalone projection themed; folds in M12.4's per-item themes | Medium |
+| **8 — Reliability & Releases** | Backup/restore, opt-in auto-update, release infra | ✅ |
+| **9 — Content & Imports** | ChordPro song import, image-folder decks, Bible ref-jump (EasyWorship/ProPresenter/PDF/pptx → backlog) | ✅ |
+| **10 — Presentation Richness** | Transition library, persistent lower-thirds, video transport controls (dual scripture dropped; clean output → backlog) | ✅ |
+| **11 — Internationalization** | Multi-language UI (.resx infra, language setting, full Spanish translation) | ✅ |
+| **12 — VideoPsalm Migration** | Full-agenda import (songs/scripture/media/schedule/themes), references-only scripture (verse text omitted as licensed), centralized enrichable Bible, batch + dedup | ✅ |
+| **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); api.bible bring-your-own-key connector ships as a separate plugin repo (backlog) | ✅ core |
+| **14 — Content-level theming** | Theme on content (Song + per-type defaults) resolved by one cascade everywhere; standalone projection themed; folds in M12.4's per-item themes; runtime Light/Dark chrome (G27) | ✅ |

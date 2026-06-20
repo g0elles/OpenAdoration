@@ -4,6 +4,18 @@ All notable changes to OpenAdoration are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] — 2026-06-20
+
+Patch release: Stage View and localization fixes.
+
+### Fixed
+- **Stage View now mirrors the projector for video-background themes.** The operator
+  preview played a placeholder ("Video background active") whose text overlapped the
+  centred lyrics; it now plays the theme's background video (muted, looping, any codec
+  via FFME) behind the lyrics in both the current and "Up Next" panels.
+- **Media library "Project" button is now localized** (showed English "Project" even in a
+  Spanish session; now uses the shared `Common_Project` string → "Proyectar").
+
 ## [2.0.0] — 2026-06-19
 
 Major release: reliability, full internationalization, richer presentation, VideoPsalm
@@ -125,6 +137,7 @@ First public release. Free, fully offline, SQLite-only worship presentation for 
 - **Packaging:** self-contained single-file `OpenAdoration.exe` (no .NET prerequisite)
   and a per-machine WiX v5 MSI with Start Menu + Desktop shortcuts.
 
+[2.0.1]: https://github.com/g0elles/openadoration/releases/tag/v2.0.1
 [2.0.0]: https://github.com/g0elles/openadoration/releases/tag/v2.0.0
 [1.1.0]: https://github.com/g0elles/openadoration/releases/tag/v1.1.0
 [1.0.1]: https://github.com/g0elles/openadoration/releases/tag/v1.0.1

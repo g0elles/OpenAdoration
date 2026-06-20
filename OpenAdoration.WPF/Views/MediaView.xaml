@@ -170,13 +170,17 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <Button Grid.Column="0"
-                                                        Content="▶ Project"
                                                         Style="{StaticResource PrimaryButton}"
                                                         FontSize="11"
                                                         Padding="0,5"
                                                         Command="{Binding DataContext.ProjectFileCommand,
                                                                   RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}" />
+                                                        CommandParameter="{Binding}">
+                                                    <TextBlock>
+                                                        <Run Text="▶ " />
+                                                        <Run Text="{loc:Loc Common_Project}" />
+                                                    </TextBlock>
+                                                </Button>
 
                                                 <Button Grid.Column="1"
                                                         Content="✕"
