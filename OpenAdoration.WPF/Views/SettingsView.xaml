@@ -236,7 +236,9 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="{loc:Loc Plugins_Title}">
+            <!-- ponytail: plugin module is incomplete (M13) — hidden from users until it ships.
+                 Re-enable by removing Visibility="Collapsed". VM/template wiring left intact. -->
+            <TabItem Header="{loc:Loc Plugins_Title}" Visibility="Collapsed">
                 <ContentControl Content="{Binding Plugins}" />
             </TabItem>
         </TabControl>

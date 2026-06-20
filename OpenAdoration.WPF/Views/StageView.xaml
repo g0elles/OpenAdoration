@@ -19,7 +19,7 @@
 
         <!-- ── Status bar ── -->
         <Border Grid.Row="0"
-                Background="#12121E"
+                Background="{DynamicResource PrimaryBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,10">
@@ -195,7 +195,7 @@
                 </Viewbox>
 
                 <!-- Section label + slide position below the preview -->
-                <Border Grid.Row="1" Background="#12121E" Padding="16,6">
+                <Border Grid.Row="1" Background="{DynamicResource PrimaryBrush}" Padding="16,6">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -217,7 +217,7 @@
             <Rectangle Grid.Column="1" Fill="{DynamicResource BorderBrush}" />
 
             <!-- ─────────── NEXT SLIDE ─────────── -->
-            <Grid Grid.Column="2" Background="#141422">
+            <Grid Grid.Column="2" Background="{DynamicResource SurfaceBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -225,9 +225,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- "UP NEXT" header -->
-                <Border Grid.Row="0" Background="#0F0F1A" Padding="14,8">
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}" Padding="14,8">
                     <TextBlock Text="{loc:Loc Stage_UpNext}"
-                               Foreground="#666688" FontSize="10" FontWeight="Bold" />
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10" FontWeight="Bold" />
                 </Border>
 
                 <!-- Next slide preview OR placeholder -->
@@ -235,7 +235,7 @@
 
                     <!-- No-next placeholder -->
                     <TextBlock Text="{loc:Loc Stage_EndOfItem}"
-                               Foreground="#444466" FontSize="12" FontStyle="Italic"
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" FontStyle="Italic"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="{Binding HasNextSlide, Converter={StaticResource InverseBoolToVis}}" />
 
@@ -310,9 +310,9 @@
                 </Grid>
 
                 <!-- Next section label -->
-                <Border Grid.Row="2" Background="#0F0F1A" Padding="14,6">
+                <Border Grid.Row="2" Background="{DynamicResource PrimaryBrush}" Padding="14,6">
                     <TextBlock Text="{Binding NextPreview.SectionLabel}"
-                               Foreground="#555577" FontSize="10" />
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10" />
                 </Border>
             </Grid>
         </Grid>

@@ -39,7 +39,7 @@ The app is **fully offline**. There are no network calls, no accounts, no cloud 
 │  ViewModels/      ObservableObject + RelayCommand (MVVM)   │
 │  Converters/      IValueConverter implementations          │
 │  Helpers/         ScreenHelper, BibleImport parsers        │
-│  Styles/          Colors.xaml, Base.xaml                   │
+│  Styles/          Colors.{Dark,Light}.xaml, Base.xaml      │
 └─────────────────────┬───────────────────────────────────────┘
                       │  interfaces only (no concrete refs)
 ┌─────────────────────▼───────────────────────────────────────┐
@@ -248,6 +248,30 @@ ProjectionService.RefreshCurrentSlide()
   │  if (!_isProjecting) return
   │  RaiseSlideChanged(CurrentSlide)  ← triggers full re-render with fresh theme
 ```
+
+### 3.5b App-Chrome Appearance (Light/Dark — G27)
+
+Distinct from projection-content theming above: this is the **operator UI** palette, not the
+projected output (projection is driven solely by the `Theme` entity and is unaffected).
+
+```
+Colors.Dark.xaml / Colors.Light.xaml   ← identical keys, different values
+   (10 base + 4 semantic: Danger/Success surfaces, Success text/border)
+App.xaml merges Colors.Dark.xaml as the build-time default
+All views/styles reference brushes via {DynamicResource} (not StaticResource)
+   │
+   ▼
+IAppThemeService.Apply(AppearanceMode)            (WPF singleton)
+   │  builds Colors.{mode}.xaml dict, finds the merged dict containing
+   │  "PrimaryBrush", replaces it in-place → DynamicResource consumers re-resolve live
+   │
+   ├─ App.OnStartup: Apply(settings.Appearance) before MainWindow.Show()
+   └─ Settings→General toggle: Apply(mode) live (no restart) + persist AppSettings.Appearance
+```
+
+Persisted as `AppSettings.Appearance` (enum Dark=0 / Light=1, default Dark; serialized as int).
+The slide-preview boxes in StageView and the ProjectionWindow keep fixed dark colours on purpose —
+they mirror the projected output, not the chrome.
 
 ### 3.6 Bible Full-Chapter Projection
 
