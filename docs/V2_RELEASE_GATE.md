@@ -11,11 +11,11 @@ bottom; don't start a new milestone until they pass.
 ---
 
 ## Gate 1 — Reconcile before RC
-- [ ] `ROADMAP.md` top progress table realigned to `dev`'s actual state (M8.2 auto-update,
-      M9.1 ChordPro, M9.2 image-folder, M10.1 transitions, M10.2 lower-thirds,
-      M10.3 dual-version, M11.3 Spanish are all **done** — table still says otherwise).
-- [ ] `SESSION_STATUS.md` reconciled with reality.
-- [ ] **Feature freeze** declared — no new milestones (incl. M14) until Gates 2–3 pass.
+- [x] `ROADMAP.md` top progress table realigned to `dev`'s actual state (the v2.0 snapshot table is
+      current as of 2026-06-19).
+- [x] `SESSION_STATUS.md` reconciled with reality (kept current each session).
+- [x] **Feature freeze** — M14 (incl. G27 theming) is now complete; remaining work is QA + ship-safety
+      + release mechanics, not new milestones.
 
 ## Gate 2 — The "Big Test" (integration QA, features frozen)
 One full, real service that deliberately combines features that landed separately:
@@ -30,14 +30,17 @@ One full, real service that deliberately combines features that landed separatel
 - [x] **Migration rollback snapshot** — `{db}.oabak.auto` taken before `MigrateAsync`, restored
       in place on failure (`InfrastructureServiceExtensions.InitialiseDatabaseAsync`). _Done 2026-06-17._
       Matters because M8.2 auto-update runs migrations unattended on user machines.
-- [ ] **Pin the FFmpeg binary hash** in `installer/fetch-ffmpeg.ps1` (currently resolves
-      "latest matching" from conda-forge with no checksum — supply-chain hole).
-- [ ] Auto-updater handles UAC cancel / non-admin denial gracefully (no crash loop).
+- [x] **Pin the FFmpeg binary hash** in `installer/fetch-ffmpeg.ps1` — _Done 2026-06-19._ All 9
+      packages pinned to exact build filenames + SHA256, verified after download (refuses on mismatch).
+      Re-ran clean (19 DLLs). No more "latest matching".
+- [x] Auto-updater handles UAC cancel / non-admin denial gracefully — _Done 2026-06-19._
+      `DownloadAndApplyAsync` returns bool; `Win32Exception 1223` (ERROR_CANCELLED) → false, caller
+      stays running (Settings shows "update cancelled", startup path just continues). No crash.
 - [ ] (Optional) VC++ 2015–2022 runtime presence check at startup → friendly dialog if missing.
 
 ## Enforcement going forward (cheap, high value)
-- [ ] **Architecture test** (NetArchTest) locking layer boundaries — CLAUDE.md G28 calls for it;
-      it was never built. One test file; protects the whole design from drift.
+- [x] **Architecture test** (NetArchTest) locking layer boundaries — _Done._ `LayerDependencyTests`
+      enforces G28 (Domain→nothing, Application→Domain, Infrastructure→never WPF).
 - [ ] i18n discipline: new user-facing strings go through `.resx` only. With the flag ON, a
       hardcoded English string now ships *visibly* in a Spanish service.
 

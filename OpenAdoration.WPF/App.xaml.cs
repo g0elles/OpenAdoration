@@ -163,8 +163,16 @@ public partial class App : WpfApp
                 "Update Available"))
             return;
 
-        await _host.Services.GetRequiredService<IUpdateService>().DownloadAndApplyAsync(info);
-        Shutdown();
+        try
+        {
+            // Only exit if the installer actually launched; if the operator cancels UAC, keep running.
+            if (await _host.Services.GetRequiredService<IUpdateService>().DownloadAndApplyAsync(info))
+                Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Startup update download/launch failed — continuing normally.");
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)

@@ -308,8 +308,10 @@ public partial class SettingsViewModel : BaseViewModel
                     L("Settings_UpdateAvailableTitle")))
                 return;
 
-            await _update.DownloadAndApplyAsync(info);
-            System.Windows.Application.Current.Shutdown();
+            if (await _update.DownloadAndApplyAsync(info))
+                System.Windows.Application.Current.Shutdown();
+            else
+                _dialog.Inform(L("Settings_UpdateCancelled"), L("Settings_CheckUpdatesTitle"));
         }
         catch (Exception ex)
         {

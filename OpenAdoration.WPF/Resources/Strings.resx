@@ -414,6 +414,7 @@ This action cannot be undone.</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>Could not restore the backup.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>You're running the latest version.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Check for Updates</value></data>
+  <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Update cancelled. You can try again any time from Settings.</value></data>
   <data name="Settings_UpdateConfirm" xml:space="preserve"><value>Version {0} is available ({1} MB). Download and install now? The app will close to finish.</value></data>
   <data name="Settings_UpdateAvailableTitle" xml:space="preserve"><value>Update Available</value></data>
   <data name="Settings_ErrUpdate" xml:space="preserve"><value>Could not complete the update.</value></data>

@@ -83,14 +83,24 @@ public sealed class GitHubUpdateService : IUpdateService
     private static bool TryParseTag(string tag, out Version version) =>
         Version.TryParse(tag.TrimStart('v', 'V'), out version!);
 
-    public async Task DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default)
+    public async Task<bool> DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default)
     {
         var msiPath = Path.Combine(Path.GetTempPath(), $"OpenAdoration-{info.Version}.msi");
         await using (var src = await Http.GetStreamAsync(info.MsiUrl, ct))
         await using (var dst = File.Create(msiPath))
             await src.CopyToAsync(dst, ct);
 
-        _logger.LogInformation("Launching installer for v{Version}", info.Version);
-        Process.Start(new ProcessStartInfo("msiexec", $"/i \"{msiPath}\"") { UseShellExecute = true });
+        try
+        {
+            Process.Start(new ProcessStartInfo("msiexec", $"/i \"{msiPath}\"") { UseShellExecute = true });
+            _logger.LogInformation("Launching installer for v{Version}", info.Version);
+            return true;
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) // ERROR_CANCELLED
+        {
+            // Operator dismissed the UAC elevation prompt (or lacks admin rights) — not a fault.
+            _logger.LogInformation("Update for v{Version} cancelled at the UAC prompt.", info.Version);
+            return false;
+        }
     }
 }
