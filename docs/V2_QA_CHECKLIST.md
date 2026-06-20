@@ -43,6 +43,19 @@ loop. We triage the notes afterward (fix now vs defer vs won't-fix).
 **Notes (§A):**
 > A dual version scripture cannot be added to the service, mmm you know what, the dual version scripture can go; the blank field in spanish it says Negro... that doesn't make sense it should be limpiar, the theme swap doesn't work, if the default time is changed it should be reflected on the slides or not?... evaluate that
 
+**Triage / resolution (closed 2026-06-20) — all addressed; none blocked the v2.0 cut:**
+- **Dual-version scripture can't be added → ✅ RESOLVED (dropped).** Tester confirmed "it can go." The
+  feature was removed (M10.3 🚫 DROPPED, see `ROADMAP.md`). Single-version scripture adds fine.
+- **Spanish "Negro" → "Limpiar" → ✅ FIXED.** `Projection_Blank` is "Limpiar" (was "Negro"); also
+  recorded in the Round 1 sign-off item 4. The About-window shortcut help keeps the descriptive
+  "Pantalla en negro" for the `B` action (different purpose: it describes the action, not the button).
+- **Theme swap doesn't work → ✅ SHIPPED.** Runtime Light/Dark app-theme swap is G27 ✅ENFORCED
+  (live, no restart; `e2e/test_appearance_toggle.py` passes). Content/default-theme cascade is M14.
+- **Default auto-advance time reflected on existing slides? → ℹ️ BY DESIGN.** The Settings default
+  applies to **new** schedule items only (per its help text); existing items keep their own per-item
+  value so a settings change never silently re-times a built service. Change an item's own timer to
+  retime it.
+
 
 
 ---

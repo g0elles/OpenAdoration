@@ -691,6 +691,8 @@ Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a c
 | M9.2 PDF / pptx deck import | Native dependency decision (Docnet/PDFium for PDF; pptx unzip) — heavyweight, defer. |
 | M10.4 Clean output / NDI *(stretch)* | Clean borderless output is doable later; NDI needs a native SDK. |
 | ChordPro in import tooltip/format string | 2-line cosmetic copy fix (both langs) — fold into the next i18n touch. |
+| Startup update dialog hardcoded English | `App.xaml.cs` `MaybeCheckForUpdatesAsync` uses literal `"Version {0} is available…"` / `"Update Available"` instead of the existing `Settings_UpdateConfirm`/`Settings_UpdateAvailableTitle` resx keys. Low priority — startup check is **off by default**, so a Spanish operator only sees it if they opt in. Fold into the next i18n touch. Found 2026-06-20. |
+| Installer code signing (Authenticode) | MSI + `OpenAdoration.exe` are unsigned → Windows SmartScreen/UAC shows "unknown publisher". Best OSS path: **SignPath Foundation** (free for OSS) or **Azure Trusted Signing** (~$10/mo); sign in `release.yml` after build. Needs a cert/account (user action) before wiring. Raised 2026-06-20. |
 | **NU1903** — `SQLitePCLRaw.lib.e_sqlite3 2.1.11` high-severity advisory (transitive via `EFCore.Sqlite 10.0.9`) | Fix is a **major** SQLitePCLRaw 2.x→3.x bump that changes native SQLite loading (single-file publish risk). Needs a dedicated bump + GUI/publish verification — let dependabot propose it on `dev` and verify, don't blind-bump. Surfaced 2026-06-18. |
 
 ---
