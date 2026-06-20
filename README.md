@@ -135,8 +135,8 @@ OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 
 ## Status
 
-**v2.0 — release-ready.** v1.0 (M0–M7) shipped 2026-06-01; the v2.0 line (M8–M14) is complete and
-pending the release cut (see [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md)).
+**v2.0 — released (2026-06-19).** v1.0 (M0–M7) shipped 2026-06-01; the v2.0 line (M8–M14) is complete
+and published as `v2.0.0` (see [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md)).
 
 | Feature | Status |
 |---|---|
@@ -163,7 +163,7 @@ clean-output/NDI, and the api.bible connector (ships as a separate plugin repo).
 | Doc | Purpose |
 |---|---|
 | [`docs/GUIA-USUARIO.md`](docs/GUIA-USUARIO.md) | **User guide (Spanish)** — operating the app during a service |
-| [`ROADMAP.md`](ROADMAP.md) | Milestones — v1.0 shipped, v2.0 release-ready |
+| [`ROADMAP.md`](ROADMAP.md) | Milestones — v1.0 and v2.0 shipped |
 | [`CHANGELOG.md`](CHANGELOG.md) | What shipped in each version |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Developer reference — layers, data flows, DB schema |
 | [`docs/RELEASE.md`](docs/RELEASE.md) | How to cut a release |
