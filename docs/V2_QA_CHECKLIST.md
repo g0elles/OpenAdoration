@@ -7,8 +7,11 @@ loop. We triage the notes afterward (fix now vs defer vs won't-fix).
 **Legend:** `[x]` pass · `[!]` works-but-issue · `[ ]` not yet / broken (say which in Notes) · `[-]` n/a
 **For every issue, note:** what you did → what you expected → what happened.
 
-> Run the cross-feature **§A scenarios first** — they're where out-of-order delivery hides bugs.
-> Everything below §A is feature-by-feature coverage.
+> **This round (2026-06-19) — focus on §M (near the bottom).**
+> §A–§L are the prior pass (PASSED 2026-06-18, fixes applied & re-verified) — keep as a regression
+> spot-check. **§M is the new surface added since:** runtime Light/Dark theme (G27), per-theme slide
+> transition, Segoe Fluent icons, three Spanish fixes, and the plugins tab being hidden.
+> Run **§M end-to-end in both Light and Dark**, then spot-check §A–§L (especially §A) for regressions.
 
 ---
 
@@ -129,7 +132,8 @@ loop. We triage the notes afterward (fix now vs defer vs won't-fix).
 ---
 
 ## §J — Plugins
-- [x] Add `.oaplugin` → loads live; edit settings; Fetch versions; Import a version; Remove (restart).
+- [-] **Plugin UI is now hidden** (module incomplete — see §M12). The Settings→Plugins tab is collapsed,
+      so this area is **not testable from the UI this round**. Re-enable only returns when the module ships.
 
 **Notes (§J):**
 > 
@@ -155,7 +159,67 @@ loop. We triage the notes afterward (fix now vs defer vs won't-fix).
 
 ---
 
-## Sign-off
+## §M — New since the 2026-06-18 QA (TEST THIS ROUND)
+
+Everything below landed after the prior sign-off. **Run each item in BOTH Light and Dark** unless noted.
+
+### Appearance / runtime theming (G27)
+- [ ] **M1. Live swap:** Settings→General → "Apariencia / Appearance" picker offers Dark + Light
+      (labels follow the UI language). Pick Light → the **whole app chrome swaps instantly, no restart**.
+      Pick Dark → reverts instantly. (Combo selection alone should change it, before you even Save.)
+- [ ] **M2. Persistence:** set Light → **Save** → fully close and reopen the app → still Light.
+      Set Dark → Save → reopen → Dark. (Default for a brand-new install is Dark.)
+- [ ] **M3. Unsaved-change guard:** switch to Light but **don't Save**, then click another section →
+      prompt "save before leaving?". Choose **No** → chrome reverts to the saved appearance.
+      Choose **Yes** → it persists. (Same prompt as the language change.)
+- [ ] **M4. Light legibility sweep:** in Light, visit **every** view — Songs, Bible, Themes, Media,
+      Programa del servicio, Vista de escenario, Configuración (+ open the Theme editor and the
+      Add/Edit Song editor). No white-on-white or dark-on-dark; active-nav lavender visible; all
+      buttons/placeholders/help text readable.
+- [ ] **M5. Dark regression sweep:** repeat M4 in Dark — confirm nothing got lighter/worse vs before.
+- [ ] **M6. Status banners adapt:** trigger an **error** banner (e.g. cancel/garble a Bible import or a
+      bad backup restore) and **success** indicators (Bible import summary; "✓ Guardado/Saved" after
+      saving Settings; the green LIVE badge in a live service) — in **both** themes. Background + text
+      legible in each (not a dark-red box floating in the light UI).
+- [ ] **M7. Stage view chrome:** in **Light**, the stage status bar, "A CONTINUACIÓN/UP NEXT" panel and
+      its labels are light; only the **slide-preview box stays dark** (it mirrors the projector). In
+      **Dark**, the whole view is uniformly dark. No half-light/half-dark look.
+- [ ] **M8. Projection unaffected:** with the app in **Light**, actually project a song/scripture →
+      the projection screen still uses the **content Theme** colors, NOT the light app chrome.
+
+### Per-theme slide transition (M14)
+- [ ] **M9.** Theme editor has a **Transition** picker incl. "Use global default". Set theme A → *Slide*,
+      save; project content that uses theme A → it slides. Set theme B → "global default" → it uses the
+      Settings→transition. (Duration still comes from Settings.)
+
+### Icons (M14.5)
+- [ ] **M10.** These render as crisp **monochrome glyphs** (no colored emoji, no missing-glyph boxes):
+      Songs search button 🔍, Media placeholder/video tiles, Bible "no version" empty-state, Stage
+      "video background active" overlay. Check at your normal display scaling.
+
+### Spanish fixes (i18n)
+- [ ] **M11.** In Español: Bible empty-state **title wraps** (not clipped to "…hay…importa"); Songs
+      search placeholder reads "Buscar canciones…"; Stage "Fondo de video activo" is translated.
+
+### Plugin visibility
+- [ ] **M12.** Settings shows **only the General tab — no Plugins tab**. There is no way to reach any
+      plugin UI from the app. (Intentional: hidden until the plugin module is finished.)
+
+**Notes (§M):**
+> 
+
+---
+
+## Sign-off — Round 2 (post-2026-06-18, v2 candidate)
+- Tester: Gabri Elles  Date: __________  Build/commit: `dev` `68d8198` (or later)
+- Verdict: [ ] ship  ·  [ ] ship after fixes (list below)  ·  [ ] not ready
+- New issues found (what you did → expected → happened):
+  1.
+  2.
+
+---
+
+## Sign-off — Round 1 (2026-06-18) — archived
 - Tester: Gabri Elles  Date: 2026-06-18  Build/commit: `dev` (post-QA fixes)
 - Verdict: [x] ship  ·  [ ] ship after fixes (list below)  ·  [ ] not ready  — **PASSED** after the fixes below were applied and re-verified.
 - Must-fix before v2.0 — ALL FIXED this pass:

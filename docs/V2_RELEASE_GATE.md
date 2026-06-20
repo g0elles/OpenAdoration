@@ -46,8 +46,9 @@ One full, real service that deliberately combines features that landed separatel
 ## Deferred / decided — NOT gates
 - **Plugin settings DPAPI encryption** — v1 plaintext is an approved decision; revisit when the
   key-bearing api.bible plugin actually ships (separate repo).
-- **DynamicResource / Light theme** — real gap (390 `StaticResource` brush refs, **0**
-  `DynamicResource`; G27 documents the opposite), but it's **M14 theming work**, not a v2.0 gate.
+- **DynamicResource / Light theme** — ✅ **DONE 2026-06-19 (G27, M14.x):** all brushes are
+  `{DynamicResource}`, `Colors.{Dark,Light}.xaml` + `IAppThemeService` runtime swap, Settings toggle.
+  Was an M14 item, not a v2.0 gate; now closed. Re-test via §M of the QA checklist.
 - **SQLite `VACUUM`/`ANALYZE` after big imports** — nice-to-have, not blocking.
 - **Feature ideas** from the reviews (OBS/WebSocket output, LAN web stage monitor, sanctuary
   alerts, CCLI usage auditor, smart verse-split, multi-version compare, songbook hierarchy,
