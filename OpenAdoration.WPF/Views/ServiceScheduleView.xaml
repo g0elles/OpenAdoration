@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             xmlns:behaviors="clr-namespace:OpenAdoration.WPF.Behaviors"
              Loaded="OnLoaded">
 
     <Grid Background="{DynamicResource SurfaceBrush}">
@@ -459,7 +460,7 @@
                                         <Border Width="44" Height="28" Margin="0,0,8,0"
                                                 CornerRadius="3" ClipToBounds="True"
                                                 Background="{DynamicResource PrimaryBrush}">
-                                            <Image Source="{Binding FilePath, Converter={StaticResource FilePathToThumbnail}}"
+                                            <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
                                                    Stretch="UniformToFill" />
                                         </Border>
                                         <TextBlock Text="{Binding FileName}"

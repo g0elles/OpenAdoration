@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             xmlns:behaviors="clr-namespace:OpenAdoration.WPF.Behaviors"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -129,8 +130,8 @@
                                                 ClipToBounds="True"
                                                 Background="#2A2A3E">
                                             <Grid>
-                                                <!-- Shell thumbnail — works for images AND videos -->
-                                                <Image Source="{Binding FilePath, Converter={StaticResource FilePathToThumbnail}}"
+                                                <!-- Thumbnail: shell (images + most videos) → FFmpeg fallback (HEVC) -->
+                                                <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
                                                        Stretch="UniformToFill" />
 
                                                 <!-- Video icon overlay — visible only when Type is Video -->

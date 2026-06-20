@@ -24,7 +24,9 @@ internal static class ShellThumbnail
         var hbitmap = IntPtr.Zero;
         try
         {
-            if (factory.GetImage(new SIZE { cx = size, cy = size }, SIIGBF.ResizeToFit, out hbitmap) != 0
+            // ThumbnailOnly: return ONLY a real thumbnail, never a generic file-type icon — so codecs
+            // the OS can't render (e.g. HEVC) fail here and fall through to the FFmpeg frame-grab.
+            if (factory.GetImage(new SIZE { cx = size, cy = size }, SIIGBF.ThumbnailOnly, out hbitmap) != 0
                 || hbitmap == IntPtr.Zero)
                 return null;
 

@@ -11,6 +11,7 @@
     <UseWindowsForms>true</UseWindowsForms>  <!-- needed for Screen.AllScreens multi-monitor -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>  <!-- FFmpeg.AutoGen frame-grab for HEVC thumbnails -->
     <AssemblyName>OpenAdoration</AssemblyName>
     <RootNamespace>OpenAdoration.WPF</RootNamespace>
 

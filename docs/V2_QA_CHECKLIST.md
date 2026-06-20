@@ -208,7 +208,8 @@ Everything below landed after the prior sign-off. **Run each item in BOTH Light 
 ### Round-2 fixes from the §M notes below (RETEST)
 - [ ] **M13. Media thumbnails:** the Media library shows a real **frame preview for videos** (not just an
       icon), and the **schedule add-media picker** shows a thumbnail per file so you can tell what you're
-      adding. (Built via Windows shell thumbnails — works for images + videos. GUI-verified with a .wmv.)
+      adding. Covers **HEVC/H.265 iPhone .MOV** too (shell thumbnail first, FFmpeg frame-grab fallback,
+      cached to disk). GUI-verified with a .wmv, an image, and an iPhone HEVC .MOV.
 - [ ] **M14. Drag-to-reorder schedule items:** in the service builder you can **drag a row** to a new
       position (e.g. item 5 → 20) as well as the ▲▼ arrows. Drop persists the new order. (GUI-verified.)
 
