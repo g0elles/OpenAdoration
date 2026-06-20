@@ -112,6 +112,7 @@ public partial class App : WpfApp
         // Load the FFmpeg media engine so the projector can decode any codec (incl. HEVC).
         // Non-fatal: if FFmpeg is missing the app still runs; only video playback is affected.
         Helpers.MediaEngine.Initialize(_logger);
+        WarnIfVcRuntimeMissing();
 
         try
         {
@@ -147,6 +148,27 @@ public partial class App : WpfApp
 
         // Opt-in, non-blocking: never delays the first frame.
         _ = MaybeCheckForUpdatesAsync();
+    }
+
+    /// <summary>
+    /// FFmpeg's native DLLs need the VC++ 2015–2022 runtime (vcruntime140/msvcp140), which ships
+    /// with Windows 10/11 but can be absent on fresh or locked-down installs. Warn once, non-blocking —
+    /// the app still runs; only video playback is affected.
+    /// </summary>
+    private void WarnIfVcRuntimeMissing()
+    {
+        var sys = Environment.SystemDirectory;
+        if (File.Exists(Path.Combine(sys, "vcruntime140.dll")) &&
+            File.Exists(Path.Combine(sys, "msvcp140.dll")))
+            return;
+
+        _logger.LogWarning("VC++ 2015–2022 runtime not detected — video playback may be unavailable.");
+        System.Windows.MessageBox.Show(
+            "The Microsoft Visual C++ 2015–2022 Runtime was not found. OpenAdoration will run, but " +
+            "video playback may not work.\n\nInstall it from:\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe",
+            "Optional component missing",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     private async Task MaybeCheckForUpdatesAsync()

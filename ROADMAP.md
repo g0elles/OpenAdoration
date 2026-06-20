@@ -2,7 +2,7 @@
 
 > This roadmap reflects the **actual state of the codebase**.
 > **v1.0 shipped 2026-06-01** — Milestones 0–7 are complete (see the version log below).
-> **v2.0 is now in planning** — Milestones 8–13 (Reliability & Releases, Content & Imports, Presentation Richness, Internationalization, VideoPsalm Migration, Plugins).
+> **v2.0 is release-ready (2026-06-19)** — Milestones 8–14 are done (Reliability & Releases, Content & Imports, Presentation Richness, Internationalization, VideoPsalm Migration, Plugins core, Content-level theming + runtime Light/Dark). All ship-safety gates are green; pending the release cut (merge to `master`, tag `v2.0.0`, build MSI, GitHub release). Backlog items below are deferred and do **not** block v2.0.
 > Every milestone starts by verifying the feature truly works before adding anything new.
 
 ---
@@ -11,8 +11,9 @@
 
 Milestones were **not** done in order — church priorities pulled M12 (VideoPsalm),
 M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
-All v2.0 work below is integrated on `master` (PR #16, `ebbc386`) but **intentionally unshipped**
-— no version tag / MSI / GitHub release until the remaining roadmap items are done.
+All v2.0 work is integrated on `dev` and **release-ready** as of 2026-06-19 — version bumped to
+2.0.0, CHANGELOG written, ship-safety gates green. The release cut itself (merge to `master`, tag
+`v2.0.0`, build + publish the MSI) is the only remaining step.
 
 | Item | Verdict |
 |---|---|
