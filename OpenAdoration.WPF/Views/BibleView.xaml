@@ -8,7 +8,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:BibleViewModel}"
-             Background="{StaticResource SurfaceBrush}">
+             Background="{DynamicResource SurfaceBrush}">
 
     <!-- Ctrl+↓/↑ extend / shrink the verse selection -->
     <UserControl.InputBindings>
@@ -29,7 +29,7 @@
 
         <!-- Group header: OLD TESTAMENT / NEW TESTAMENT -->
         <Style x:Key="TestamentHeader" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="FontSize"   Value="10" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin"     Value="12,10,0,4" />
@@ -42,7 +42,7 @@
         -->
         <Style x:Key="BookTreeItem" TargetType="ListBoxItem">
             <Setter Property="Background"                 Value="Transparent" />
-            <Setter Property="Foreground"                 Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Foreground"                 Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Padding"                    Value="0" />
             <Setter Property="Cursor"                     Value="Hand" />
@@ -58,9 +58,9 @@
 
         <!-- Chapter tile buttons inside the tree -->
         <Style x:Key="ChapterTileButton" TargetType="Button">
-            <Setter Property="Background"      Value="{StaticResource PrimaryBrush}" />
-            <Setter Property="Foreground"      Value="{StaticResource TextPrimaryBrush}" />
-            <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"      Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground"      Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Width"           Value="32" />
             <Setter Property="Height"          Value="30" />
@@ -80,8 +80,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background"  Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                 <Setter Property="Foreground" Value="White" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -101,8 +101,8 @@
                                      Path="DataContext.SelectedChapter" />
                         </MultiBinding>
                     </DataTrigger.Binding>
-                    <Setter Property="Background"  Value="{StaticResource AccentBrush}" />
-                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                    <Setter Property="Background"  Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                     <Setter Property="Foreground"  Value="White" />
                 </DataTrigger>
             </Style.Triggers>
@@ -117,7 +117,7 @@
                     <ControlTemplate TargetType="CheckBox">
                         <Border x:Name="Bd" Width="16" Height="16" CornerRadius="3"
                                 Background="Transparent"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1.5">
                             <Path x:Name="Check"
                                   Data="M2,8 L6,12 L14,4"
@@ -126,8 +126,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd"    Property="Background"  Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="Bd"    Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Bd"    Property="Background"  Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Bd"    Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                 <Setter TargetName="Check" Property="Visibility"  Value="Visible" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -144,7 +144,7 @@
               Background="#B0000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{loc:Loc Common_Loading}"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="15"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
@@ -153,13 +153,14 @@
         <!-- Empty-state: no Bible imported yet -->
         <Grid Visibility="{Binding HasVersions, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="340">
-                <TextBlock Text="📖" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,14" />
+                <TextBlock Text="&#xE8F1;" FontFamily="Segoe Fluent Icons" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,14" />
                 <TextBlock Text="{loc:Loc Bible_NoVersion}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="18" FontWeight="SemiBold"
+                           TextAlignment="Center" TextWrapping="Wrap"
                            HorizontalAlignment="Center" Margin="0,0,0,8" />
                 <TextBlock Text="{loc:Loc Bible_NoVersionHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13" TextAlignment="Center" TextWrapping="Wrap"
                            Margin="0,0,0,24" />
                 <Button Content="{loc:Loc Bible_ImportFile}"
@@ -174,8 +175,8 @@
 
             <!-- ── Reference bar ─────────────────────────────────────────── -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1" Padding="12,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -202,8 +203,8 @@
                                Placement="Bottom"
                                StaysOpen="True"
                                AllowsTransparency="True">
-                            <Border Background="{StaticResource SurfaceBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="4">
                                 <ItemsControl ItemsSource="{Binding BookSuggestions}">
                                     <ItemsControl.ItemTemplate>
@@ -217,13 +218,13 @@
                                                         CommandParameter="{Binding}" />
                                                 </Border.InputBindings>
                                                 <TextBlock Text="{Binding}"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            FontSize="13" />
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Style.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                                <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                                             </Trigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -259,8 +260,8 @@
 
             <!-- ── Import progress strip ──────────────────────────────────── -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1" Padding="14,8"
                     Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}">
                 <Grid>
@@ -270,13 +271,13 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                         <TextBlock Text="{Binding ImportStatusMessage}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" />
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" />
                         <ProgressBar Height="4" Margin="0,5,0,0"
                                      Value="{Binding ImportProgress, Mode=OneWay}"
                                      Maximum="{Binding ImportTotal, Mode=OneWay}"
                                      IsIndeterminate="{Binding IsImportIndeterminate, Mode=OneWay}"
-                                     Foreground="{StaticResource AccentBrush}"
-                                     Background="{StaticResource BorderBrush}" />
+                                     Foreground="{DynamicResource AccentBrush}"
+                                     Background="{DynamicResource BorderBrush}" />
                     </StackPanel>
                     <Button Grid.Column="1" Content="{loc:Loc Common_Cancel}"
                             Style="{StaticResource SecondaryButton}"
@@ -286,16 +287,16 @@
             </Border>
 
             <!-- ── Import summary bar ─────────────────────────────────────── -->
-            <Border DockPanel.Dock="Top" Background="#162016" Padding="16,8"
+            <Border DockPanel.Dock="Top" Background="{DynamicResource SuccessSurfaceBrush}" Padding="16,8"
                     Visibility="{Binding HasImportSummary, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="{Binding ImportSummary}" Foreground="#4CAF50" FontSize="12" />
+                <TextBlock Text="{Binding ImportSummary}" Foreground="{DynamicResource SuccessBrush}" FontSize="12" />
             </Border>
 
             <!-- ── Error bar ──────────────────────────────────────────────── -->
-            <Border DockPanel.Dock="Top" Background="#3E1A1A" Padding="16,8"
+            <Border DockPanel.Dock="Top" Background="{DynamicResource DangerSurfaceBrush}" Padding="16,8"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="{StaticResource DangerBrush}" FontSize="12" />
+                           Foreground="{DynamicResource DangerBrush}" FontSize="12" />
             </Border>
 
             <!-- ── Action bar (bottom) ────────────────────────────────────── -->
@@ -305,8 +306,8 @@
                 Use ▶▶ Project to push the current verse selection to screen.
             -->
             <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0" Padding="12,8">
                 <DockPanel>
                     <!-- Manage buttons (right-aligned) -->
@@ -341,8 +342,8 @@
 
             <!-- ── Slide preview panel (above action bar) ─────────────────── -->
             <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0" Padding="14,10"
                     Visibility="{Binding HasSlidePreview, Converter={StaticResource BoolToVis}}">
                 <Grid>
@@ -352,13 +353,13 @@
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0"
                                Text="{Binding SlidePreviewText}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="13" FontStyle="Italic"
                                TextWrapping="Wrap" MaxHeight="60"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Row="1"
                                Text="{Binding SlidePreviewLabel}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,4,0,0"
                                HorizontalAlignment="Right" />
                 </Grid>
@@ -372,7 +373,7 @@
                     <ColumnDefinition Width="*" />     <!-- Verses -->
                 </Grid.ColumnDefinitions>
 
-                <Rectangle Grid.Column="1" Fill="{StaticResource BorderBrush}" />
+                <Rectangle Grid.Column="1" Fill="{DynamicResource BorderBrush}" />
 
                 <!-- ── Books + chapters (tree-like) ── -->
                 <ListBox Grid.Column="0"
@@ -390,20 +391,20 @@
                                 <Border x:Name="BookRow" Padding="12,8" Background="Transparent">
                                     <TextBlock Text="{Binding Name}"
                                                FontSize="13"
-                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
                                                              Value="True">
-                                                    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
                                                 </DataTrigger>
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="False" />
                                                         <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True" />
                                                     </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                    <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                                 </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -461,13 +462,13 @@
                 <Grid Grid.Column="2">
 
                     <!-- Search results header (shown while a keyword search is active) -->
-                    <Border Background="{StaticResource PrimaryBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1"
                             Padding="14,8" VerticalAlignment="Top"
                             Panel.ZIndex="1"
                             Visibility="{Binding IsSearchActive, Converter={StaticResource BoolToVis}}">
-                        <TextBlock FontSize="12" Foreground="{StaticResource TextSecondaryBrush}">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
                             <TextBlock.Text>
                                 <MultiBinding Converter="{StaticResource LocFormat}">
                                     <Binding Path="[Bible_SearchResults]" Source="{x:Static loc:TranslationSource.Instance}" />
@@ -490,7 +491,7 @@
                         </ScrollViewer.Style>
 
                         <ItemsControl ItemsSource="{Binding CheckableVerses}"
-                                      Foreground="{StaticResource TextPrimaryBrush}">
+                                      Foreground="{DynamicResource TextPrimaryBrush}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:BibleVerseCheckItem}">
                                     <Border x:Name="RowBorder"
@@ -516,7 +517,7 @@
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding Verse.Verse}"
                                                        FontSize="11" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        VerticalAlignment="Top"
                                                        TextAlignment="Right"
                                                        Margin="0,2,6,0" />
@@ -525,7 +526,7 @@
                                                 <!-- Book/chapter reference shown only in search results -->
                                                 <TextBlock Text="{Binding Verse.Reference}"
                                                            FontSize="10"
-                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                                            Margin="0,0,0,2">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
@@ -543,7 +544,7 @@
 
                                                 <TextBlock Text="{Binding Verse.Text}"
                                                            FontSize="13"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            TextWrapping="Wrap"
                                                            LineHeight="20" />
                                             </StackPanel>
@@ -553,14 +554,14 @@
                                             <Style TargetType="Border">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsChecked}" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource ActiveNavBrush}" />
+                                                        <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
                                                     </DataTrigger>
                                                     <MultiDataTrigger>
                                                         <MultiDataTrigger.Conditions>
                                                             <Condition Binding="{Binding IsChecked}" Value="False" />
                                                             <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
                                                         </MultiDataTrigger.Conditions>
-                                                        <Setter Property="Background" Value="#20FFFFFF" />
+                                                        <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
                                                     </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -572,7 +573,7 @@
                     </ScrollViewer>
 
                     <!-- Placeholder: no chapter selected and no search active -->
-                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                    <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                Text="{loc:Loc Bible_SelectPrompt}"
                                HorizontalAlignment="Center" VerticalAlignment="Center">

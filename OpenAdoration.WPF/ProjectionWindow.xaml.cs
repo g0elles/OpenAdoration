@@ -535,9 +535,11 @@ public partial class ProjectionWindow : Window
             EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
         };
 
-        switch (_appSettings.Current.SlideTransition)
+        // Per-theme transition overrides the global default; duration stays global.
+        var kind = _activeTheme?.SlideTransition ?? _appSettings.Current.SlideTransition;
+        switch (kind)
         {
-            case Application.Common.SlideTransitionKind.Slide:
+            case Domain.Common.SlideTransitionKind.Slide:
                 var translate = new System.Windows.Media.TranslateTransform();
                 ContentLayers.RenderTransform = translate;
                 translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
@@ -545,7 +547,7 @@ public partial class ProjectionWindow : Window
                     { EasingFunction = ease });
                 break;
 
-            case Application.Common.SlideTransitionKind.Zoom:
+            case Domain.Common.SlideTransitionKind.Zoom:
                 ContentLayers.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
                 var scale = new System.Windows.Media.ScaleTransform(0.85, 0.85);
                 ContentLayers.RenderTransform = scale;

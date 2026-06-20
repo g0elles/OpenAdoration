@@ -2,33 +2,36 @@
 
 > This roadmap reflects the **actual state of the codebase**.
 > **v1.0 shipped 2026-06-01** — Milestones 0–7 are complete (see the version log below).
-> **v2.0 is now in planning** — Milestones 8–13 (Reliability & Releases, Content & Imports, Presentation Richness, Internationalization, VideoPsalm Migration, Plugins).
+> **v2.0 is release-ready (2026-06-19)** — Milestones 8–14 are done (Reliability & Releases, Content & Imports, Presentation Richness, Internationalization, VideoPsalm Migration, Plugins core, Content-level theming + runtime Light/Dark). All ship-safety gates are green; pending the release cut (merge to `master`, tag `v2.0.0`, build MSI, GitHub release). Backlog items below are deferred and do **not** block v2.0.
 > Every milestone starts by verifying the feature truly works before adding anything new.
 
 ---
 
-## v2.0 progress snapshot — real state (verified against code 2026-06-17)
+## v2.0 progress snapshot — real state (verified against code 2026-06-18)
 
 Milestones were **not** done in order — church priorities pulled M12 (VideoPsalm),
 M10.5 (video transport) and FFME forward; M8/M9/most of M10 were leapfrogged.
+All v2.0 work is integrated on `dev` and **release-ready** as of 2026-06-19 — version bumped to
+2.0.0, CHANGELOG written, ship-safety gates green. The release cut itself (merge to `master`, tag
+`v2.0.0`, build + publish the MSI) is the only remaining step.
 
 | Item | Verdict |
 |---|---|
 | M8.1 Backup/Restore (`.oabak`) | ✅ Done — `IBackupService`/`ZipBackupService`, Settings UI, staged DB swap on restart |
-| M8.2 Auto-update (`IUpdateService`) | ❌ Not started (releases are published, but **no in-app updater consumes them yet**) |
-| M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions) |
-| M9.1 More song importers | ❌ Not started (only OpenLyrics/OpenSong/PlainText/VideoPsalm) |
-| M9.2 Image-folder / PDF / pptx decks | ❌ Not started |
-| M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`) |
-| M10.1 Transition library | 🔶 Partial — Fade + Cut only (no Slide/Zoom) |
-| M10.2 Persistent lower-thirds | ❌ Not started (only the auto-dismiss announcement banner) |
+| M8.2 Auto-update (`IUpdateService`) | ✅ Done — `GitHubUpdateService` (releases/latest → SemVer → MSI), opt-in startup check, Settings UPDATES |
+| M8.3 Release infra + CI/CD | ✅ Done (CHANGELOG, RELEASE.md, build.ps1, GitHub Actions: ci/release/codeql) |
+| M9.1 More song importers | 🔶 ChordPro done (`.cho/.crd/.chopro/.chordpro`); EasyWorship + ProPresenter **moved to backlog** (blocked — need real export samples; see Backlog below) |
+| M9.2 Image-folder / PDF / pptx decks | 🔶 Image-folder import done; PDF + pptx decks deferred (native dep: Docnet/PDFium). **Media thumbnails added 2026-06-19** — Windows Shell thumbnails (images + videos) in the media library tiles and the schedule add-media picker (`FilePathToThumbnailConverter`, no new dep) |
+| M9.3 Bible quick-reference jump | ✅ Done (`ParseReference` + `BibleReferenceParser`; consolidated to one smart search box 2026-06-18) |
+| M10.1 Transition library | ✅ Done — Cut / Fade / Slide / Zoom (`SlideTransitionKind`) |
+| M10.2 Persistent lower-thirds | ✅ Done — `ShowLowerThird`/`ClearLowerThird`, flush-bottom bar, operator controls |
 | M10.3 Dual-version scripture | 🚫 Dropped (2026-06-18 QA — operator found the secondary picker confusing; built then removed) |
-| M10.4 Clean livestream output | ❌ Not started (stretch) |
+| M10.4 Clean livestream output | ❌ Not started (stretch — clean output window, optional NDI) |
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
-| M11 i18n | 🔶 Foundation done; ~30% translated; UI **locked to English** |
+| M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
-| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX); 13.4 api.bible connector is a separate repo |
-| M14 Content-level theming | ❌ Not started |
+| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
+| M14 Content-level theming | 🔶 In progress — **14.1–14.4 + per-theme `SlideTransition` done** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified; M14.5 color-emoji → Segoe Fluent Icons (🔍🖼🎬📖, GUI-verified); **G27 runtime Light/Dark theme swap done (phases 1–5, ✅ENFORCED)** — DynamicResource brushes, `Colors.{Dark,Light}.xaml`, `IAppThemeService` live swap, Settings toggle, all views verified both themes). Remaining: M14.5 optional full geometric-glyph unification (✕✎★▲▼◀▶+− render consistently already — deferred as churn/risk) |
 
 ---
 
@@ -639,22 +642,55 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 - Add nullable `ThemeId` where styling belongs to the content: `Song.ThemeId`; a per-**content-type** default theme (Songs / Scripture / Media); keep the existing app-wide default as the root. *(Bible-version-level theme can come later if a church needs different looks per version — YAGNI until asked.)*
 - One EF migration; all `ThemeId`s nullable so existing data is untouched (null = inherit from the level above).
 
-### 14.2 — Resolution cascade
-- Single resolver, most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → app default`.
-- Used **everywhere** projection renders, so standalone song/Bible projection honors it too (not just live service items).
+### 14.2 — Resolution cascade ✅
+- Single resolver `ThemeCascade` (Application/Common), most-specific wins: `ScheduleItem.ThemeId → content's own ThemeId (Song.ThemeId) → content-type default → null`. The final `null` rung means "no explicit theme", which `ProjectionWindow.ResolveThemeAsync` already maps to the app-wide default — so app default is not duplicated in the resolver.
+- Applied at **every** slide-generation call site: service items (`ServiceScheduleViewModel`, incl. UP-NEXT previews + live song-edit refresh) **and** standalone `SongsViewModel` / `BibleViewModel` / `MediaViewModel`. `SongsViewModel` + `MediaViewModel` gained `IAppSettingsService`. Unit-tested (`ThemeCascadeTests`, +3 → 67 tests).
 
-### 14.3 — UI
-- Theme picker in the song editor (inherit / pick).
-- "Default themes" section (Settings or the Themes page): set the per-content-type defaults; the app default stays the existing "Set default".
+### 14.3 — UI ✅
+- Theme picker in the song editor (`AddEditSongView`): "Use default theme" sentinel + all themes; persists `Song.ThemeId` (also fixed `SongRepository.UpdateAsync`, which wasn't copying `ThemeId`).
+- "Content themes" section in Settings → General: Songs / Scripture / Media default-theme pickers ("App default" sentinel) → `AppSettings.Default{Song,Scripture,Media}ThemeId`. Save fires `NotifyThemeChanged()` so a changed default refreshes a live projection. App-wide default stays the existing Themes-page "Set default".
+- Shared `ThemeOption` record drives both pickers (null Id = inherit sentinel). New en/es resx keys (`SongEdit_Theme*`, `Settings_*Theme*`). Build 0/0, tests 67/67.
 
-### 14.4 — Fold M12.4 into the cascade
-- VideoPsalm import targets the right level instead of minting a per-item theme: song style → `Song.ThemeId`; `BibleStyle` → Scripture default; `RootStyle` → app default. Collapses theme proliferation and matches VP's own model. *(Until this lands, M12.4's per-item dedup is the stopgap.)*
+### 14.4 — Fold M12.4 into the cascade ✅
+- VideoPsalm import now targets the right cascade level instead of minting a per-schedule-item theme: a song's style → its own `Song.ThemeId` (new songs only; reused songs keep theirs); `BibleStyle` → `DefaultScriptureThemeId`; `RootStyle` → the app-default theme. Schedule items are left theme-null and inherit. Collapses theme proliferation and matches VP's model.
+- **Guarded ("set defaults only if unset", agreed 2026-06-19):** Scripture default applied only when `DefaultScriptureThemeId is null`; RootStyle→app-default applied only when the current default theme was never hand-edited (`UpdatedAt == CreatedAt`) — so an import never clobbers an operator's deliberate theme choices. Parser now surfaces `VpAgenda.RootStyle` (was internal-only); `VideoPsalmServiceImporter` gained `IAppSettingsService`. +1 parser test (68 total).
 
 ### 14.5 — Icon system: emoji → Fluent font, decoupled from resx
 - Replace button emoji/Unicode glyphs (`▶▶ Project`, `■ Stop`, `🔒 Freeze`, `◀ Back`, `📢 Announce`…) with the **Segoe Fluent Icons / MDL2** font (`FontFamily="Segoe Fluent Icons" Content="&#xE768;"`) — not hand-drawn `Path` geometries (far less code, same crispness). Emoji render inconsistently across DPI / Windows version / font stack (ui_ux review Rec 2).
 - **Decouple icon from text:** the M11.3 i18n pass fused glyph + label into ~25 resx values in *both* en and es (`Nav_*`, `Projection_*`, `Bible_Freeze/Project`, `Sched_Stop/Back/...`). Move the glyph into XAML; keep only the label in resx, so an icon change no longer edits localized strings. Leave *status* glyphs (`● LIVE`, `⚠`, `✓ Saved`) as inline text. **Guard meanwhile:** don't add new icon-in-resx strings.
 
+### 14.x — G27 Runtime theme swapping (Light/Dark) — PLANNED (drafted 2026-06-19)
+Converts the app chrome from a single hardcoded dark palette to runtime-swappable Light/Dark, flipping G27 from ⚠️ASPIRATION to ✅ENFORCED. App chrome only — projection *content* is theme-entity driven and out of scope.
+
+**Measured state:** `Styles/Colors.xaml` = 10 `Color` + 10 `SolidColorBrush`, merged in `App.xaml`. **393** `StaticResource …Brush` refs, **0** DynamicResource (736 total StaticResource — the other ~343 are styles/converters/templates and stay static). No appearance field in `AppSettings`. 43 inline-hex colors in 10 files bypass the palette.
+
+**Decisions (with user 2026-06-19):** Light palette = *I propose a table, user approves* (same accent `#7C6AF7`). **No "follow system"** — explicit Light/Dark only, **default Dark** (no change for existing users). Persist as `AppSettings.Appearance`.
+
+**Phases:**
+1. ✅ **DONE (2026-06-19):** surgical regex `{StaticResource (\w*Brush)}` → `{DynamicResource \1}` — 393 brush refs converted, 2 converter false-positives (`ColorToBrush`/`HexToBrush`) reverted. GUI-verified unchanged dark.
+2. ✅ **DONE (2026-06-19):** `Colors.Dark.xaml` (renamed) + `Colors.Light.xaml` (approved palette); `IAppThemeService`/`AppThemeService` (WPF singleton) replaces the palette merged-dict in `Application.Current.Resources` (finds the dict containing `PrimaryBrush`); applied at startup from `AppSettings.Appearance`. **`AppSettings.Appearance` (enum Dark/Light, default Dark) pulled forward from phase 3** so the swap is verifiable. GUI-verified: seeded `Appearance:1`→Light, default→Dark, both legible.
+3. ✅ **DONE (2026-06-19):** Settings→General appearance picker (`AppearanceCombo`, en/es `Settings_Appearance*`), wired through `IAppThemeService.Apply` for **live** swap (no restart), dirty+save, reverts the preview on discard-leave. GUI-verified live swap to Light + settings.json round-trip (`e2e/test_appearance_toggle.py`).
+4. ✅ **DONE (2026-06-19):** promoted the semantic banner colors to the palette — 4 new key pairs in both `Colors.{Dark,Light}.xaml`: `DangerSurfaceBrush` (error banners ×6), `SuccessBrush` (success text ×3), `SuccessSurfaceBrush`/`SuccessBorderBrush` (import/live banners). 13 inline hexes → DynamicResource across Base.xaml + 5 views; one invisible-in-light Bible hover (`#20FFFFFF`) → `BorderBrush`. Dark values kept equal to the originals (no Dark regression). GUI-verified `SuccessBrush` live-legible in Light. **Accepted as-is (deliberate fixed colors):** `ProjectionWindow` overlays; modal scrims (`#80000000`/`#CC000000`/`#B0000000`/`#AA…`); translucent accent tints (`#1A7C6AF7`/`#337C6AF7`); `DangerButton` hover `#C04040` (valid darker-red on both); the entire `StageView` (deliberate dark stage-monitor); media thumbnail backdrops.
+5. ✅ **DONE (2026-06-19):** swept all 7 views in Light (+ Stage in both themes) via `oa-e2e` live toggle — all legible/consistent. StageView made theme-aware per user call (chrome → brushes; slide-preview boxes stay dark as they mirror projection). `ARCHITECTURE.md` updated (§3.5b app-chrome appearance); **G27 flipped ⚠️→✅ENFORCED** in CLAUDE.md. **G27 complete.**
+
+**Risks:** a few brush refs may sit where DynamicResource is awkward (frozen Freezables/GradientStops) — Phase 1 screenshot-diff catches them. Light-palette contrast is the real design work, not the wiring. **Effort:** ~3 focused sessions; Phase 1 independently shippable.
+
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
+
+---
+
+## Backlog (deferred — not blocking v2.0)
+
+Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a church asks.
+
+| Item | Why parked |
+|---|---|
+| M9.1 EasyWorship import | Needs a **real EW7 export** to validate the SQLite schema — can't build blind. |
+| M9.1 ProPresenter import | Needs a real `.pro`/bundle sample. |
+| M9.2 PDF / pptx deck import | Native dependency decision (Docnet/PDFium for PDF; pptx unzip) — heavyweight, defer. |
+| M10.4 Clean output / NDI *(stretch)* | Clean borderless output is doable later; NDI needs a native SDK. |
+| ChordPro in import tooltip/format string | 2-line cosmetic copy fix (both langs) — fold into the next i18n touch. |
+| **NU1903** — `SQLitePCLRaw.lib.e_sqlite3 2.1.11` high-severity advisory (transitive via `EFCore.Sqlite 10.0.9`) | Fix is a **major** SQLitePCLRaw 2.x→3.x bump that changes native SQLite loading (single-file publish risk). Needs a dedicated bump + GUI/publish verification — let dependabot propose it on `dev` and verify, don't blind-bump. Surfaced 2026-06-18. |
 
 ---
 
@@ -667,7 +703,7 @@ OA is an open-source **tool**, not a Bible licensee. It ships no copyrighted tex
 | Multi-user / network sync | Out — one PC per service is universal in small churches. |
 | **Cloud** backup / sync | Out — violates offline-first. (Note: **local** backup/restore is in scope as M8.1 — a portable file, no cloud.) |
 | CCLI licence tracking / reporting | Out for now — useful but not blocking. |
-| Drag-to-reorder in schedule | Out — Up/Down buttons are sufficient. |
+| Drag-to-reorder in schedule | ✅ **Done 2026-06-19** — reversed (Up/Down alone is tedious past ~20 items). Hand-rolled drag (no dep) on the builder list → `MoveItemAsync` → existing `PersistOrderAsync`; ▲▼ arrows kept. GUI-verified (drag flips persisted order). |
 
 ---
 

@@ -4,7 +4,7 @@
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              Loaded="OnLoaded">
 
-    <Grid Background="{StaticResource SurfaceBrush}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" /> <!-- header -->
             <RowDefinition Height="*"    /> <!-- form -->
@@ -13,12 +13,12 @@
 
         <!-- Header -->
         <Border Grid.Row="0"
-                Background="{StaticResource PrimaryBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource PrimaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,12">
             <TextBlock Text="{loc:Loc Settings_Title}"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="16" FontWeight="SemiBold"
                        VerticalAlignment="Center" />
         </Border>
@@ -30,7 +30,7 @@
                     <StackPanel MaxWidth="520" HorizontalAlignment="Left" Margin="24,20">
 
                 <TextBlock Text="{loc:Loc Settings_LanguageSection}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
                            Margin="0,0,0,12" />
 
@@ -47,11 +47,28 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <TextBlock Text="{loc:Loc Settings_LanguageHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
+                <TextBlock Text="{loc:Loc Settings_Appearance}" Style="{StaticResource FieldLabel}" />
+                <ComboBox x:Name="AppearanceCombo"
+                          Style="{StaticResource FieldComboBox}"
+                          Width="220" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableAppearances}"
+                          SelectedItem="{Binding SelectedAppearance}"
+                          Margin="0,0,0,4">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{loc:Loc Settings_AppearanceHelp}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_ChurchSection}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
                            Margin="0,0,0,12" />
 
@@ -61,7 +78,7 @@
                          Text="{Binding ChurchName, UpdateSourceTrigger=PropertyChanged}"
                          Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_ChurchNameHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_Ccli}" Style="{StaticResource FieldLabel}" />
@@ -70,11 +87,11 @@
                          Text="{Binding ChurchCcliNumber, UpdateSourceTrigger=PropertyChanged}"
                          Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_CcliHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_DefaultsSection}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
                            Margin="0,0,0,12" />
 
@@ -85,7 +102,7 @@
                          Width="120" HorizontalAlignment="Left"
                          Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_AutoAdvanceHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_VersesPerSlide}" Style="{StaticResource FieldLabel}" />
@@ -95,7 +112,7 @@
                          Width="120" HorizontalAlignment="Left"
                          Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_VersesPerSlideHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_AnnouncementDuration}" Style="{StaticResource FieldLabel}" />
@@ -105,7 +122,7 @@
                          Width="120" HorizontalAlignment="Left"
                          Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_AnnouncementDurationHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_Transition}" Style="{StaticResource FieldLabel}" />
@@ -126,11 +143,52 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <TextBlock Text="{loc:Loc Settings_TransitionHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
+                <TextBlock Text="{loc:Loc Settings_ThemesSection}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+
+                <TextBlock Text="{loc:Loc Settings_DefaultSongTheme}" Style="{StaticResource FieldLabel}" />
+                <ComboBox Style="{StaticResource FieldComboBox}"
+                          Width="260" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableThemes}"
+                          SelectedItem="{Binding SelectedSongTheme}"
+                          Margin="0,0,0,8">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Text="{loc:Loc Settings_DefaultScriptureTheme}" Style="{StaticResource FieldLabel}" />
+                <ComboBox Style="{StaticResource FieldComboBox}"
+                          Width="260" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableThemes}"
+                          SelectedItem="{Binding SelectedScriptureTheme}"
+                          Margin="0,0,0,8">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Text="{loc:Loc Settings_DefaultMediaTheme}" Style="{StaticResource FieldLabel}" />
+                <ComboBox Style="{StaticResource FieldComboBox}"
+                          Width="260" HorizontalAlignment="Left"
+                          ItemsSource="{Binding AvailableThemes}"
+                          SelectedItem="{Binding SelectedMediaTheme}"
+                          Margin="0,0,0,4">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{loc:Loc Settings_ThemesHelp}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_BackupSection}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
                            Margin="0,0,0,12" />
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -143,11 +201,11 @@
                             Margin="8,0,0,0" />
                 </StackPanel>
                 <TextBlock Text="{loc:Loc Settings_BackupHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <TextBlock Text="{loc:Loc Settings_UpdatesSection}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"
                            Margin="0,0,0,12" />
                 <Button Content="{loc:Loc Settings_CheckUpdates}"
@@ -155,18 +213,19 @@
                         HorizontalAlignment="Left"
                         Command="{Binding CheckForUpdatesCommand}" Margin="0,0,0,8" />
                 <CheckBox Content="{loc:Loc Settings_CheckUpdatesStartup}"
-                          Foreground="{StaticResource TextPrimaryBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
                           IsChecked="{Binding CheckForUpdatesOnStartup}" Margin="0,0,0,4" />
                 <TextBlock Text="{loc:Loc Settings_UpdatesHelp}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="{loc:Loc Settings_Save}"
+                    <Button x:Name="SaveSettingsButton"
+                            Content="{loc:Loc Settings_Save}"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding SaveCommand}" />
                     <TextBlock Text="{loc:Loc Settings_Saved}"
-                               Foreground="#4CAF50"
+                               Foreground="{DynamicResource SuccessBrush}"
                                FontSize="13" FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Margin="12,0,0,0"
@@ -177,20 +236,22 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="{loc:Loc Plugins_Title}">
+            <!-- ponytail: plugin module is incomplete (M13) — hidden from users until it ships.
+                 Re-enable by removing Visibility="Collapsed". VM/template wiring left intact. -->
+            <TabItem Header="{loc:Loc Plugins_Title}" Visibility="Collapsed">
                 <ContentControl Content="{Binding Plugins}" />
             </TabItem>
         </TabControl>
 
         <!-- Error banner -->
         <Border Grid.Row="2"
-                Background="#3E1A1A"
-                BorderBrush="{StaticResource DangerBrush}"
+                Background="{DynamicResource DangerSurfaceBrush}"
+                BorderBrush="{DynamicResource DangerBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="16,10"
                 Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="{StaticResource DangerBrush}"
+                       Foreground="{DynamicResource DangerBrush}"
                        FontSize="13" TextWrapping="Wrap" />
         </Border>
     </Grid>

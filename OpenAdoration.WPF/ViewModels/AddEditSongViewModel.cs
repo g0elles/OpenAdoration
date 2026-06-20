@@ -11,6 +11,7 @@ namespace OpenAdoration.WPF.ViewModels;
 public partial class AddEditSongViewModel : BaseViewModel
 {
     private readonly ISongService _songService;
+    private readonly IThemeService _themeService;
     private readonly ILogger<AddEditSongViewModel> _logger;
 
     private int _songId; // 0 = new song
@@ -24,16 +25,38 @@ public partial class AddEditSongViewModel : BaseViewModel
 
     public ObservableCollection<SongSectionViewModel> Sections { get; } = [];
 
+    /// <summary>Theme picker entries; index 0 is the "use default" (null) sentinel.</summary>
+    public ObservableCollection<ThemeOption> AvailableThemes { get; } = [];
+
+    [ObservableProperty] private ThemeOption? _selectedTheme;
+
     public bool   IsNew     => _songId == 0;
     public string FormTitle => IsNew ? L("SongEdit_FormNew") : L("SongEdit_FormEdit");
 
     public event EventHandler<Song>? Saved;
     public event EventHandler?       Cancelled;
 
-    public AddEditSongViewModel(ISongService songService, ILogger<AddEditSongViewModel> logger)
+    public AddEditSongViewModel(
+        ISongService songService,
+        IThemeService themeService,
+        ILogger<AddEditSongViewModel> logger)
     {
-        _songService = songService;
-        _logger      = logger;
+        _songService  = songService;
+        _themeService = themeService;
+        _logger       = logger;
+    }
+
+    /// <summary>
+    /// Loads the theme picker (default sentinel + all themes) and selects the one matching
+    /// <paramref name="selectedThemeId"/>. Called after Initialise* since it hits the DB.
+    /// </summary>
+    public async Task LoadThemesAsync(int? selectedThemeId)
+    {
+        AvailableThemes.Clear();
+        AvailableThemes.Add(new ThemeOption(null, L("SongEdit_ThemeInherit")));
+        foreach (var theme in await _themeService.GetAllAsync())
+            AvailableThemes.Add(new ThemeOption(theme.Id, theme.Name));
+        SelectedTheme = AvailableThemes.FirstOrDefault(o => o.Id == selectedThemeId) ?? AvailableThemes[0];
     }
 
     public void InitialiseNew()
@@ -153,6 +176,7 @@ public partial class AddEditSongViewModel : BaseViewModel
         Copyright      = string.IsNullOrWhiteSpace(Copyright)      ? null : Copyright.Trim(),
         CcliNumber     = string.IsNullOrWhiteSpace(CcliNumber)     ? null : CcliNumber.Trim(),
         VerseOrder     = string.IsNullOrWhiteSpace(VerseOrder)     ? null : VerseOrder.Trim(),
+        ThemeId        = SelectedTheme?.Id,
         Sections       = [.. Sections.Select(vm => new SongSection
         {
             Type          = vm.Type,

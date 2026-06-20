@@ -8,7 +8,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:AddEditThemeViewModel}"
-             Background="{StaticResource SurfaceBrush}">
+             Background="{DynamicResource SurfaceBrush}">
 
     <Grid>
         <!-- Busy overlay -->
@@ -16,7 +16,7 @@
               Background="#80000000"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{loc:Loc Common_Saving}"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="16"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
@@ -26,13 +26,13 @@
 
             <!-- ── Footer ── -->
             <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="20,12">
                 <Grid>
                     <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource DangerBrush}"
+                               Foreground="{DynamicResource DangerBrush}"
                                FontSize="12"
                                VerticalAlignment="Center"
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
@@ -46,7 +46,8 @@
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding CancelCommand}"
                                 Margin="0,0,8,0" />
-                        <Button Content="{loc:Loc ThemeEdit_Save}"
+                        <Button x:Name="SaveThemeButton"
+                                Content="{loc:Loc ThemeEdit_Save}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding SaveCommand}" />
                     </StackPanel>
@@ -59,7 +60,7 @@
 
                     <!-- Header -->
                     <TextBlock Text="{Binding FormTitle}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="20"
                                FontWeight="SemiBold"
                                Margin="0,0,0,20" />
@@ -73,8 +74,8 @@
 
                     <!-- ── Font ── -->
                     <TextBlock Text="{loc:Loc ThemeEdit_Font}" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
-                    <Border Background="{StaticResource PrimaryBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="6"
                             Padding="16,14"
@@ -89,7 +90,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{loc:Loc ThemeEdit_FontFamily}"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                FontSize="11"
                                                Margin="0,0,0,4" />
                                     <ComboBox Style="{StaticResource FieldComboBox}"
@@ -100,7 +101,7 @@
                                 <!-- Font size ± spinner -->
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="{loc:Loc ThemeEdit_Size}"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                FontSize="11"
                                                Margin="0,0,0,4" />
                                     <StackPanel Orientation="Horizontal">
@@ -109,7 +110,7 @@
                                                 Padding="12,8"
                                                 Command="{Binding DecreaseFontSizeCommand}" />
                                         <TextBlock Text="{Binding FontSize}"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    FontSize="14"
                                                    MinWidth="38"
                                                    TextAlignment="Center"
@@ -125,13 +126,13 @@
 
                             <!-- Font Color picker -->
                             <TextBlock Text="{loc:Loc ThemeEdit_FontColor}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
                             <xctk:ColorPicker SelectedColor="{Binding FontColor}"
-                                              Background="{StaticResource PrimaryBrush}"
-                                              Foreground="{StaticResource TextPrimaryBrush}"
-                                              BorderBrush="{StaticResource BorderBrush}"
+                                              Background="{DynamicResource PrimaryBrush}"
+                                              Foreground="{DynamicResource TextPrimaryBrush}"
+                                              BorderBrush="{DynamicResource BorderBrush}"
                                               UsingAlphaChannel="False"
                                               ShowRecentColors="True"
                                               ShowAvailableColors="True"
@@ -141,10 +142,10 @@
 
                             <!-- Text Alignment -->
                             <TextBlock Text="{loc:Loc ThemeEdit_TextAlignment}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
-                            <Border BorderBrush="{StaticResource BorderBrush}"
+                            <Border BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     HorizontalAlignment="Left"
@@ -155,13 +156,13 @@
                                                   IsChecked="{Binding IsAlignLeft, Mode=OneWay}"
                                                   Command="{Binding SetAlignmentCommand}"
                                                   CommandParameter="Left" />
-                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
                                     <ToggleButton Content="{loc:Loc ThemeEdit_AlignCenter}"
                                                   Style="{StaticResource AlignToggleButton}"
                                                   IsChecked="{Binding IsAlignCenter, Mode=OneWay}"
                                                   Command="{Binding SetAlignmentCommand}"
                                                   CommandParameter="Center" />
-                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
                                     <ToggleButton Content="{loc:Loc ThemeEdit_AlignRight}"
                                                   Style="{StaticResource AlignToggleButton}"
                                                   IsChecked="{Binding IsAlignRight, Mode=OneWay}"
@@ -174,8 +175,8 @@
 
                     <!-- ── Background ── -->
                     <TextBlock Text="{loc:Loc ThemeEdit_Background}" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
-                    <Border Background="{StaticResource PrimaryBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="6"
                             Padding="16,14"
@@ -184,10 +185,10 @@
 
                             <!-- Background type selector -->
                             <TextBlock Text="{loc:Loc ThemeEdit_Type}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
-                            <Border BorderBrush="{StaticResource BorderBrush}"
+                            <Border BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     HorizontalAlignment="Left"
@@ -199,13 +200,13 @@
                                                   IsChecked="{Binding IsBackgroundColor, Mode=OneWay}"
                                                   Command="{Binding SetBackgroundTypeCommand}"
                                                   CommandParameter="Color" />
-                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
                                     <ToggleButton Content="{loc:Loc ThemeEdit_BgImage}"
                                                   Style="{StaticResource AlignToggleButton}"
                                                   IsChecked="{Binding IsBackgroundImage, Mode=OneWay}"
                                                   Command="{Binding SetBackgroundTypeCommand}"
                                                   CommandParameter="Image" />
-                                    <Rectangle Width="1" Fill="{StaticResource BorderBrush}" />
+                                    <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
                                     <ToggleButton Content="{loc:Loc ThemeEdit_BgVideo}"
                                                   Style="{StaticResource AlignToggleButton}"
                                                   IsChecked="{Binding IsBackgroundVideo, Mode=OneWay}"
@@ -217,9 +218,9 @@
                             <!-- Background Color (visible when type = Color) -->
                             <StackPanel Visibility="{Binding IsBackgroundColor, Converter={StaticResource BoolToVis}}">
                                 <xctk:ColorPicker SelectedColor="{Binding BackgroundColor}"
-                                                  Background="{StaticResource PrimaryBrush}"
-                                                  Foreground="{StaticResource TextPrimaryBrush}"
-                                                  BorderBrush="{StaticResource BorderBrush}"
+                                                  Background="{DynamicResource PrimaryBrush}"
+                                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                                  BorderBrush="{DynamicResource BorderBrush}"
                                                   UsingAlphaChannel="False"
                                                   ShowRecentColors="True"
                                                   ShowAvailableColors="True"
@@ -283,16 +284,31 @@
                     </Border>
 
                     <!-- ── Default toggle ── -->
-                    <CheckBox Foreground="{StaticResource TextPrimaryBrush}"
+                    <CheckBox Foreground="{DynamicResource TextPrimaryBrush}"
                               FontSize="13"
                               IsChecked="{Binding IsDefault}"
                               Margin="0,0,0,24"
                               Content="{loc:Loc ThemeEdit_UseDefault}" />
 
+                    <!-- ── Slide transition ── -->
+                    <TextBlock Text="{loc:Loc ThemeEdit_Transition}" Style="{StaticResource FieldLabel}" />
+                    <ComboBox x:Name="TransitionCombo"
+                              Style="{StaticResource FieldComboBox}"
+                              Width="220" HorizontalAlignment="Left"
+                              ItemsSource="{Binding AvailableTransitions}"
+                              SelectedItem="{Binding SelectedTransition}"
+                              Margin="0,0,0,24">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
                     <!-- ── Header / Footer templates ── -->
                     <TextBlock Text="{loc:Loc ThemeEdit_HeaderFooter}" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
-                    <Border Background="{StaticResource PrimaryBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="6"
                             Padding="16,14"
@@ -306,7 +322,7 @@
                                     CornerRadius="4"
                                     Padding="10,7"
                                     Margin="0,0,0,12">
-                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
                                            FontSize="11"
                                            TextWrapping="Wrap">
                                     <Run Text="{loc:Loc ThemeEdit_TokenNote1}" />
@@ -316,7 +332,7 @@
 
                             <!-- Header template -->
                             <TextBlock Text="{loc:Loc ThemeEdit_HeaderTop}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
                             <TextBox x:Name="HeaderTemplateBox"
@@ -325,7 +341,7 @@
                                      Margin="0,0,0,6" />
                             <WrapPanel Margin="0,0,0,14">
                                 <TextBlock Text="{loc:Loc ThemeEdit_Insert}"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
@@ -345,7 +361,7 @@
 
                             <!-- Footer template -->
                             <TextBlock Text="{loc:Loc ThemeEdit_FooterBottom}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,0,0,4" />
                             <TextBox x:Name="FooterTemplateBox"
@@ -354,7 +370,7 @@
                                      Margin="0,0,0,6" />
                             <WrapPanel>
                                 <TextBlock Text="{loc:Loc ThemeEdit_Insert}"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            FontSize="11"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,4" />
@@ -377,7 +393,7 @@
 
                     <!-- ── Live Preview ── -->
                     <TextBlock Text="{loc:Loc ThemeEdit_Preview}" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
-                    <Border BorderBrush="{StaticResource BorderBrush}"
+                    <Border BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             ClipToBounds="True"

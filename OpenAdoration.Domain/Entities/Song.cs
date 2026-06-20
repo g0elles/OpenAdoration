@@ -25,6 +25,13 @@ public class Song : BaseEntity
     /// </summary>
     public string? VerseOrder { get; set; }
 
+    /// <summary>
+    /// Content-level theme (M14). When set, this song carries its own look whether projected
+    /// standalone or inside a service. Null = inherit from the cascade
+    /// (schedule-item theme → this → Songs type-default → app default).
+    /// </summary>
+    public int? ThemeId { get; set; }
+
     public List<SongSection> Sections { get; set; } = new();
 
     /// <summary>

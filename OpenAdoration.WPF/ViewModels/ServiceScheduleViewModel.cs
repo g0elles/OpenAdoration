@@ -834,6 +834,18 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         await PersistOrderAsync();
     }
 
+    /// <summary>Drag-and-drop reorder: move <paramref name="source"/> to <paramref name="target"/>'s slot.</summary>
+    public async Task MoveItemAsync(ScheduleItemViewModel source, ScheduleItemViewModel target)
+    {
+        if (OpenedService is null || ReferenceEquals(source, target)) return;
+        var from = ScheduleItems.IndexOf(source);
+        var to   = ScheduleItems.IndexOf(target);
+        if (from < 0 || to < 0 || from == to) return;
+
+        ScheduleItems.Move(from, to);
+        await PersistOrderAsync();
+    }
+
     private async Task PersistOrderAsync()
     {
         if (OpenedService is null) return;
@@ -971,7 +983,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             {
                 case SongScheduleItem songItem:
                 {
-                    var slides = _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride);
+                    var themeId = ThemeCascade.ForSong(songItem.ThemeId, songItem.Song.ThemeId, _appSettings.Current);
+                    var slides = _songService.GenerateSlides(songItem.Song, themeId, songItem.VerseOrderOverride);
                     if (slides.Count == 0) { SetError(L("Sched_ErrNoLyrics")); return; }
                     _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId));
                     break;
@@ -985,14 +998,16 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                         .Where(v => v.Verse >= bibleItem.VerseStart && v.Verse <= bibleItem.VerseEnd)
                         .ToList();
                     if (verses.Count == 0) { SetError($"No verses found for {bibleItem.Reference}."); return; }
-                    var slides = _bibleService.GenerateSlides(verses, BibleVersesPerSlide, bibleItem.ThemeId);
+                    var themeId = ThemeCascade.ForScripture(bibleItem.ThemeId, _appSettings.Current);
+                    var slides = _bibleService.GenerateSlides(verses, BibleVersesPerSlide, themeId);
                     _projectionService.LoadSlides(slides, bibleItem.Reference);
                     break;
                 }
 
                 case MediaScheduleItem mediaItem:
                 {
-                    var slide = _mediaService.GenerateSlide(mediaItem.MediaFile, mediaItem.ThemeId);
+                    var themeId = ThemeCascade.ForMedia(mediaItem.ThemeId, _appSettings.Current);
+                    var slide = _mediaService.GenerateSlide(mediaItem.MediaFile, themeId);
                     _projectionService.LoadSlides([slide], mediaItem.MediaFile.FileName);
                     break;
                 }
@@ -1020,13 +1035,16 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             return ScheduleItems[nextIdx].Item switch
             {
                 SongScheduleItem songItem =>
-                    _songService.GenerateSlides(songItem.Song, songItem.ThemeId, songItem.VerseOrderOverride).FirstOrDefault(),
+                    _songService.GenerateSlides(songItem.Song,
+                        ThemeCascade.ForSong(songItem.ThemeId, songItem.Song.ThemeId, _appSettings.Current),
+                        songItem.VerseOrderOverride).FirstOrDefault(),
 
                 BibleScheduleItem bibleItem when bibleItem.BibleVersionId.HasValue =>
                     await GetBibleItemFirstSlideAsync(bibleItem),
 
                 MediaScheduleItem mediaItem =>
-                    _mediaService.GenerateSlide(mediaItem.MediaFile, mediaItem.ThemeId),
+                    _mediaService.GenerateSlide(mediaItem.MediaFile,
+                        ThemeCascade.ForMedia(mediaItem.ThemeId, _appSettings.Current)),
 
                 _ => null
             };
@@ -1046,7 +1064,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             .Where(v => v.Verse >= item.VerseStart && v.Verse <= item.VerseEnd)
             .ToList();
         return verses.Count > 0
-            ? _bibleService.GenerateSlides(verses, BibleVersesPerSlide, item.ThemeId).FirstOrDefault()
+            ? _bibleService.GenerateSlides(verses, BibleVersesPerSlide,
+                ThemeCascade.ForScripture(item.ThemeId, _appSettings.Current)).FirstOrDefault()
             : null;
     }
 
@@ -1092,7 +1111,8 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         // On screen now → swap slides in place, keeping position + this item's theme/verse order.
         if (CurrentLiveSong(songId) is { } current)
         {
-            var slides = _songService.GenerateSlides(fresh, current.ThemeId, current.VerseOrderOverride);
+            var themeId = ThemeCascade.ForSong(current.ThemeId, fresh.ThemeId, _appSettings.Current);
+            var slides = _songService.GenerateSlides(fresh, themeId, current.VerseOrderOverride);
             if (slides.Count > 0)
                 _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId), slides, fresh.Title);
         }

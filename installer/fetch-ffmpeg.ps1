@@ -25,21 +25,22 @@ $ErrorActionPreference = "Stop"
 $repoRoot  = Split-Path -Parent $PSScriptRoot
 $targetDir = Join-Path $repoRoot "OpenAdoration.WPF\ffmpeg"
 $cdn       = "https://conda.anaconda.org/conda-forge/win-64"
-$api       = "https://api.anaconda.org/package/conda-forge"
 
-# FFmpeg is pinned to a specific LGPL build. Its runtime dependencies are pinned to the
-# version ranges that build was compiled against (conda 'depends'), so the DLL ABIs match.
-# We only load the playback libraries (MinimumFeatures), so avfilter's font deps are omitted.
-$pinnedFfmpeg = "ffmpeg-4.4.2-lgpl_h907f4eb_4.tar.bz2"
-$depPackages  = @(
-    @{ pkg = "libzlib";        ver = "1.2.13" },  # zlib.dll
-    @{ pkg = "bzip2";          ver = "1.0.8"  },  # libbz2.dll
-    @{ pkg = "libiconv";       ver = "1.17"   },  # iconv.dll
-    @{ pkg = "libxml2";        ver = "2.9.14" },  # libxml2.dll (must be 2.9.x for FFmpeg 4.4.2)
-    @{ pkg = "xz";             ver = "5.2"    },  # liblzma.dll (libxml2 dep)
-    @{ pkg = "openh264";       ver = "2.2.0"  },  # openh264-6.dll (avcodec)
-    @{ pkg = "svt-av1";        ver = "1.1.0"  },  # svtav1enc.dll (avcodec)
-    @{ pkg = "aom";            ver = "3.4.0"  }    # aom.dll (avcodec, AV1)
+# Every package is pinned to an EXACT build filename + SHA256 of the archive bytes (supply-chain
+# gate: we verify what we download instead of trusting "latest matching"). FFmpeg is the LGPL 4.4.2
+# build; deps are the exact builds it was compiled against. We only load the playback libraries
+# (MinimumFeatures), so avfilter's font deps are omitted.
+# To bump: change the filename, re-run, take the printed actual hash, paste it here, re-run clean.
+$packages = @(
+    @{ file = "ffmpeg-4.4.2-lgpl_h907f4eb_4.tar.bz2"; sha256 = "d7f6d2999d638299af23a27169993161ca5c3c449e839f2d6e8093e82a3ea50c" },  # FFmpeg 4.4.2 LGPL
+    @{ file = "libzlib-1.2.13-hcfcfb64_4.tar.bz2";    sha256 = "184da12b4296088a47086f4e69e65eb5f8537a824ee3131d8076775e1d1ea767" },  # zlib.dll
+    @{ file = "bzip2-1.0.8-h8ffe710_4.tar.bz2";       sha256 = "5389dad4e73e4865bb485f460fc60b120bae74404003d457ecb1a62eb7abf0c1" },  # libbz2.dll
+    @{ file = "libiconv-1.17-h8ffe710_0.tar.bz2";     sha256 = "657c2a992c896475021a25faebd9ccfaa149c5d70c7dc824d4069784b686cea1" },  # iconv.dll
+    @{ file = "libxml2-2.9.14-hf5bbc77_4.tar.bz2";    sha256 = "cf8215e429ff6572f77ee7382b4c9e06a31126318f22d45fc281b6062d3be544" },  # libxml2.dll (2.9.x for FFmpeg 4.4.2)
+    @{ file = "xz-5.2.6-h8d14728_0.tar.bz2";          sha256 = "54d9778f75a02723784dc63aff4126ff6e6749ba21d11a6d03c1f4775f269fe0" },  # liblzma.dll (libxml2 dep)
+    @{ file = "openh264-2.2.0-h0e60522_2.tar.bz2";    sha256 = "f01fc82b13e7dd99a017ea1c107b4f3cb3d25619f804b722b520f24fdbfb4dad" },  # openh264 (avcodec)
+    @{ file = "svt-av1-1.1.0-h0e60522_1.tar.bz2";     sha256 = "edf19ff4d5c7d6b78f7dbe3eabbe0314a099d5b5ba43713d8121bc9848b3122d" },  # svtav1enc (avcodec)
+    @{ file = "aom-3.4.0-h0e60522_1.tar.bz2";         sha256 = "84f5264645fcc049168d4c1208daa87541313a126640f38842554a5276e3b4e0" }   # aom (avcodec, AV1)
 )
 # Note: FFmpeg also needs the VC++ 2015-2022 runtime (vcruntime140.dll / msvcp140.dll),
 # which ships with Windows 10/11 and the .NET runtime — treated as a system prerequisite.
@@ -51,20 +52,15 @@ $requiredFfmpeg = @(
     "swresample-3.dll", "swscale-5.dll", "avfilter-7.dll", "avdevice-58.dll"
 )
 
-function Resolve-Win64([string]$pkg, [string]$ver) {
-    $files = Invoke-RestMethod "$api/$pkg/files"
-    $cand  = $files |
-        Where-Object { $_.attrs.subdir -eq 'win-64' -and $_.basename -like '*.tar.bz2' -and ($ver -eq '' -or $_.version -like "$ver*") } |
-        Sort-Object { [datetime]$_.upload_time } -Descending |
-        Select-Object -First 1
-    if (-not $cand) { throw "No win-64 .tar.bz2 found for conda-forge/$pkg $ver." }
-    return Split-Path $cand.basename -Leaf
-}
-
-function Expand-CondaDlls([string]$fileName, [string]$work, [string]$dest) {
+function Expand-CondaDlls([string]$fileName, [string]$sha256, [string]$work, [string]$dest) {
     $archive = Join-Path $work $fileName
     Write-Host "    - $fileName"
     Invoke-WebRequest -Uri "$cdn/$fileName" -OutFile $archive -UseBasicParsing
+    # Supply-chain gate: the bytes must match the pinned hash, or we refuse to use them.
+    $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+    if ($actual -ne $sha256.ToLower()) {
+        throw "SHA256 mismatch for $fileName`n  expected: $sha256`n  actual:   $actual"
+    }
     $ex = Join-Path $work ([System.IO.Path]::GetFileNameWithoutExtension($fileName))
     New-Item -ItemType Directory -Force -Path $ex | Out-Null
     tar -xf $archive -C $ex
@@ -85,10 +81,9 @@ try {
     if (Test-Path $targetDir) { Remove-Item $targetDir -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
-    Write-Host "==> Downloading FFmpeg 4.4.2 (LGPL) + dependencies from conda-forge..."
-    Expand-CondaDlls $pinnedFfmpeg $work $targetDir
-    foreach ($d in $depPackages) {
-        Expand-CondaDlls (Resolve-Win64 $d.pkg $d.ver) $work $targetDir
+    Write-Host "==> Downloading FFmpeg 4.4.2 (LGPL) + dependencies from conda-forge (SHA256-verified)..."
+    foreach ($p in $packages) {
+        Expand-CondaDlls $p.file $p.sha256 $work $targetDir
     }
 
     $missing = $requiredFfmpeg | Where-Object { -not (Test-Path (Join-Path $targetDir $_)) }

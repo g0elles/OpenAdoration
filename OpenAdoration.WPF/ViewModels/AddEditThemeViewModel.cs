@@ -1,13 +1,21 @@
 using System.IO;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
+using OpenAdoration.Domain.Common;
 using OpenAdoration.Domain.Entities;
 
 namespace OpenAdoration.WPF.ViewModels;
 
 public enum BackgroundType { Color, Image, Video }
+
+/// <summary>Theme transition picker item. Null Kind = inherit the global default.</summary>
+public sealed record TransitionOption(SlideTransitionKind? Kind, string Label)
+{
+    public override string ToString() => Label; // clean name for combo display + UI Automation
+}
 
 public partial class AddEditThemeViewModel : BaseViewModel
 {
@@ -55,6 +63,9 @@ public partial class AddEditThemeViewModel : BaseViewModel
     [ObservableProperty] private string? _headerTemplate;
     [ObservableProperty] private string? _footerTemplate;
 
+    public IReadOnlyList<TransitionOption> AvailableTransitions { get; }
+    [ObservableProperty] private TransitionOption _selectedTransition = null!;
+
     public bool IsNew      => _themeId == 0;
     public string FormTitle => IsNew ? L("ThemeEdit_FormNew") : L("ThemeEdit_FormEdit");
 
@@ -87,6 +98,13 @@ public partial class AddEditThemeViewModel : BaseViewModel
         _themeService      = themeService;
         _projectionService = projectionService;
         _logger            = logger;
+
+        AvailableTransitions =
+        [
+            new TransitionOption(null, L("ThemeEdit_TransitionInherit")),
+            .. Enum.GetValues<SlideTransitionKind>().Select(k => new TransitionOption(k, k.ToString()))
+        ];
+        SelectedTransition = AvailableTransitions[0];
     }
 
     // ── Initialise ────────────────────────────────────────────────────────────
@@ -106,6 +124,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         IsDefault              = false;
         HeaderTemplate         = null;
         FooterTemplate         = null;
+        SelectedTransition     = AvailableTransitions[0]; // inherit global default
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
@@ -125,6 +144,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         IsDefault           = theme.IsDefault;
         HeaderTemplate      = theme.HeaderTemplate;
         FooterTemplate      = theme.FooterTemplate;
+        SelectedTransition  = AvailableTransitions.FirstOrDefault(o => o.Kind == theme.SlideTransition)
+                              ?? AvailableTransitions[0];
 
         SelectedBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
             : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                   ? BackgroundType.Image
@@ -232,7 +253,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         BackgroundVideoPath = IsBackgroundVideo ? NullIfEmpty(BackgroundVideoPath) : null,
         IsDefault           = IsDefault,
         HeaderTemplate      = NullIfEmpty(HeaderTemplate),
-        FooterTemplate      = NullIfEmpty(FooterTemplate)
+        FooterTemplate      = NullIfEmpty(FooterTemplate),
+        SlideTransition     = SelectedTransition?.Kind
     };
 
     private static System.Windows.Media.Color ParseColor(string? hex, System.Windows.Media.Color fallback)

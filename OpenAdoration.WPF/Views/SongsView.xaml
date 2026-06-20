@@ -18,7 +18,7 @@
 
         <!-- ══════════════════════════════════════ LEFT: Song list ══ -->
         <Grid Grid.Column="0"
-              Background="{StaticResource PrimaryBrush}">
+              Background="{DynamicResource PrimaryBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -26,7 +26,7 @@
 
             <!-- Search + New button header -->
             <Border Grid.Row="0"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,1"
                     Padding="12,12,12,10">
                 <StackPanel>
@@ -38,7 +38,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    Text="{loc:Loc Songs_Title}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
@@ -64,6 +64,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0"
                                  Style="{StaticResource SearchTextBox}"
+                                 Tag="{loc:Loc Songs_SearchPlaceholder}"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,6,0">
                             <TextBox.InputBindings>
@@ -71,7 +72,8 @@
                             </TextBox.InputBindings>
                         </TextBox>
                         <Button Grid.Column="1"
-                                Content="🔍"
+                                Content="&#xE721;"
+                                FontFamily="Segoe Fluent Icons"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding SearchCommand}"
                                 Padding="8,6" />
@@ -81,12 +83,12 @@
 
             <!-- Song list -->
             <Border Grid.Row="1"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <!-- Loading indicator -->
                     <TextBlock Text="{loc:Loc Common_Loading}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -94,7 +96,7 @@
 
                     <!-- Error -->
                     <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource DangerBrush}"
+                               Foreground="{DynamicResource DangerBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
                                Margin="12"
@@ -103,7 +105,7 @@
 
                     <!-- Empty state — no songs exist yet -->
                     <TextBlock Text="{loc:Loc Songs_Empty}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Center"
@@ -128,7 +130,7 @@
                     </TextBlock>
 
                     <!-- Empty state — search returned nothing -->
-                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                    <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Center"
@@ -198,7 +200,7 @@
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding Title}"
                                                            ToolTip="{Binding Title}"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            FontSize="13"
                                                            FontWeight="SemiBold"
                                                            VerticalAlignment="Center"
@@ -232,7 +234,7 @@
                                             <!-- Author -->
                                             <TextBlock Grid.Row="1"
                                                        Text="{Binding Author}"
-                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        FontSize="11"
                                                        Margin="0,2,0,0"
                                                        TextTrimming="CharacterEllipsis">
@@ -253,7 +255,7 @@
                                             <!-- Classification -->
                                             <TextBlock Grid.Row="2"
                                                        Text="{Binding Classification}"
-                                                       Foreground="{StaticResource AccentBrush}"
+                                                       Foreground="{DynamicResource AccentBrush}"
                                                        FontSize="10"
                                                        Margin="0,2,0,0"
                                                        TextTrimming="CharacterEllipsis">
@@ -291,16 +293,16 @@
 
         <!-- Placeholder (visible when IsEditing = false) -->
         <Grid Grid.Column="1"
-              Background="{StaticResource SurfaceBrush}"
+              Background="{DynamicResource SurfaceBrush}"
               Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                 <TextBlock Text="{loc:Loc Songs_SelectPrompt}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center" />
                 <TextBlock Text="{loc:Loc Songs_SelectPromptSub}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13"
                            HorizontalAlignment="Center"
                            Margin="0,4,0,0" />

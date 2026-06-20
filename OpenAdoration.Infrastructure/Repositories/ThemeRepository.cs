@@ -87,6 +87,7 @@ public sealed class ThemeRepository : IThemeRepository
         existing.IsDefault           = theme.IsDefault;
         existing.HeaderTemplate      = theme.HeaderTemplate;
         existing.FooterTemplate      = theme.FooterTemplate;
+        existing.SlideTransition     = theme.SlideTransition;
 
         await context.SaveChangesAsync(ct);
     }

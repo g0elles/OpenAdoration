@@ -15,7 +15,7 @@ namespace OpenAdoration.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
             modelBuilder.Entity("OpenAdoration.Domain.Entities.BibleBook", b =>
                 {
@@ -240,6 +240,9 @@ namespace OpenAdoration.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ThemeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -254,6 +257,8 @@ namespace OpenAdoration.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SourceGuid");
+
+                    b.HasIndex("ThemeId");
 
                     b.HasIndex("Title");
 
@@ -346,6 +351,9 @@ namespace OpenAdoration.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("SlideTransition")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("TextAlignment")
                         .IsRequired()
@@ -505,6 +513,14 @@ namespace OpenAdoration.Infrastructure.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("Theme");
+                });
+
+            modelBuilder.Entity("OpenAdoration.Domain.Entities.Song", b =>
+                {
+                    b.HasOne("OpenAdoration.Domain.Entities.Theme", null)
+                        .WithMany()
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("OpenAdoration.Domain.Entities.SongSection", b =>

@@ -27,9 +27,12 @@ public partial class App : WpfApp
     {
         base.OnStartup(e);
 
-        var appDataDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenAdoration");
+        // OA_DATA_DIR overrides the data location (e2e isolation, portable installs);
+        // falls back to %LOCALAPPDATA%\OpenAdoration.
+        var appDataDir = Environment.GetEnvironmentVariable("OA_DATA_DIR")
+            ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OpenAdoration");
 
         var dbPath       = Path.Combine(appDataDir, "openadoration.db");
         var settingsPath = Path.Combine(appDataDir, "settings.json");
@@ -109,6 +112,7 @@ public partial class App : WpfApp
         // Load the FFmpeg media engine so the projector can decode any codec (incl. HEVC).
         // Non-fatal: if FFmpeg is missing the app still runs; only video playback is affected.
         Helpers.MediaEngine.Initialize(_logger);
+        WarnIfVcRuntimeMissing();
 
         try
         {
@@ -130,6 +134,10 @@ public partial class App : WpfApp
         // frame renders in the correct language (the service applies it in its ctor).
         _host.Services.GetRequiredService<ILocalizationService>();
 
+        // Apply the saved app-chrome appearance (Light/Dark) before the first window renders.
+        _host.Services.GetRequiredService<IAppThemeService>()
+            .Apply(_host.Services.GetRequiredService<IAppSettingsService>().Current.Appearance);
+
         // Discover + load installed plugins (each isolated; failures are logged, not fatal).
         _host.Services.GetRequiredService<PluginManager>().LoadAll();
 
@@ -140,6 +148,27 @@ public partial class App : WpfApp
 
         // Opt-in, non-blocking: never delays the first frame.
         _ = MaybeCheckForUpdatesAsync();
+    }
+
+    /// <summary>
+    /// FFmpeg's native DLLs need the VC++ 2015–2022 runtime (vcruntime140/msvcp140), which ships
+    /// with Windows 10/11 but can be absent on fresh or locked-down installs. Warn once, non-blocking —
+    /// the app still runs; only video playback is affected.
+    /// </summary>
+    private void WarnIfVcRuntimeMissing()
+    {
+        var sys = Environment.SystemDirectory;
+        if (File.Exists(Path.Combine(sys, "vcruntime140.dll")) &&
+            File.Exists(Path.Combine(sys, "msvcp140.dll")))
+            return;
+
+        _logger.LogWarning("VC++ 2015–2022 runtime not detected — video playback may be unavailable.");
+        System.Windows.MessageBox.Show(
+            "The Microsoft Visual C++ 2015–2022 Runtime was not found. OpenAdoration will run, but " +
+            "video playback may not work.\n\nInstall it from:\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe",
+            "Optional component missing",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     private async Task MaybeCheckForUpdatesAsync()
@@ -156,8 +185,16 @@ public partial class App : WpfApp
                 "Update Available"))
             return;
 
-        await _host.Services.GetRequiredService<IUpdateService>().DownloadAndApplyAsync(info);
-        Shutdown();
+        try
+        {
+            // Only exit if the installer actually launched; if the operator cancels UAC, keep running.
+            if (await _host.Services.GetRequiredService<IUpdateService>().DownloadAndApplyAsync(info))
+                Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Startup update download/launch failed — continuing normally.");
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)
@@ -208,6 +245,7 @@ public partial class App : WpfApp
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
+        services.AddSingleton<IAppThemeService, AppThemeService>();
         services.AddSingleton(sp => new PluginManager(
             Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0),
             sp.GetRequiredService<ILoggerFactory>(),

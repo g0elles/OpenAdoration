@@ -138,6 +138,19 @@ public sealed class VideoPsalmAgendaParserTests : IDisposable
     }
 
     [Fact]
+    public void Parse_ExposesRootStyle_ForAppDefaultMapping()
+    {
+        Build(FullAgenda);
+
+        var root = VideoPsalmAgendaParser.Parse(_path).RootStyle;
+
+        // RootStyle is the cascade's lowest rung — M14.4 maps it to OA's app-default theme.
+        Assert.Equal("Candara", root.FontFamily);
+        Assert.Equal("#FFFFFF", root.FontColor);
+        Assert.Equal("bg-root.png", root.BackgroundImage);
+    }
+
+    [Fact]
     public void Parse_NoRecognizableItems_Throws()
     {
         Build(("Version.json", "2"), ("RootStyle.json", "{}"), ("AgendaItemProperties.json", "{Items:[]}"));

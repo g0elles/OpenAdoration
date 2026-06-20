@@ -58,4 +58,11 @@ public sealed record VpAgendaItem
 }
 
 /// <summary>An ordered VideoPsalm agenda parsed from a <c>.vpagd</c> archive.</summary>
-public sealed record VpAgenda(IReadOnlyList<VpAgendaItem> Items);
+public sealed record VpAgenda(IReadOnlyList<VpAgendaItem> Items)
+{
+    /// <summary>
+    /// The agenda-wide VideoPsalm RootStyle. Mapped to OA's app-default theme on import (M14.4),
+    /// the lowest rung of the cascade. <see cref="VpStyle.Empty"/> when the archive carries none.
+    /// </summary>
+    public VpStyle RootStyle { get; init; } = VpStyle.Empty;
+}

@@ -3,12 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             xmlns:behaviors="clr-namespace:OpenAdoration.WPF.Behaviors"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel}"
              Loaded="OnLoaded"
-             Background="{StaticResource SurfaceBrush}">
+             Background="{DynamicResource SurfaceBrush}">
 
     <Grid>
         <!-- Busy overlay -->
@@ -16,7 +17,7 @@
                 Background="#AA1E1E2E"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{loc:Loc Common_Loading}"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="16"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
@@ -25,12 +26,12 @@
         <DockPanel>
             <!-- Toolbar -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource PrimaryBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
                     Padding="20,14">
                 <Grid>
                     <TextBlock Text="{loc:Loc Media_Title}"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="{loc:Loc Media_ImportFolder}"
@@ -47,7 +48,7 @@
 
             <!-- Error bar -->
             <Border DockPanel.Dock="Top"
-                    Background="{StaticResource DangerBrush}"
+                    Background="{DynamicResource DangerBrush}"
                     Padding="20,10"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
@@ -61,21 +62,23 @@
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="{Binding HasMedia, Converter={StaticResource InverseBoolToVis}}">
-                    <TextBlock Text="🖼"
+                    <TextBlock Text="&#xE91B;"
+                               FontFamily="Segoe Fluent Icons"
                                FontSize="56"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,16" />
                     <TextBlock Text="{loc:Loc Media_Empty}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="18" FontWeight="SemiBold"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8" />
                     <TextBlock Text="{loc:Loc Media_EmptyHelp}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,24" />
-                    <Button Content="{loc:Loc Media_ImportCta}"
+                    <Button x:Name="ImportMediaCtaButton"
+                            Content="{loc:Loc Media_ImportCta}"
                             Style="{StaticResource PrimaryButton}"
                             Padding="20,9"
                             HorizontalAlignment="Center"
@@ -98,8 +101,8 @@
                                 <Border Width="180" Margin="8"
                                         CornerRadius="6"
                                         BorderThickness="1.5"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Cursor="Hand">
                                     <Border.Style>
                                         <Style TargetType="Border">
@@ -114,7 +117,7 @@
                                                                      TargetNullValue="0" />
                                                         </MultiBinding>
                                                     </DataTrigger.Binding>
-                                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -127,12 +130,13 @@
                                                 ClipToBounds="True"
                                                 Background="#2A2A3E">
                                             <Grid>
-                                                <!-- Image thumbnail (null for videos — FilePathToImage returns null) -->
-                                                <Image Source="{Binding FilePath, Converter={StaticResource FilePathToImage}}"
+                                                <!-- Thumbnail: shell (images + most videos) → FFmpeg fallback (HEVC) -->
+                                                <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
                                                        Stretch="UniformToFill" />
 
                                                 <!-- Video icon overlay — visible only when Type is Video -->
-                                                <TextBlock Text="🎬"
+                                                <TextBlock Text="&#xE714;"
+                                                           FontFamily="Segoe Fluent Icons"
                                                            FontSize="32"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center">
@@ -153,7 +157,7 @@
                                         <!-- Filename + actions -->
                                         <StackPanel Margin="10,8,10,10">
                                             <TextBlock Text="{Binding FileName}"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                                        FontSize="12"
                                                        TextTrimming="CharacterEllipsis"
                                                        ToolTip="{Binding FileName}"

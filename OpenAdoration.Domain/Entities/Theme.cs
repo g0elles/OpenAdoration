@@ -20,6 +20,12 @@ public class Theme : BaseEntity
     public bool IsDefault { get; set; }
 
     /// <summary>
+    /// Per-theme slide transition. Null = inherit the global default
+    /// (AppSettings.SlideTransition). Duration stays global.
+    /// </summary>
+    public SlideTransitionKind? SlideTransition { get; set; }
+
+    /// <summary>
     /// Token template rendered at the top of the projection slide.
     /// Null/empty = header zone hidden. Supports: [SongTitle], [SongVerseTag],
     /// [BibleBookName], [BibleChapterID], [BibleVerseID].

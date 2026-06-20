@@ -39,7 +39,7 @@ The app is **fully offline**. There are no network calls, no accounts, no cloud 
 │  ViewModels/      ObservableObject + RelayCommand (MVVM)   │
 │  Converters/      IValueConverter implementations          │
 │  Helpers/         ScreenHelper, BibleImport parsers        │
-│  Styles/          Colors.xaml, Base.xaml                   │
+│  Styles/          Colors.{Dark,Light}.xaml, Base.xaml      │
 └─────────────────────┬───────────────────────────────────────┘
                       │  interfaces only (no concrete refs)
 ┌─────────────────────▼───────────────────────────────────────┐
@@ -195,6 +195,20 @@ IProjectionService.LoadSlides(slides, contextLabel)   ← Singleton
 
 ### 3.4 Theme Resolution (per slide)
 
+Two stages. **Upstream** (`ThemeCascade`, Application/Common) picks *which* `themeId` a slide
+carries; **downstream** (`ProjectionWindow.ResolveThemeAsync`) turns that id into a `Theme`.
+
+`ThemeCascade` runs at every slide-generation call site (standalone song/Bible/media projection
+**and** live service items), most-specific wins:
+
+```
+ScheduleItem.ThemeId  ??  content's own ThemeId (Song.ThemeId)  ??  per-content-type default
+   (Default{Song,Scripture,Media}ThemeId in settings.json)  →  null
+```
+
+A `null` result means "no explicit theme" and flows into the per-slide resolver below, whose
+`themeId null` branch supplies the app-wide default — so the app-default rung is **not** duplicated.
+
 ```
 ProjectionWindow.ResolveThemeAsync(themeId?)
   │
@@ -234,6 +248,30 @@ ProjectionService.RefreshCurrentSlide()
   │  if (!_isProjecting) return
   │  RaiseSlideChanged(CurrentSlide)  ← triggers full re-render with fresh theme
 ```
+
+### 3.5b App-Chrome Appearance (Light/Dark — G27)
+
+Distinct from projection-content theming above: this is the **operator UI** palette, not the
+projected output (projection is driven solely by the `Theme` entity and is unaffected).
+
+```
+Colors.Dark.xaml / Colors.Light.xaml   ← identical keys, different values
+   (10 base + 4 semantic: Danger/Success surfaces, Success text/border)
+App.xaml merges Colors.Dark.xaml as the build-time default
+All views/styles reference brushes via {DynamicResource} (not StaticResource)
+   │
+   ▼
+IAppThemeService.Apply(AppearanceMode)            (WPF singleton)
+   │  builds Colors.{mode}.xaml dict, finds the merged dict containing
+   │  "PrimaryBrush", replaces it in-place → DynamicResource consumers re-resolve live
+   │
+   ├─ App.OnStartup: Apply(settings.Appearance) before MainWindow.Show()
+   └─ Settings→General toggle: Apply(mode) live (no restart) + persist AppSettings.Appearance
+```
+
+Persisted as `AppSettings.Appearance` (enum Dark=0 / Light=1, default Dark; serialized as int).
+The slide-preview boxes in StageView and the ProjectionWindow keep fixed dark colours on purpose —
+they mirror the projected output, not the chrome.
 
 ### 3.6 Bible Full-Chapter Projection
 
@@ -383,10 +421,10 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ Title          TEXT NOT NULL│ SongId       INT  FK → Songs   │
 │ Author         TEXT NULL    │ Type         INT  (SectionType)│
 │ Classification TEXT NULL    │ SectionNumber INT              │
-│ CreatedAt      DATETIME     │ Lyrics       TEXT NOT NULL     │
-│ UpdatedAt      DATETIME     │ Order        INT  NOT NULL     │
-│                             │ CreatedAt    DATETIME          │
-│                             │ UpdatedAt    DATETIME          │
+│ ThemeId  INT? FK→Themes     │ Lyrics       TEXT NOT NULL     │
+│           (SetNull)         │ Order        INT  NOT NULL     │
+│ CreatedAt      DATETIME     │ CreatedAt    DATETIME          │
+│ UpdatedAt      DATETIME     │ UpdatedAt    DATETIME          │
 │  1 Song ──< many Sections (Cascade delete)                   │
 └──────────────────────────────────────────────────────────────┘
 
@@ -469,9 +507,13 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `20260529011841_AddSongCopyrightAndCcli` | `Copyright` / `CcliNumber` on Songs |
 | `20260529012740_AddScheduleItemAutoAdvance` | `AutoAdvanceSeconds` on ScheduleItems |
 | `20260529210146_AddSongScheduleItemVerseOrderOverride` | `VerseOrderOverride` on song schedule items |
+| `20260616211931_AddVideoPsalmMigrationFields` | VideoPsalm-migration provenance fields (M12.1) |
+| `20260619011133_AddSongThemeId` | `ThemeId` FK (SetNull) + index on Songs — content-level theming (M14.1) |
 
 > Note: app **Settings** (church name/CCLI, default auto-advance, verses-per-slide,
-> announcement duration, transition ms) live in `settings.json`, **not** the database — no migration.
+> announcement duration, transition ms, **per-content-type default themes** —
+> `DefaultSongThemeId` / `DefaultScriptureThemeId` / `DefaultMediaThemeId`) live in
+> `settings.json`, **not** the database — no migration.
 
 ### 5.3 Table Per Hierarchy — ScheduleItems
 

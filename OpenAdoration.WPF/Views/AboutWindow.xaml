@@ -7,7 +7,7 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="{StaticResource SurfaceBrush}">
+        Background="{DynamicResource SurfaceBrush}">
 
     <StackPanel Margin="32,28,32,28">
 
@@ -15,7 +15,7 @@
         <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
             <Border Width="56" Height="56"
                     CornerRadius="28"
-                    Background="{StaticResource AccentBrush}"
+                    Background="{DynamicResource AccentBrush}"
                     HorizontalAlignment="Center"
                     Margin="0,0,0,12">
                 <TextBlock Text="✝"
@@ -26,17 +26,17 @@
             </Border>
             <TextBlock x:Name="AppNameText"
                        Text="OpenAdoration"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="20"
                        FontWeight="Bold"
                        HorizontalAlignment="Center" />
             <TextBlock x:Name="VersionText"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="12"
                        HorizontalAlignment="Center"
                        Margin="0,3,0,0" />
             <TextBlock Text="{loc:Loc About_Tagline}"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="12"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
@@ -45,7 +45,7 @@
         </StackPanel>
 
         <!-- Keyboard shortcuts -->
-        <Border Background="{StaticResource PrimaryBrush}"
+        <Border Background="{DynamicResource PrimaryBrush}"
                 CornerRadius="6"
                 Padding="16,12"
                 Margin="0,0,0,12">
@@ -67,45 +67,45 @@
 
                 <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
                            Text="{loc:Loc About_ShortcutsHeader}"
-                           Foreground="{StaticResource AccentBrush}"
+                           Foreground="{DynamicResource AccentBrush}"
                            FontSize="10" FontWeight="SemiBold"
                            Margin="0,0,0,8" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Space / → / PgDn"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{loc:Loc About_NextSlide}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="← / PgUp"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{loc:Loc About_PrevSlide}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="B"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="3" Grid.Column="1" Text="{loc:Loc About_BlankScreen}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Esc"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="4" Grid.Column="1" Text="{loc:Loc About_StopProjection}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="1 – 9"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="5" Grid.Column="1" Text="{loc:Loc About_JumpToSlide}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Ctrl + 1–5"
-                           Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" Margin="0,2" />
                 <TextBlock Grid.Row="6" Grid.Column="1" Text="{loc:Loc About_NavigateTabs}"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2" />
             </Grid>
         </Border>
 
         <!-- License -->
         <TextBlock Text="{loc:Loc About_License}"
-                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
                    FontSize="11"
                    HorizontalAlignment="Center"
                    TextAlignment="Center"

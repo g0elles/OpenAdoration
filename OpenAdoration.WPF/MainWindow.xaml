@@ -7,7 +7,7 @@
         Icon="Assets/openadoration.ico"
         MinWidth="1024" MinHeight="600"
         Width="1280" Height="720"
-        Background="{StaticResource PrimaryBrush}">
+        Background="{DynamicResource PrimaryBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -18,8 +18,8 @@
 
         <!-- ── Menu bar ── -->
         <Border Grid.Row="0"
-                Background="{StaticResource PrimaryBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource PrimaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1">
             <Menu Background="Transparent">
                 <MenuItem Header="{loc:Loc Menu_Help}">
@@ -38,53 +38,60 @@
 
             <!-- Sidebar -->
             <Border Grid.Column="0"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <DockPanel>
 
                     <Border DockPanel.Dock="Top" Padding="16,20,16,12">
                         <StackPanel>
                             <TextBlock Text="OpenAdoration"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="16"
                                        FontWeight="Bold" />
                             <TextBlock Text="{loc:Loc App_Subtitle}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        FontSize="11"
                                        Margin="0,2,0,0" />
                         </StackPanel>
                     </Border>
 
                     <Separator DockPanel.Dock="Top"
-                               Background="{StaticResource BorderBrush}"
+                               Background="{DynamicResource BorderBrush}"
                                Margin="16,0" />
 
                     <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0">
                         <TextBlock Text="{loc:Loc Nav_Group_Content}" Style="{StaticResource NavGroupHeader}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavSongsButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Songs}"
                                 Command="{Binding NavigateToSongsCommand}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavBibleButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Bible}"
                                 Command="{Binding NavigateToBibleCommand}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavThemesButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Themes}"
                                 Command="{Binding NavigateToThemesCommand}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavMediaButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Media}"
                                 Command="{Binding NavigateToMediaCommand}" />
 
                         <TextBlock Text="{loc:Loc Nav_Group_Present}" Style="{StaticResource NavGroupHeader}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavScheduleButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Schedule}"
                                 Command="{Binding NavigateToScheduleCommand}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavStageButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Stage}"
                                 Command="{Binding NavigateToStageCommand}" />
 
                         <TextBlock Text="{loc:Loc Nav_Group_Setup}" Style="{StaticResource NavGroupHeader}" />
-                        <Button Style="{StaticResource NavButton}"
+                        <Button x:Name="NavSettingsButton"
+                                Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Settings}"
                                 Command="{Binding NavigateToSettingsCommand}" />
                     </StackPanel>
@@ -95,13 +102,13 @@
             <!-- Page content -->
             <ContentControl Grid.Column="1"
                             Content="{Binding CurrentView}"
-                            Background="{StaticResource SurfaceBrush}" />
+                            Background="{DynamicResource SurfaceBrush}" />
         </Grid>
 
         <!-- ── Projection control bar ── -->
         <Border Grid.Row="2"
-                Background="{StaticResource PrimaryBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource PrimaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="12,8">
             <Grid>
@@ -115,7 +122,7 @@
                             VerticalAlignment="Center"
                             Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
-                        <Border Background="{StaticResource AccentBrush}"
+                        <Border Background="{DynamicResource AccentBrush}"
                                 CornerRadius="2"
                                 Padding="5,1"
                                 Margin="0,0,6,0"
@@ -126,13 +133,13 @@
                                        FontWeight="Bold" />
                         </Border>
                         <TextBlock Text="{Binding CurrentSongTitle}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Text="{Binding CurrentSlideLabel}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="11"
                                Margin="0,2,0,0"
                                Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}" />
@@ -228,7 +235,7 @@
                                      Value="{Binding MediaPositionSeconds}"
                                      Margin="0,0,6,0" />
                         <TextBlock Text="{Binding MediaTimeText}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="11"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0" />

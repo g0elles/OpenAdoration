@@ -128,6 +128,12 @@
   <data name="Settings_AnnouncementDurationHelp" xml:space="preserve"><value>Cuánto tiempo permanece el anuncio en pantalla antes de desaparecer. Mínimo 1.</value></data>
   <data name="Settings_Transition" xml:space="preserve"><value>Transición de diapositiva (milisegundos)</value></data>
   <data name="Settings_TransitionHelp" xml:space="preserve"><value>Duración del fundido al cambiar de diapositiva. 0 = sin transición.</value></data>
+  <data name="Settings_ThemesSection" xml:space="preserve"><value>TEMAS DE CONTENIDO</value></data>
+  <data name="Settings_DefaultSongTheme" xml:space="preserve"><value>Tema predeterminado de canciones</value></data>
+  <data name="Settings_DefaultScriptureTheme" xml:space="preserve"><value>Tema predeterminado de Escrituras</value></data>
+  <data name="Settings_DefaultMediaTheme" xml:space="preserve"><value>Tema predeterminado de multimedia</value></data>
+  <data name="Settings_ThemesHelp" xml:space="preserve"><value>Tema usado para cada tipo de contenido cuando el contenido no tiene un tema propio. Si no, se usa el tema predeterminado de la aplicación.</value></data>
+  <data name="Settings_ThemeAppDefault" xml:space="preserve"><value>Predeterminado de la app</value></data>
   <data name="Settings_BackupSection" xml:space="preserve"><value>COPIA DE SEGURIDAD</value></data>
   <data name="Settings_CreateBackup" xml:space="preserve"><value>Crear copia…</value></data>
   <data name="Settings_RestoreBackup" xml:space="preserve"><value>Restaurar copia…</value></data>
@@ -139,6 +145,10 @@
   <data name="Settings_LanguageSection" xml:space="preserve"><value>IDIOMA</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Idioma de la aplicación</value></data>
   <data name="Settings_LanguageHelp" xml:space="preserve"><value>Cambia el idioma de la interfaz de la aplicación.</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Apariencia</value></data>
+  <data name="Settings_AppearanceHelp" xml:space="preserve"><value>Tema claro u oscuro para la interfaz de la aplicación. La proyección no se ve afectada.</value></data>
+  <data name="Settings_AppearanceDark" xml:space="preserve"><value>Oscuro</value></data>
+  <data name="Settings_AppearanceLight" xml:space="preserve"><value>Claro</value></data>
   <data name="Settings_Save" xml:space="preserve"><value>Guardar</value></data>
   <data name="Settings_Saved" xml:space="preserve"><value>✓ Guardado</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Cargando…</value></data>
@@ -171,7 +181,9 @@
   <data name="Stage_NotProjecting" xml:space="preserve"><value>Sin proyección</value></data>
   <data name="Stage_UpNext" xml:space="preserve"><value>A CONTINUACIÓN</value></data>
   <data name="Stage_EndOfItem" xml:space="preserve"><value>Fin del elemento</value></data>
+  <data name="Stage_VideoBgActive" xml:space="preserve"><value>Fondo de video activo</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Canciones</value></data>
+  <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Buscar canciones…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Importar</value></data>
   <data name="Songs_ImportTooltip" xml:space="preserve"><value>Importar canciones (OpenLyrics, OpenSong, VideoPsalm .vpagd, texto sin formato)</value></data>
   <data name="Songs_Empty" xml:space="preserve"><value>Aún no hay canciones. Haz clic en + Nuevo para agregar una.</value></data>
@@ -213,6 +225,9 @@
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>ORDEN DE EJECUCIÓN</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Opcional — p. ej. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Déjalo en blanco para reproducir las secciones de arriba abajo. Usa las fichas de sección de abajo (p. ej. V1 = Verso 1, C = Coro, B = Puente); repite una ficha para repetir esa sección.</value></data>
+  <data name="SongEdit_Theme" xml:space="preserve"><value>TEMA</value></data>
+  <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Usar tema predeterminado</value></data>
+  <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Tema para esta canción al proyectarse. Déjalo en predeterminado para usar el tema del servicio o de la aplicación.</value></data>
   <data name="SongEdit_RemoveSection" xml:space="preserve"><value>Quitar sección</value></data>
   <data name="SongEdit_AddSection" xml:space="preserve"><value>AGREGAR SECCIÓN</value></data>
   <data name="SongEdit_AddVerse" xml:space="preserve"><value>+ Verso</value></data>
@@ -247,6 +262,8 @@
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>Ninguna imagen seleccionada</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>Ningún video seleccionado</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Usar como tema predeterminado para todas las diapositivas</value></data>
+  <data name="ThemeEdit_Transition" xml:space="preserve"><value>Transición de diapositiva</value></data>
+  <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Usar predeterminado global</value></data>
   <data name="ThemeEdit_HeaderFooter" xml:space="preserve"><value>ENCABEZADO / PIE</value></data>
   <data name="ThemeEdit_TokenNote1" xml:space="preserve"><value>Las zonas de fichas se ocultan automáticamente cuando las fichas no tienen valor para el tipo de diapositiva actual (p. ej. un encabezado bíblico en una diapositiva de canción). </value></data>
   <data name="ThemeEdit_TokenNote2" xml:space="preserve"><value>El texto fijo que escribas siempre aparecerá en cada diapositiva.</value></data>
@@ -321,6 +338,7 @@
   <data name="Sched_ImportFolderTitle" xml:space="preserve"><value>Importar carpeta</value></data>
   <data name="Sched_DeleteServiceTitle" xml:space="preserve"><value>Eliminar servicio</value></data>
   <data name="Sched_RemoveItemTitle" xml:space="preserve"><value>Quitar elemento</value></data>
+  <data name="Sched_DragHint" xml:space="preserve"><value>Arrastra para reordenar (o usa las flechas ▲▼)</value></data>
   <data name="Sched_ErrImportVp" xml:space="preserve"><value>No se pudo importar esta agenda de VideoPsalm. Puede estar dañada o ser un archivo no compatible.</value></data>
   <data name="Sched_ErrNoAgendas" xml:space="preserve"><value>No se encontraron agendas de VideoPsalm (*.vpagd) en esa carpeta.</value></data>
   <data name="Sched_ErrImportFolder" xml:space="preserve"><value>No se pudo importar esta carpeta.</value></data>
@@ -396,6 +414,7 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>No se pudo restaurar la copia de seguridad.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>Estás usando la versión más reciente.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Buscar actualizaciones</value></data>
+  <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Actualización cancelada. Puedes volver a intentarlo cuando quieras desde Configuración.</value></data>
   <data name="Settings_UpdateConfirm" xml:space="preserve"><value>La versión {0} está disponible ({1} MB). ¿Descargar e instalar ahora? La aplicación se cerrará para finalizar.</value></data>
   <data name="Settings_UpdateAvailableTitle" xml:space="preserve"><value>Actualización disponible</value></data>
   <data name="Settings_ErrUpdate" xml:space="preserve"><value>No se pudo completar la actualización.</value></data>

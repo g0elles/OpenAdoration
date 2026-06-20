@@ -12,14 +12,14 @@ A single operator runs OpenAdoration during a church service to control what app
 
 | Module | What you can do |
 |---|---|
-| **Songs** | Build a song library with structured sections (Verse, Chorus, Bridge, etc.); search and project any song; navigate between sections with ◀/▶; set play order; import from OpenLyrics, OpenSong, and plain text |
-| **Bible** | Browse any imported translation by book and chapter; click a verse to project it; search by keyword (FTS); select multi-verse ranges; import from 8 file formats |
-| **Themes** | Control fonts, colors, and backgrounds (solid color, image, or looping video) for all projected content |
-| **Media** | Import images and videos; project them full-screen with a click; videos play with audio |
-| **Service Schedule** | Build a setlist before the service; add songs, Bible passages, and media; reorder items; per-item auto-advance and verse-order override; go live and navigate the schedule; add items to the queue on the fly |
-| **Projection** | Full-screen output on a secondary monitor; header/body/footer zones with template tokens; announcement banner; configurable fade; blank screen with one key; theme applies per slide |
+| **Songs** | Build a song library with structured sections (Verse, Chorus, Bridge, etc.); search and project any song; navigate between sections with ◀/▶; set play order; import from OpenLyrics, OpenSong, ChordPro, and plain text |
+| **Bible** | Browse any imported translation by book and chapter; click a verse to project it; one smart search box (reference jump / keyword FTS / exact phrase); select multi-verse ranges; import from 8 file formats |
+| **Themes** | Control fonts, colors, and backgrounds (solid color, image, or looping video); assign a theme to content (per song + per-content-type defaults) resolved by one cascade; optional per-theme slide transition |
+| **Media** | Import images and videos (single files or a whole folder); thumbnails for both — incl. HEVC/iPhone `.MOV`; project full-screen with a click; transport controls (restart / ±10s / play-pause / seek); any codec via FFmpeg |
+| **Service Schedule** | Build a setlist; add songs, Bible passages, and media; reorder with drag-and-drop or ▲▼; per-item auto-advance and verse-order override; import a full VideoPsalm agenda; go live and navigate; add to the queue on the fly |
+| **Projection** | Full-screen output on a secondary monitor; header/body/footer zones with template tokens; announcement banner; persistent lower-third; Cut/Fade/Slide/Zoom transitions; blank screen with one key; theme applies per slide |
 | **Stage View** | Operator monitor: themed preview of the current slide + UP NEXT (including the next schedule item); Prev/Next item controls |
-| **Settings** | Church name + CCLI for `[ChurchName]`/`[SiteLicense]` tokens; default auto-advance; verses-per-slide; announcement duration; transition speed |
+| **Settings** | Church name + CCLI tokens; UI **language** (English/Spanish) and **Light/Dark appearance**; default auto-advance; verses-per-slide; announcement duration; transition speed; backup/restore; opt-in update check |
 
 ---
 
@@ -66,8 +66,8 @@ The database is created and migrated automatically on first launch.
 # Requires the WiX v5 CLI once per machine:
 dotnet tool install --global wix --version 5.0.2
 
-pwsh installer/build.ps1 -Version 1.0.0
-# → installer/out/OpenAdoration-1.0.0-win-x64.msi
+pwsh installer/build.ps1 -Version 2.0.0
+# → installer/out/OpenAdoration-2.0.0-win-x64.msi
 #   (and a single self-contained OpenAdoration.exe that needs no .NET install)
 ```
 
@@ -77,10 +77,11 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full tag → build → GitHub-r
 
 ```bash
 dotnet test OpenAdoration.Tests.Infrastructure
-# 43/43 — Bible parsers (Zefania, OSIS, USFX, thiagobodruk / OpenAdoration /
+# 70/70 — Bible parsers (Zefania, OSIS, USFX, thiagobodruk / OpenAdoration /
 #   BibleSuperSearch JSON / ZIP / SQLite + ZIP guards + import sanity check),
-#   song import (OpenLyrics, OpenSong, plain text), VideoPsalm agenda + DRM
-#   detector, and localization resources
+#   song import (OpenLyrics, OpenSong, ChordPro, plain text), VideoPsalm agenda
+#   + DRM detector, theme cascade, layer-boundary (NetArchTest), and en/es
+#   localization parity
 ```
 
 ---
@@ -108,11 +109,13 @@ Book names are preserved from the source file when available (localized).
 
 | Layer | Technology |
 |---|---|
-| UI | WPF (.NET 10) |
-| Architecture | Clean Architecture — Domain / Application / Infrastructure / WPF |
-| Database | SQLite via Entity Framework Core 9 |
+| UI | WPF (.NET 10); runtime Light/Dark theming via `DynamicResource` |
+| Architecture | Clean Architecture — Domain / Application / Infrastructure / WPF (boundaries enforced by NetArchTest) |
+| Database | SQLite via Entity Framework Core 10 |
 | MVVM | CommunityToolkit.Mvvm 8.4 (source-generated) |
-| Full-text search | SQLite FTS5 (Bible verse search) |
+| Full-text search | SQLite FTS5 (Bible verse + song lyric search) |
+| Video | FFmpeg via FFME (any codec, incl. HEVC) |
+| i18n | resx + `{loc:Loc}` markup extension + live `TranslationSource` (en/es) |
 | Logging | Serilog — rolling daily file + debug sink |
 | Multi-monitor | `System.Windows.Forms.Screen.AllScreens` |
 
@@ -132,24 +135,26 @@ OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 
 ## Status
 
-**v1.0 — released.** All milestones (M0–M7) complete; v2.0 is in planning (see [`ROADMAP.md`](ROADMAP.md)).
+**v2.0 — release-ready.** v1.0 (M0–M7) shipped 2026-06-01; the v2.0 line (M8–M14) is complete and
+pending the release cut (see [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md)).
 
 | Feature | Status |
 |---|---|
-| Songs — CRUD, search, projection, play order, OpenLyrics/OpenSong/text import | Done |
-| Themes — colors, fonts, image/video backgrounds, 3-zone layout + tokens | Done |
-| Bible — browser, multi-verse selection, 8-format import, keyword + phrase FTS | Done |
-| Service Schedule — builder + live mode + auto-advance + verse-order override | Done |
-| Media — import, project images and videos (with audio) | Done |
-| Projection — multi-monitor, theme per slide, tokens, announcements, fade, blank | Done |
+| Songs — CRUD, search, projection, play order, OpenLyrics/OpenSong/ChordPro/text import | Done |
+| Themes — colors, fonts, image/video backgrounds, 3-zone tokens; per-content theming; per-theme transition | Done |
+| Bible — browser, multi-verse selection, 8-format import, smart reference/keyword/phrase search | Done |
+| Service Schedule — builder + live mode + auto-advance + verse-order + drag-reorder + VideoPsalm import | Done |
+| Media — import (files/folder), thumbnails (incl. HEVC), project images + any-codec video, transport controls | Done |
+| Projection — multi-monitor, theme per slide, tokens, announcements, lower-thirds, transitions, blank | Done |
 | Stage View — operator preview + cross-item UP NEXT | Done |
-| Settings — church tokens, defaults | Done |
-| Keyboard shortcuts | Done |
-| Installer / packaging (self-contained exe + MSI) | Done |
+| Settings — church tokens, defaults, language (en/es), Light/Dark, backup/restore, update check | Done |
+| Internationalization — English + Spanish UI | Done |
+| Reliability — backup/restore, opt-in auto-update, safe migrations | Done |
+| Plugin foundation (`.oaplugin` loader; UI hidden until the first connector ships) | Done |
+| Keyboard shortcuts · Installer / packaging (self-contained exe + MSI) | Done |
 
-### Coming in v2.0
-
-Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks), Bible quick-reference jump, richer transitions, persistent overlays, and dual-version scripture. (Video transport controls shipped in v1.1.0.) See [`ROADMAP.md`](ROADMAP.md) Milestones 8–13.
+Deferred to the backlog (not blocking v2.0): EasyWorship/ProPresenter song import, PDF/pptx decks,
+clean-output/NDI, and the api.bible connector (ships as a separate plugin repo). See [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -158,12 +163,12 @@ Backup/restore, opt-in auto-update, more import formats (songs + image/PDF decks
 | Doc | Purpose |
 |---|---|
 | [`docs/GUIA-USUARIO.md`](docs/GUIA-USUARIO.md) | **User guide (Spanish)** — operating the app during a service |
-| [`ROADMAP.md`](ROADMAP.md) | Milestones — v1.0 shipped, v2.0 in planning |
+| [`ROADMAP.md`](ROADMAP.md) | Milestones — v1.0 shipped, v2.0 release-ready |
 | [`CHANGELOG.md`](CHANGELOG.md) | What shipped in each version |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Developer reference — layers, data flows, DB schema |
 | [`docs/RELEASE.md`](docs/RELEASE.md) | How to cut a release |
 
-> A multi-language UI (including English + Spanish) is planned for v2.0 — see ROADMAP.md, Milestone 11.
+> The UI ships in **English and Spanish** (switch in Settings). Adding a language is just another resx.
 
 ## Contributing
 

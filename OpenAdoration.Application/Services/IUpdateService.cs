@@ -12,6 +12,10 @@ public interface IUpdateService
     /// <summary>Newer release if one exists, else null. Returns null on any network/parse failure (offline-safe).</summary>
     Task<UpdateInfo?> CheckAsync(CancellationToken ct = default);
 
-    /// <summary>Downloads the MSI to a temp path and launches msiexec. Caller exits the app afterwards.</summary>
-    Task DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default);
+    /// <summary>
+    /// Downloads the MSI to a temp path and launches msiexec (which prompts for UAC elevation).
+    /// Returns true if the installer was started — the caller should then exit the app. Returns
+    /// false if the operator cancelled the elevation prompt (UAC) so the caller stays running.
+    /// </summary>
+    Task<bool> DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default);
 }
