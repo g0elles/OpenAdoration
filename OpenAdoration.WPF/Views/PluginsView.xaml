@@ -99,7 +99,7 @@
         </Grid>
 
         <!-- Error banner -->
-        <Border Grid.Row="2" Background="#3E1A1A" BorderBrush="{DynamicResource DangerBrush}"
+        <Border Grid.Row="2" Background="{DynamicResource DangerSurfaceBrush}" BorderBrush="{DynamicResource DangerBrush}"
                 BorderThickness="0,1,0,0" Padding="16,10"
                 Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}"

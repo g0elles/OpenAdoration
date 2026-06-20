@@ -287,13 +287,13 @@
             </Border>
 
             <!-- ── Import summary bar ─────────────────────────────────────── -->
-            <Border DockPanel.Dock="Top" Background="#162016" Padding="16,8"
+            <Border DockPanel.Dock="Top" Background="{DynamicResource SuccessSurfaceBrush}" Padding="16,8"
                     Visibility="{Binding HasImportSummary, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="{Binding ImportSummary}" Foreground="#4CAF50" FontSize="12" />
+                <TextBlock Text="{Binding ImportSummary}" Foreground="{DynamicResource SuccessBrush}" FontSize="12" />
             </Border>
 
             <!-- ── Error bar ──────────────────────────────────────────────── -->
-            <Border DockPanel.Dock="Top" Background="#3E1A1A" Padding="16,8"
+            <Border DockPanel.Dock="Top" Background="{DynamicResource DangerSurfaceBrush}" Padding="16,8"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="{DynamicResource DangerBrush}" FontSize="12" />
@@ -561,7 +561,7 @@
                                                             <Condition Binding="{Binding IsChecked}" Value="False" />
                                                             <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
                                                         </MultiDataTrigger.Conditions>
-                                                        <Setter Property="Background" Value="#20FFFFFF" />
+                                                        <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
                                                     </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>

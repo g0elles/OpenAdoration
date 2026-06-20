@@ -135,7 +135,7 @@
 
             <!-- Error banner -->
             <Border Grid.Row="3"
-                    Background="#3E1A1A"
+                    Background="{DynamicResource DangerSurfaceBrush}"
                     BorderBrush="{DynamicResource DangerBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="16,10"
@@ -630,7 +630,7 @@
 
             <!-- Error banner -->
             <Border Grid.Row="4"
-                    Background="#3E1A1A"
+                    Background="{DynamicResource DangerSurfaceBrush}"
                     BorderBrush="{DynamicResource DangerBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="16,10"
@@ -653,8 +653,8 @@
 
             <!-- Live header -->
             <Border Grid.Row="0"
-                    Background="#1E2E1E"
-                    BorderBrush="#3A5A3A"
+                    Background="{DynamicResource SuccessSurfaceBrush}"
+                    BorderBrush="{DynamicResource SuccessBorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="12,10">
                 <Grid>
@@ -672,7 +672,7 @@
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="15" FontWeight="SemiBold" />
                         <TextBlock Text="{loc:Loc Sched_LiveBadge}"
-                                   Foreground="#4CAF50"
+                                   Foreground="{DynamicResource SuccessBrush}"
                                    FontSize="11" FontWeight="Bold" />
                     </StackPanel>
                 </Grid>

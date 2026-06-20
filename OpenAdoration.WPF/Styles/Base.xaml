@@ -107,7 +107,7 @@
     <Style x:Key="IconDangerButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#3E1A1A" />
+                <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
             </Trigger>
         </Style.Triggers>

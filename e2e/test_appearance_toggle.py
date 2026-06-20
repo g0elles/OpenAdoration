@@ -26,9 +26,6 @@ def test_appearance_round_trips(oa, request):
     combo.wait("visible", timeout=10)
     combo.wrapper_object().select(1)  # AvailableAppearances[1] == Light
 
-    # live swap proof for the human reviewer; assertion is the JSON below
-    oa.capture_as_image().save(str(Path(request.node.data_dir).parent / "appearance_light.png"))
-
     # Save sits at the bottom of a ScrollViewer; invoke via UIA (off-screen-safe), not physical click.
     oa.child_window(auto_id="SaveSettingsButton", control_type="Button").wrapper_object().invoke()
 
@@ -40,3 +37,7 @@ def test_appearance_round_trips(oa, request):
             break
         time.sleep(0.3)
     assert value == 1, f"expected Light (1) persisted, got {value!r}"
+
+    # Visual proof for the human reviewer: full Light chrome (live swap held) +
+    # the green "Saved ✓" confirmation rendering via the new SuccessBrush.
+    oa.capture_as_image().save(str(Path(request.node.data_dir).parent / "appearance_light.png"))

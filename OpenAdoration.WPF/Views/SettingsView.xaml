@@ -225,7 +225,7 @@
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding SaveCommand}" />
                     <TextBlock Text="{loc:Loc Settings_Saved}"
-                               Foreground="#4CAF50"
+                               Foreground="{DynamicResource SuccessBrush}"
                                FontSize="13" FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Margin="12,0,0,0"
@@ -243,7 +243,7 @@
 
         <!-- Error banner -->
         <Border Grid.Row="2"
-                Background="#3E1A1A"
+                Background="{DynamicResource DangerSurfaceBrush}"
                 BorderBrush="{DynamicResource DangerBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="16,10"

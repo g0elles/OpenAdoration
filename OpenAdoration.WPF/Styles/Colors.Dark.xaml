@@ -11,6 +11,10 @@
     <Color x:Key="TextSecondaryColor">#A0A0B8</Color>
     <Color x:Key="BorderColor">#3A3A52</Color>
     <Color x:Key="ActiveNavColor">#3A3A5C</Color>
+    <Color x:Key="DangerSurfaceColor">#3E1A1A</Color>
+    <Color x:Key="SuccessColor">#4CAF50</Color>
+    <Color x:Key="SuccessSurfaceColor">#1A2A1A</Color>
+    <Color x:Key="SuccessBorderColor">#3A5A3A</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush"       Color="{StaticResource PrimaryColor}" />
     <SolidColorBrush x:Key="SurfaceBrush"       Color="{StaticResource SurfaceColor}" />
@@ -22,5 +26,9 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="BorderBrush"        Color="{StaticResource BorderColor}" />
     <SolidColorBrush x:Key="ActiveNavBrush"     Color="{StaticResource ActiveNavColor}" />
+    <SolidColorBrush x:Key="DangerSurfaceBrush"  Color="{StaticResource DangerSurfaceColor}" />
+    <SolidColorBrush x:Key="SuccessBrush"        Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="SuccessSurfaceBrush" Color="{StaticResource SuccessSurfaceColor}" />
+    <SolidColorBrush x:Key="SuccessBorderBrush"  Color="{StaticResource SuccessBorderColor}" />
 
 </ResourceDictionary>
