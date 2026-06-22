@@ -1,7 +1,8 @@
 # OpenAdoration — Architecture & Developer Reference
 
-> Last updated: 2026-06-19
-> Status: **v2.0 released** — v1.0 (M0–M7) shipped 2026-06-01; v2.0 (M8–M14) shipped as `v2.0.0`.
+> Last updated: 2026-06-19 (architecture unchanged in v2.0.1)
+> Status: **v2.0.1 current** — v1.0 (M0–M7) shipped 2026-06-01; v2.0 (M8–M14) shipped as `v2.0.0`
+> (2026-06-19); v2.0.1 patch (Stage View video-bg + i18n fix) released 2026-06-20.
 > See `ROADMAP.md` / `CHANGELOG.md`.
 >
 > **Scope note:** the core architecture below (layers, DI, projection engine, theme resolution, DB,
@@ -423,10 +424,15 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ Title          TEXT NOT NULL│ SongId       INT  FK → Songs   │
 │ Author         TEXT NULL    │ Type         INT  (SectionType)│
 │ Classification TEXT NULL    │ SectionNumber INT              │
-│ ThemeId  INT? FK→Themes     │ Lyrics       TEXT NOT NULL     │
-│           (SetNull)         │ Order        INT  NOT NULL     │
-│ CreatedAt      DATETIME     │ CreatedAt    DATETIME          │
-│ UpdatedAt      DATETIME     │ UpdatedAt    DATETIME          │
+│ Copyright      TEXT NULL    │ Lyrics       TEXT NOT NULL     │
+│ CcliNumber     TEXT NULL    │ Order        INT  NOT NULL     │
+│ VerseOrder     TEXT NULL    │ CreatedAt    DATETIME          │
+│ SourceGuid     TEXT NULL    │ UpdatedAt    DATETIME          │
+│  (VP dedup key)             │                                │
+│ ThemeId  INT? FK→Themes     │                                │
+│           (SetNull)         │                                │
+│ CreatedAt      DATETIME     │                                │
+│ UpdatedAt      DATETIME     │                                │
 │  1 Song ──< many Sections (Cascade delete)                   │
 └──────────────────────────────────────────────────────────────┘
 
@@ -442,6 +448,10 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ BackgroundImagePath  TEXT  NULL                              │
 │ BackgroundVideoPath  TEXT  NULL                              │
 │ TextAlignment        TEXT  NOT NULL  default "Center"        │
+│ HeaderTemplate       TEXT  NULL  (token string, e.g. [SongTitle]) │
+│ FooterTemplate       TEXT  NULL                              │
+│ SlideTransition      INT   NULL  (SlideTransitionKind enum; │
+│                              null = use global setting)      │
 │ IsDefault            BOOL  NOT NULL                          │
 │ CreatedAt / UpdatedAt DATETIME                               │
 │                                                              │
@@ -467,20 +477,21 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ WorshipServices      │ ScheduleItems  (TPH — one table)     │
-│──────────────────────│──────────────────────────────────────│
-│ Id    INT  PK        │ Id         INT  PK                   │
-│ Name  TEXT           │ ServiceId  INT  FK → WorshipServices │
-│ Date  DATETIME       │ ItemType   TEXT  ← discriminator     │
-│ CreatedAt/At         │ Order      INT  NOT NULL             │
-│                      │ ThemeId    INT? FK → Themes (SetNull)│
-│                      │ CreatedAt/At                         │
-│                      │                                      │
-│                      │ Song rows:   SongId INT FK           │
-│                      │ Bible rows:  Book, Chapter,          │
-│                      │             VerseStart, VerseEnd,    │
-│                      │             BibleVersionId INT? FK   │
-│                      │ Media rows:  MediaFileId INT FK      │
+│ WorshipServices         │ ScheduleItems  (TPH — one table)  │
+│─────────────────────────│──────────────────────────────────│
+│ Id    INT  PK           │ Id         INT  PK               │
+│ Name  TEXT              │ ServiceId  INT  FK→WorshipSvc    │
+│ Date  DATETIME          │ ItemType   TEXT  ← discriminator │
+│ SourceGuid  TEXT NULL   │ Order      INT  NOT NULL         │
+│  (VP dedup key)         │ ThemeId    INT? FK→Themes        │
+│ SourceArchivePath       │  (SetNull)                       │
+│   TEXT NULL             │ CreatedAt/At                     │
+│ CreatedAt/At            │                                  │
+│                         │ Song rows:   SongId INT FK       │
+│                         │ Bible rows:  Book, Chapter,      │
+│                         │   VerseStart, VerseEnd,          │
+│                         │   BibleVersionId INT? FK         │
+│                         │ Media rows:  MediaFileId INT FK  │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -500,13 +511,13 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | Migration | What it adds |
 |---|---|
 | `20260505012006_InitialCreate` | Full schema; seeds default theme |
-| `20260511000000_AddSongClassification` | `Classification` column on Songs |
-| `20260518_AddThemeVideoBackground` | `BackgroundVideoPath` on Themes |
+| `20260512033146_AddSongClassification` | `Classification` column on Songs |
+| `20260519003743_AddThemeVideoBackground` | `BackgroundVideoPath` on Themes |
 | `20260519005541_AddThemeTextAlignment` | `TextAlignment` column on Themes |
 | `20260520041713_AddBibleVersesFts` | `BibleVersesFts` FTS5 virtual table |
-| `AddSongVerseOrder` | `VerseOrder` token string on Songs |
-| `AddSongSectionsFts` | `SongSectionsFts` FTS5 table for lyrics search |
-| `AddThemeHeaderFooter` | `HeaderTemplate` / `FooterTemplate` on Themes |
+| `20260528234215_AddSongVerseOrder` | `VerseOrder` token string on Songs |
+| `20260528234224_AddSongSectionsFts` | `SongSectionsFts` FTS5 table for lyrics search |
+| `20260529000159_AddThemeHeaderFooter` | `HeaderTemplate` / `FooterTemplate` on Themes |
 | `20260529011841_AddSongCopyrightAndCcli` | `Copyright` / `CcliNumber` on Songs |
 | `20260529012740_AddScheduleItemAutoAdvance` | `AutoAdvanceSeconds` on ScheduleItems |
 | `20260529210146_AddSongScheduleItemVerseOrderOverride` | `VerseOrderOverride` on song schedule items |
@@ -700,6 +711,9 @@ OpenAdoration.WPF/
   ProjectionWindow.xaml.cs      ★     ← RenderSlide(), ResolveThemeAsync(), Dispatcher.InvokeAsync()
   Helpers/
     ScreenHelper.cs                   ← GetSecondaryScreen(), PositionOnScreen()
+    MediaSignatureValidator.cs        ← validates file magic bytes (JPEG/PNG/GIF/BMP/TIFF/WEBP/
+                                         MP4/AVI/WMV/MKV) at import time so a renamed or corrupt
+                                         file is rejected before it reaches projection
     BibleImport/
       BibleFormatDispatcher.cs  ★     ← Auto-detect format + dispatch to parser
       OsisBookCatalog.cs              ← 66 books; GetOrFallback(); GetByNumber()
@@ -721,6 +735,12 @@ OpenAdoration.WPF/
   Services/ (WPF)
     IAppThemeService / AppThemeService.cs ← runtime Light/Dark palette swap (G27)
     LocalizationService.cs            ← applies UiCulture; backs {loc:Loc} / TranslationSource
+    IBibleImportService / BibleImportService.cs ← wraps BibleFormatDispatcher with Progress/Total/
+                                         StatusMessage + StateChanged/ImportCompleted/ImportFailed
+                                         events; runs import on a background thread
+    ISongLibraryNotifier / SongLibraryNotifier.cs ★ ← singleton cross-scope signal: song editor
+                                         raises NotifySongSaved(id); live service schedule
+                                         re-fetches and re-renders that song (G22)
   ViewModels/
     BaseViewModel.cs                  ← IsBusy, ErrorMessage, HasError, SetError(), ClearError()
     MainViewModel.cs            ★     ← Scope-per-navigation, projection controls, state sync

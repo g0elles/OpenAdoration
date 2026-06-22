@@ -135,8 +135,9 @@ OpenAdoration.Tests.Infrastructure/  Bible + song import parser tests
 
 ## Status
 
-**v2.0 — released (2026-06-19).** v1.0 (M0–M7) shipped 2026-06-01; the v2.0 line (M8–M14) is complete
-and published as `v2.0.0` (see [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md)).
+**v2.0.1 — current release (2026-06-20).** v1.0 (M0–M7) shipped 2026-06-01; v2.0.0 (M8–M14) shipped
+2026-06-19; v2.0.1 patch (Stage View video-background fix + Media "Project" button i18n fix) released
+2026-06-20. See [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md).
 
 | Feature | Status |
 |---|---|
