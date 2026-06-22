@@ -48,7 +48,7 @@ segunda pantalla o proyector es recomendable, pero también funciona con una sol
 
 ## 2. Instalación
 
-1. Abre el archivo **`OpenAdoration-2.0.0-win-x64.msi`**.
+1. Abre el archivo **`OpenAdoration-2.0.1-win-x64.msi`**.
 2. Si Windows muestra una advertencia ("Windows protegió tu PC"), haz clic en
    **"Más información" → "Ejecutar de todas formas"** (la app no está firmada todavía).
 3. Sigue el asistente. Al terminar tendrás accesos directos en el **menú Inicio** y en
