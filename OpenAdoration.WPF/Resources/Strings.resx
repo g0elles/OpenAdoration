@@ -61,6 +61,29 @@
 
   <data name="App_Subtitle" xml:space="preserve"><value>Worship Presenter</value></data>
 
+  <data name="App_ErrRecoverable" xml:space="preserve"><value>An unexpected error occurred and has been handled. Projection was stopped as a precaution.
+
+Details logged to:
+{0}</value></data>
+  <data name="App_ErrRecoverableTitle" xml:space="preserve"><value>Unexpected Error</value></data>
+  <data name="App_ErrCritical" xml:space="preserve"><value>A critical error occurred and the application must close.
+
+Details logged to:
+{0}</value></data>
+  <data name="App_ErrCriticalTitle" xml:space="preserve"><value>Critical Error</value></data>
+  <data name="App_ErrDbInit" xml:space="preserve"><value>The database could not be initialised:
+
+{0}
+
+Check the log files at:
+{1}</value></data>
+  <data name="App_ErrStartupTitle" xml:space="preserve"><value>Startup Error</value></data>
+  <data name="App_VcRuntimeMissing" xml:space="preserve"><value>The Microsoft Visual C++ 2015–2022 Runtime was not found. OpenAdoration will run, but video playback may not work.
+
+Install it from:
+https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
+  <data name="App_VcRuntimeMissingTitle" xml:space="preserve"><value>Optional component missing</value></data>
+
   <data name="Nav_Songs" xml:space="preserve"><value>🎵  Songs</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Bible</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Service Schedule</value></data>
@@ -80,7 +103,11 @@
   <data name="Plugins_Save" xml:space="preserve"><value>Save settings</value></data>
   <data name="Plugins_Versions" xml:space="preserve"><value>BIBLE VERSIONS</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Fetch versions</value></data>
-  <data name="Plugins_Import" xml:space="preserve"><value>Import selected version</value></data>
+  <data name="Plugins_Import" xml:space="preserve"><value>Import selected</value></data>
+  <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filter</value></data>
+  <data name="Plugins_AlreadyDownloaded" xml:space="preserve"><value>Downloaded</value></data>
+  <data name="Plugins_ImportStarting" xml:space="preserve"><value>Importing {0}…</value></data>
+  <data name="Plugins_ImportProgress" xml:space="preserve"><value>Downloaded {0} verses…</value></data>
 
   <data name="Menu_Help" xml:space="preserve"><value>Help</value></data>
   <data name="Menu_About" xml:space="preserve"><value>About OpenAdoration</value></data>
@@ -422,10 +449,11 @@ This action cannot be undone.</value></data>
   <data name="Plugins_Installed" xml:space="preserve"><value>Plugin installed.</value></data>
   <data name="Plugins_ErrInstall" xml:space="preserve"><value>Could not install the plugin.</value></data>
   <data name="Plugins_ConfirmRemove" xml:space="preserve"><value>Remove plugin '{0}'? It is fully unloaded after a restart.</value></data>
+  <data name="Plugins_ConfirmRemoveWithBibles" xml:space="preserve"><value>Remove plugin '{0}'? This will also permanently delete {1} Bible version(s) it downloaded.</value></data>
   <data name="Plugins_RemoveTitle" xml:space="preserve"><value>Remove Plugin</value></data>
   <data name="Plugins_ErrRemove" xml:space="preserve"><value>Could not remove the plugin.</value></data>
   <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>
   <data name="Plugins_ErrFetch" xml:space="preserve"><value>Could not fetch versions from the plugin.</value></data>
-  <data name="Plugins_Imported" xml:space="preserve"><value>Imported '{0}' into your Bible library.</value></data>
+  <data name="Plugins_ImportedCount" xml:space="preserve"><value>Imported {0} version(s) into your Bible library.</value></data>
   <data name="Plugins_ErrImport" xml:space="preserve"><value>Could not import the version.</value></data>
 </root>

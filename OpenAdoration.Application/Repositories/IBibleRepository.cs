@@ -20,4 +20,7 @@ public interface IBibleRepository
     Task UpsertVersionVersesAsync(BibleVersion version, IReadOnlyList<BibleBook> books, IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default);
 
     Task DeleteVersionAsync(int versionId, CancellationToken ct = default);
+
+    /// <summary>Deletes every version downloaded by the given plugin (by <c>SourcePluginId</c>); returns the count removed.</summary>
+    Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default);
 }

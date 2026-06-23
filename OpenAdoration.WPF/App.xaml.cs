@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Infrastructure.Extensions;
 using OpenAdoration.Infrastructure.Logging;
+using OpenAdoration.WPF.Localization;
 using OpenAdoration.WPF.Plugins;
 using OpenAdoration.WPF.Services;
 using OpenAdoration.WPF.ViewModels;
@@ -66,8 +67,8 @@ public partial class App : WpfApp
             if (recoverable)
             {
                 System.Windows.MessageBox.Show(
-                    $"An unexpected error occurred and has been handled. Projection was stopped as a precaution.\n\nDetails logged to:\n{logDir}",
-                    "Unexpected Error",
+                    string.Format(TranslationSource.Instance["App_ErrRecoverable"], logDir),
+                    TranslationSource.Instance["App_ErrRecoverableTitle"],
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 ex.Handled = true;
@@ -77,8 +78,8 @@ public partial class App : WpfApp
             // Unknown failure type — application state may be corrupt. Inform and let WPF terminate
             // (ex.Handled stays false) rather than silently continuing in a bad state.
             System.Windows.MessageBox.Show(
-                $"A critical error occurred and the application must close.\n\nDetails logged to:\n{logDir}",
-                "Critical Error",
+                string.Format(TranslationSource.Instance["App_ErrCritical"], logDir),
+                TranslationSource.Instance["App_ErrCriticalTitle"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         };
@@ -122,8 +123,8 @@ public partial class App : WpfApp
         {
             _logger.LogCritical(ex, "Database initialisation failed — cannot continue");
             System.Windows.MessageBox.Show(
-                $"The database could not be initialised:\n\n{ex.Message}\n\nCheck the log files at:\n{logDir}",
-                "Startup Error",
+                string.Format(TranslationSource.Instance["App_ErrDbInit"], ex.Message, logDir),
+                TranslationSource.Instance["App_ErrStartupTitle"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);
@@ -164,9 +165,8 @@ public partial class App : WpfApp
 
         _logger.LogWarning("VC++ 2015–2022 runtime not detected — video playback may be unavailable.");
         System.Windows.MessageBox.Show(
-            "The Microsoft Visual C++ 2015–2022 Runtime was not found. OpenAdoration will run, but " +
-            "video playback may not work.\n\nInstall it from:\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe",
-            "Optional component missing",
+            TranslationSource.Instance["App_VcRuntimeMissing"],
+            TranslationSource.Instance["App_VcRuntimeMissingTitle"],
             MessageBoxButton.OK,
             MessageBoxImage.Information);
     }
@@ -180,9 +180,10 @@ public partial class App : WpfApp
         if (info is null) return;
 
         var dialog = _host.Services.GetRequiredService<IDialogService>();
+        var sizeMb = (info.MsiSizeBytes / 1024d / 1024d).ToString("0.#");
         if (!dialog.Confirm(
-                $"Version {info.Version} is available. Download and install now? The app will close to finish.",
-                "Update Available"))
+                string.Format(TranslationSource.Instance["Settings_UpdateConfirm"], info.Version, sizeMb),
+                TranslationSource.Instance["Settings_UpdateAvailableTitle"]))
             return;
 
         try
@@ -205,6 +206,10 @@ public partial class App : WpfApp
         // then flush — reversing this order drops any logs emitted during host stop.
         if (_host is not null)
         {
+            // Let any in-flight settings write (fire-and-forget on Settings → leave) finish first.
+            try { await _host.Services.GetRequiredService<IAppSettingsService>().FlushAsync(); }
+            catch (Exception ex) { _logger?.LogWarning(ex, "Settings flush on exit failed."); }
+
             await _host.StopAsync(TimeSpan.FromSeconds(3));
             _host.Dispose();
         }
@@ -216,14 +221,14 @@ public partial class App : WpfApp
 
     /// <summary>
     /// Allowlist of dispatcher exceptions considered safe to swallow and continue from.
-    /// These are transient I/O / cancellation faults that do not corrupt app state.
-    /// Anything not listed is treated as fatal — the app informs the user and terminates
-    /// rather than continuing in a potentially inconsistent state.
+    /// These are transient I/O faults that do not corrupt app state. Anything not listed is
+    /// treated as fatal — the app informs the user and terminates rather than continuing in a
+    /// potentially inconsistent state. OperationCanceledException is deliberately excluded: a
+    /// cancellation surfacing on the dispatcher thread is unexpected and may mask a deeper bug.
     /// </summary>
     private static bool IsRecoverable(Exception ex) => ex is
         System.IO.IOException or
-        UnauthorizedAccessException or
-        OperationCanceledException; // covers TaskCanceledException
+        UnauthorizedAccessException;
 
     /// <summary>
     /// Swaps in a database staged by a backup restore (written as <c>&lt;db&gt;.restore</c>),
@@ -243,13 +248,16 @@ public partial class App : WpfApp
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
+        services.AddSingleton<BibleNavigationState>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
         services.AddSingleton<IAppThemeService, AppThemeService>();
         services.AddSingleton(sp => new PluginManager(
             Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0),
             sp.GetRequiredService<ILoggerFactory>(),
-            sp.GetRequiredService<ILogger<PluginManager>>()));
+            sp.GetRequiredService<ILogger<PluginManager>>(),
+            // Root the plugins dir at the active data dir (honours OA_DATA_DIR), not raw %LOCALAPPDATA%.
+            Path.Combine(Path.GetDirectoryName(sp.GetRequiredService<OpenAdoration.Application.Common.AppPaths>().DbPath)!, "plugins")));
         services.AddTransient<PluginBibleImporter>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();

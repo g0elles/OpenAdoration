@@ -16,23 +16,11 @@ public partial class MediaViewModel : BaseViewModel
     private readonly IMediaService       _mediaService;
     private readonly IProjectionService  _projectionService;
     private readonly IAppSettingsService _appSettings;
+    private readonly AppPaths            _appPaths;
     private readonly ILogger<MediaViewModel> _logger;
 
-    private static readonly string MediaStore =
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenAdoration", "Media");
-
-    private static readonly HashSet<string> ImageExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-            { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp" };
-
-    private static readonly HashSet<string> VideoExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-            { ".mp4", ".avi", ".wmv", ".mov", ".mkv", ".m4v" };
-
-    private static readonly HashSet<string> AllowedExtensions =
-        new(ImageExtensions.Concat(VideoExtensions), StringComparer.OrdinalIgnoreCase);
+    // Canonical store path (honours OA_DATA_DIR via AppPaths, unlike a hardcoded LocalAppData path).
+    private string MediaStore => _appPaths.MediaDirectory;
 
     private const long MaxMediaFileSizeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
 
@@ -45,11 +33,13 @@ public partial class MediaViewModel : BaseViewModel
         IMediaService       mediaService,
         IProjectionService  projectionService,
         IAppSettingsService appSettings,
+        AppPaths            appPaths,
         ILogger<MediaViewModel> logger)
     {
         _mediaService      = mediaService;
         _projectionService = projectionService;
         _appSettings       = appSettings;
+        _appPaths          = appPaths;
         _logger            = logger;
     }
 
@@ -123,11 +113,10 @@ public partial class MediaViewModel : BaseViewModel
             var skipped = 0;
             foreach (var sourcePath in paths)
             {
-                var ext = Path.GetExtension(sourcePath);
-                if (!AllowedExtensions.Contains(ext))
+                if (!MediaFormats.IsSupported(sourcePath))
                 {
                     _logger.LogWarning("Skipping '{FileName}' — unsupported extension '{Ext}'",
-                        Path.GetFileName(sourcePath), ext);
+                        Path.GetFileName(sourcePath), Path.GetExtension(sourcePath));
                     skipped++;
                     continue;
                 }
@@ -141,11 +130,21 @@ public partial class MediaViewModel : BaseViewModel
                     continue;
                 }
 
-                var isVideo = VideoExtensions.Contains(ext);
+                var isVideo = MediaFormats.IsVideo(sourcePath);
                 if (!MediaSignatureValidator.IsValid(sourcePath, isVideo))
                 {
                     _logger.LogWarning("Skipping '{FileName}' — contents do not match a supported {Kind} format",
                         Path.GetFileName(sourcePath), isVideo ? "video" : "image");
+                    skipped++;
+                    continue;
+                }
+
+                // Dedup by content: the same bytes already in the library reuse that record (no copy).
+                var hash = ComputeHash(sourcePath);
+                if (await _mediaService.GetByContentHashAsync(hash) is not null)
+                {
+                    _logger.LogInformation("Skipping '{FileName}' — already in the library (same content)",
+                        Path.GetFileName(sourcePath));
                     skipped++;
                     continue;
                 }
@@ -155,9 +154,10 @@ public partial class MediaViewModel : BaseViewModel
 
                 await _mediaService.AddAsync(new MediaFile
                 {
-                    FileName = Path.GetFileName(destPath),
-                    FilePath = destPath,
-                    Type     = isVideo ? MediaType.Video : MediaType.Image
+                    FileName    = Path.GetFileName(destPath),
+                    FilePath    = destPath,
+                    Type        = isVideo ? MediaType.Video : MediaType.Image,
+                    ContentHash = hash
                 });
             }
 
@@ -232,7 +232,13 @@ public partial class MediaViewModel : BaseViewModel
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private static string GetUniqueDestinationPath(string sourcePath)
+    private static string ComputeHash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+    }
+
+    private string GetUniqueDestinationPath(string sourcePath)
     {
         var fileName = Path.GetFileName(sourcePath);
         var destPath = Path.Combine(MediaStore, fileName);

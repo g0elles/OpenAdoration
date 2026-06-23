@@ -61,6 +61,29 @@
 
   <data name="App_Subtitle" xml:space="preserve"><value>Presentador de adoración</value></data>
 
+  <data name="App_ErrRecoverable" xml:space="preserve"><value>Se produjo un error inesperado y se controló. La proyección se detuvo como precaución.
+
+Detalles registrados en:
+{0}</value></data>
+  <data name="App_ErrRecoverableTitle" xml:space="preserve"><value>Error inesperado</value></data>
+  <data name="App_ErrCritical" xml:space="preserve"><value>Se produjo un error crítico y la aplicación debe cerrarse.
+
+Detalles registrados en:
+{0}</value></data>
+  <data name="App_ErrCriticalTitle" xml:space="preserve"><value>Error crítico</value></data>
+  <data name="App_ErrDbInit" xml:space="preserve"><value>No se pudo inicializar la base de datos:
+
+{0}
+
+Consulte los archivos de registro en:
+{1}</value></data>
+  <data name="App_ErrStartupTitle" xml:space="preserve"><value>Error de inicio</value></data>
+  <data name="App_VcRuntimeMissing" xml:space="preserve"><value>No se encontró el entorno de ejecución de Microsoft Visual C++ 2015–2022. OpenAdoration funcionará, pero es posible que la reproducción de video no funcione.
+
+Instálelo desde:
+https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
+  <data name="App_VcRuntimeMissingTitle" xml:space="preserve"><value>Componente opcional ausente</value></data>
+
   <data name="Nav_Songs" xml:space="preserve"><value>🎵  Canciones</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Biblia</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Programa del servicio</value></data>
@@ -80,7 +103,11 @@
   <data name="Plugins_Save" xml:space="preserve"><value>Guardar configuración</value></data>
   <data name="Plugins_Versions" xml:space="preserve"><value>VERSIONES DE LA BIBLIA</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Obtener versiones</value></data>
-  <data name="Plugins_Import" xml:space="preserve"><value>Importar versión seleccionada</value></data>
+  <data name="Plugins_Import" xml:space="preserve"><value>Importar seleccionadas</value></data>
+  <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filtrar</value></data>
+  <data name="Plugins_AlreadyDownloaded" xml:space="preserve"><value>Descargada</value></data>
+  <data name="Plugins_ImportStarting" xml:space="preserve"><value>Importando {0}…</value></data>
+  <data name="Plugins_ImportProgress" xml:space="preserve"><value>Descargados {0} versículos…</value></data>
 
   <data name="Menu_Help" xml:space="preserve"><value>Ayuda</value></data>
   <data name="Menu_About" xml:space="preserve"><value>Acerca de OpenAdoration</value></data>
@@ -422,10 +449,11 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Plugins_Installed" xml:space="preserve"><value>Complemento instalado.</value></data>
   <data name="Plugins_ErrInstall" xml:space="preserve"><value>No se pudo instalar el complemento.</value></data>
   <data name="Plugins_ConfirmRemove" xml:space="preserve"><value>¿Quitar el complemento '{0}'? Se descarga por completo tras reiniciar.</value></data>
+  <data name="Plugins_ConfirmRemoveWithBibles" xml:space="preserve"><value>¿Quitar el complemento '{0}'? Esto también eliminará permanentemente {1} versión(es) de la Biblia que descargó.</value></data>
   <data name="Plugins_RemoveTitle" xml:space="preserve"><value>Quitar complemento</value></data>
   <data name="Plugins_ErrRemove" xml:space="preserve"><value>No se pudo quitar el complemento.</value></data>
   <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Configuración guardada.</value></data>
   <data name="Plugins_ErrFetch" xml:space="preserve"><value>No se pudieron obtener las versiones del complemento.</value></data>
-  <data name="Plugins_Imported" xml:space="preserve"><value>Se importó '{0}' a tu biblioteca de la Biblia.</value></data>
+  <data name="Plugins_ImportedCount" xml:space="preserve"><value>Se importaron {0} versión(es) a tu biblioteca de la Biblia.</value></data>
   <data name="Plugins_ErrImport" xml:space="preserve"><value>No se pudo importar la versión.</value></data>
 </root>

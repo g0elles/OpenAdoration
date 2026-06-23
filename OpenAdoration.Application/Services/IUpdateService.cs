@@ -1,7 +1,9 @@
 namespace OpenAdoration.Application.Services;
 
-/// <summary>A newer release available on GitHub.</summary>
-public sealed record UpdateInfo(Version Version, string ReleaseNotesUrl, string MsiUrl, long MsiSizeBytes);
+/// <summary>A newer release available on GitHub. <paramref name="Sha256"/> is the asset's
+/// hex digest from the GitHub API (same TLS response as the URL), or null on older releases
+/// that predate API asset digests — in which case the download can't be integrity-checked.</summary>
+public sealed record UpdateInfo(Version Version, string ReleaseNotesUrl, string MsiUrl, long MsiSizeBytes, string? Sha256 = null);
 
 /// <summary>
 /// Opt-in, update-only network feature: checks GitHub releases for a newer version and, on the

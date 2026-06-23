@@ -136,6 +136,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
 
         // ── IAppSettingsService ──
         public Task SaveAsync(AppSettings settings, CancellationToken ct = default) => Task.CompletedTask;
+        public Task FlushAsync() => Task.CompletedTask;
 
         // ── ISongService ──
         public Task<Song?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default) => Task.FromResult<Song?>(null);
@@ -195,6 +196,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task<BibleVerse?> GetVerseAsync(int versionId, string book, int chapter, int verse, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<BibleVerse>> SearchAsync(int versionId, string term, BibleSearchMode mode = BibleSearchMode.Keyword, int maxResults = 100, CancellationToken ct = default) => throw new NotImplementedException();
         public Task DeleteVersionAsync(int versionId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpsertVersionVersesAsync(BibleVersion version, IReadOnlyList<BibleBook> books, IReadOnlyList<BibleVerse> verses, IProgress<int>? progress = null, CancellationToken ct = default) => throw new NotImplementedException();
         public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null) => throw new NotImplementedException();
         public IReadOnlyList<Slide> GenerateSlides(IReadOnlyList<BibleVerse> verses, int versesPerSlide, int? themeId = null, BibleVersion? version = null) => throw new NotImplementedException();

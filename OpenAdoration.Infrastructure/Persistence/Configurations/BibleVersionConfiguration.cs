@@ -22,6 +22,9 @@ public sealed class BibleVersionConfiguration : IEntityTypeConfiguration<BibleVe
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(bv => bv.SourcePluginId)
+            .HasMaxLength(100);
+
         builder.HasMany(bv => bv.Books)
             .WithOne(bb => bb.BibleVersion)
             .HasForeignKey(bb => bb.BibleVersionId)

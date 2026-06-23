@@ -1223,8 +1223,16 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     private async void OnReplaceBibleRequested(object? sender, EventArgs e)
     {
         if (sender is not ScheduleItemViewModel vm) return;
-        await ShowAddBiblePanelAsync();
-        ReplacingBibleItem = vm;
+        // async void: guard the whole body so an escaped exception isn't lost to TaskScheduler.
+        try
+        {
+            await ShowAddBiblePanelAsync();
+            ReplacingBibleItem = vm;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open Bible re-pick panel for item {ItemId}", vm.Item.Id);
+        }
     }
 
     private void OnProjectionStateChanged(object? sender, bool isProjecting)

@@ -17,6 +17,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService      _projectionService;
     private readonly IBibleImportService     _importService;
     private readonly IAppSettingsService     _appSettings;
+    private readonly BibleNavigationState    _navState;
     private readonly ILogger<BibleViewModel> _logger;
 
     private CancellationTokenSource  _booksCts  = new();
@@ -28,9 +29,6 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private int          _restoreChapter;
     private HashSet<int> _restoreVerseNums = new();
     private bool         _hasRestoreTarget;
-
-    // Survives scope disposal so the selected version is restored on every navigation back.
-    private static int? _lastVersionId;
 
     // Suppresses OnVerseItemPropertyChanged during bulk selection updates
     private bool _updatingSelection;
@@ -105,12 +103,14 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         IProjectionService      projectionService,
         IBibleImportService     importService,
         IAppSettingsService     appSettings,
+        BibleNavigationState    navState,
         ILogger<BibleViewModel> logger)
     {
         _bibleService      = bibleService;
         _projectionService = projectionService;
         _importService     = importService;
         _appSettings       = appSettings;
+        _navState          = navState;
         _logger            = logger;
 
         _importService.StateChanged    += OnImportStateChanged;
@@ -136,8 +136,17 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     private async void OnImportCompleted(object? sender, BibleImportCompletedArgs e)
     {
-        ImportSummary = $"Imported {e.VerseCount:N0} verses ({e.VersionName})";
-        await LoadVersionsCoreAsync();
+        // async void: an escaped exception would be lost to TaskScheduler, so guard the whole body.
+        try
+        {
+            ImportSummary = $"Imported {e.VerseCount:N0} verses ({e.VersionName})";
+            await LoadVersionsCoreAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bible view import-completed refresh failed");
+            SetError("Could not refresh Bible versions after import.");
+        }
     }
 
     private void OnImportFailed(object? sender, BibleImportFailedArgs e) => SetError(e.Message);
@@ -191,7 +200,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
             Versions.Clear();
             foreach (var v in list) Versions.Add(v);
             NotifyVersionState();
-            var preferredId = SelectedVersion?.Id ?? _lastVersionId;
+            var preferredId = SelectedVersion?.Id ?? _navState.LastVersionId;
             SelectedVersion = Versions.FirstOrDefault(v => v.Id == preferredId)
                            ?? Versions.FirstOrDefault();
         }
@@ -211,7 +220,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     partial void OnSelectedVersionChanged(BibleVersion? value)
     {
-        _lastVersionId = value?.Id;
+        _navState.LastVersionId = value?.Id;
         var bookName  = SelectedBook?.Name;
         var chapter   = SelectedChapter;
         var verseNums = GetCheckedVerseNumbers();

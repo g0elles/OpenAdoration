@@ -77,6 +77,8 @@ public sealed class BibleImportSanityCheckTests
             => Task.FromResult<IReadOnlyList<BibleVerse>>([]);
         public Task DeleteVersionAsync(int versionId, CancellationToken ct = default)
             => Task.CompletedTask;
+        public Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default)
+            => Task.FromResult(0);
     }
 
     private sealed class CapturingLogger<T> : ILogger<T>
