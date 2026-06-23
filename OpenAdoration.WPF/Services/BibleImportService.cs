@@ -133,7 +133,7 @@ public sealed class BibleImportService : IBibleImportService
     }
 
     private static void InvokeOnUi(Action action) =>
-        System.Windows.Application.Current.Dispatcher.BeginInvoke(action);
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(action); // null during shutdown
 
     private void NotifyOnUiThread(string message) =>
         InvokeOnUi(() => { StatusMessage = message; RaiseStateChanged(); });

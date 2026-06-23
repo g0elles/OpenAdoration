@@ -13,4 +13,10 @@ public interface IAppSettingsService
 
     /// <summary>Persists the supplied settings and updates <see cref="Current"/>.</summary>
     Task SaveAsync(AppSettings settings, CancellationToken ct = default);
+
+    /// <summary>
+    /// Awaits any save still in flight so an abandoned fire-and-forget write (e.g. Settings →
+    /// navigate away → immediate exit) completes before shutdown. No-op when nothing is pending.
+    /// </summary>
+    Task FlushAsync();
 }

@@ -58,12 +58,6 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     private readonly ConcurrentDictionary<int, Theme> _themeCache = new();
     private Theme? _defaultTheme;
 
-    private static readonly HashSet<string> VideoExtensions =
-        new(StringComparer.OrdinalIgnoreCase) { ".mp4", ".avi", ".wmv", ".mov", ".mkv", ".m4v" };
-
-    private static readonly HashSet<string> ImageExtensions =
-        new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" };
-
     // Status
     [ObservableProperty] private bool   _isProjecting;
     [ObservableProperty] private bool   _isServiceScheduleActive;
@@ -180,8 +174,15 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     // ── Core refresh ──────────────────────────────────────────────────────────
 
+    // Monotonic guard: rapid slide changes (auto-advance) fire concurrent RefreshAsync tasks.
+    // Each tags itself; a task superseded by a newer one self-discards instead of writing a
+    // stale preview — mirrors ProjectionWindow.OnSlideChanged (H2).
+    private int _refreshSequence;
+
     private async Task RefreshAsync()
     {
+        var seq = Interlocked.Increment(ref _refreshSequence);
+
         var isProjecting = _projectionService.IsProjecting;
         var slides       = _projectionService.CurrentSlides;
         var idx          = _projectionService.CurrentSlideIndex;
@@ -212,8 +213,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
         var isScheduleActive = _projectionService.IsServiceScheduleActive;
 
+        // A newer refresh started while we awaited theme resolution — let it win.
+        if (seq != _refreshSequence) return;
+
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
+            if (seq != _refreshSequence) return; // re-check on the UI thread before writing
             IsProjecting             = isProjecting;
             IsServiceScheduleActive  = isScheduleActive;
             ContextLabel  = _projectionService.ContextLabel;
@@ -244,9 +249,8 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         var headerText = ResolveZone(theme?.HeaderTemplate, slide.Context);
         var footerText = ResolveZone(theme?.FooterTemplate, slide.Context);
 
-        var ext          = Path.GetExtension(slide.MediaPath ?? string.Empty).ToLowerInvariant();
-        var isImageMedia = slide.Type == SlideType.Media && ImageExtensions.Contains(ext);
-        var isVideoMedia = slide.Type == SlideType.Media && VideoExtensions.Contains(ext);
+        var isImageMedia = slide.Type == SlideType.Media && MediaFormats.IsImage(slide.MediaPath);
+        var isVideoMedia = slide.Type == SlideType.Media && MediaFormats.IsVideo(slide.MediaPath);
 
         return new SlidePreview
         {

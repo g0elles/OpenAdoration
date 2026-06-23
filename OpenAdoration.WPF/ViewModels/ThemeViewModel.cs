@@ -146,8 +146,16 @@ public partial class ThemeViewModel : BaseViewModel, IDisposable
 
     private async void OnThemeSaved(object? sender, Theme theme)
     {
-        IsEditing = false;
-        await LoadAsync();
+        // async void: guard the whole body so an escaped exception isn't lost to TaskScheduler.
+        try
+        {
+            IsEditing = false;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Theme-saved handler failed for {ThemeId}", theme.Id);
+        }
     }
 
     private void OnEditCancelled(object? sender, EventArgs e)

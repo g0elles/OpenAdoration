@@ -27,8 +27,9 @@ public sealed class GitHubUpdateService : IUpdateService
     private static HttpClient CreateClient()
     {
         var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-        // GitHub's API rejects requests with no User-Agent.
-        http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("OpenAdoration", "1.0"));
+        // GitHub's API rejects requests with no User-Agent; send the real app version for server-side analytics.
+        var version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0";
+        http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("OpenAdoration", version));
         return http;
     }
 
@@ -74,7 +75,8 @@ public sealed class GitHubUpdateService : IUpdateService
 
             var size = asset.TryGetProperty("size", out var s) && s.TryGetInt64(out var bytes) ? bytes : 0;
             var notes = root.TryGetProperty("html_url", out var h) ? h.GetString() ?? url : url;
-            return new UpdateInfo(version, notes, url, size);
+            var sha = ParseDigest(asset);
+            return new UpdateInfo(version, notes, url, size, sha);
         }
 
         return null;
@@ -83,12 +85,21 @@ public sealed class GitHubUpdateService : IUpdateService
     private static bool TryParseTag(string tag, out Version version) =>
         Version.TryParse(tag.TrimStart('v', 'V'), out version!);
 
+    /// <summary>GitHub returns the asset hash as "sha256:&lt;hex&gt;"; we keep only the hex.</summary>
+    private static string? ParseDigest(JsonElement asset) =>
+        asset.TryGetProperty("digest", out var d) && d.GetString() is { } text &&
+        text.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+            ? text["sha256:".Length..]
+            : null;
+
     public async Task<bool> DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default)
     {
         var msiPath = Path.Combine(Path.GetTempPath(), $"OpenAdoration-{info.Version}.msi");
         await using (var src = await Http.GetStreamAsync(info.MsiUrl, ct))
         await using (var dst = File.Create(msiPath))
             await src.CopyToAsync(dst, ct);
+
+        await VerifyIntegrityAsync(msiPath, info, ct);
 
         try
         {
@@ -101,6 +112,30 @@ public sealed class GitHubUpdateService : IUpdateService
             // Operator dismissed the UAC elevation prompt (or lacks admin rights) — not a fault.
             _logger.LogInformation("Update for v{Version} cancelled at the UAC prompt.", info.Version);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Verifies the downloaded MSI against the API-supplied SHA256, deleting it and throwing on
+    /// mismatch (caught + logged by the caller, which then stays running). A genuine compromised
+    /// release can replace the digest too, so this only closes the download/CDN-MITM gap — Authenticode
+    /// signing of the MSI is the real defence. ponytail: no digest (old release) ⇒ can't verify, proceed.
+    /// </summary>
+    private async Task VerifyIntegrityAsync(string msiPath, UpdateInfo info, CancellationToken ct)
+    {
+        if (info.Sha256 is not { Length: > 0 } expected)
+        {
+            _logger.LogWarning("Release v{Version} has no asset digest — MSI integrity unverified.", info.Version);
+            return;
+        }
+
+        await using var stream = File.OpenRead(msiPath);
+        var actual = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(stream, ct));
+        if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Delete(msiPath);
+            throw new InvalidDataException(
+                $"MSI hash mismatch for v{info.Version}: expected {expected}, got {actual}. Download rejected.");
         }
     }
 }

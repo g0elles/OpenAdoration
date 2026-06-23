@@ -61,6 +61,29 @@
 
   <data name="App_Subtitle" xml:space="preserve"><value>Presentador de adoración</value></data>
 
+  <data name="App_ErrRecoverable" xml:space="preserve"><value>Se produjo un error inesperado y se controló. La proyección se detuvo como precaución.
+
+Detalles registrados en:
+{0}</value></data>
+  <data name="App_ErrRecoverableTitle" xml:space="preserve"><value>Error inesperado</value></data>
+  <data name="App_ErrCritical" xml:space="preserve"><value>Se produjo un error crítico y la aplicación debe cerrarse.
+
+Detalles registrados en:
+{0}</value></data>
+  <data name="App_ErrCriticalTitle" xml:space="preserve"><value>Error crítico</value></data>
+  <data name="App_ErrDbInit" xml:space="preserve"><value>No se pudo inicializar la base de datos:
+
+{0}
+
+Consulte los archivos de registro en:
+{1}</value></data>
+  <data name="App_ErrStartupTitle" xml:space="preserve"><value>Error de inicio</value></data>
+  <data name="App_VcRuntimeMissing" xml:space="preserve"><value>No se encontró el entorno de ejecución de Microsoft Visual C++ 2015–2022. OpenAdoration funcionará, pero es posible que la reproducción de video no funcione.
+
+Instálelo desde:
+https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
+  <data name="App_VcRuntimeMissingTitle" xml:space="preserve"><value>Componente opcional ausente</value></data>
+
   <data name="Nav_Songs" xml:space="preserve"><value>🎵  Canciones</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Biblia</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Programa del servicio</value></data>

@@ -16,6 +16,9 @@ public sealed class AppSettingsService : IAppSettingsService
     private readonly string _filePath;
     private readonly ILogger<AppSettingsService> _logger;
 
+    // Tracks the most recent write so a fire-and-forget save can be awaited at shutdown (H4).
+    private Task _lastWrite = Task.CompletedTask;
+
     public AppSettings Current { get; private set; }
 
     public AppSettingsService(string filePath, ILogger<AppSettingsService> logger)
@@ -25,10 +28,16 @@ public sealed class AppSettingsService : IAppSettingsService
         Current   = Load();
     }
 
-    public async Task SaveAsync(AppSettings settings, CancellationToken ct = default)
+    public Task SaveAsync(AppSettings settings, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        return _lastWrite = WriteAsync(settings, ct);
+    }
 
+    public Task FlushAsync() => _lastWrite;
+
+    private async Task WriteAsync(AppSettings settings, CancellationToken ct)
+    {
         var json = JsonSerializer.Serialize(settings, SerializerOptions);
         await File.WriteAllTextAsync(_filePath, json, ct);
         Current = settings;

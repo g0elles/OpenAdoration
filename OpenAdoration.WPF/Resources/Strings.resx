@@ -61,6 +61,29 @@
 
   <data name="App_Subtitle" xml:space="preserve"><value>Worship Presenter</value></data>
 
+  <data name="App_ErrRecoverable" xml:space="preserve"><value>An unexpected error occurred and has been handled. Projection was stopped as a precaution.
+
+Details logged to:
+{0}</value></data>
+  <data name="App_ErrRecoverableTitle" xml:space="preserve"><value>Unexpected Error</value></data>
+  <data name="App_ErrCritical" xml:space="preserve"><value>A critical error occurred and the application must close.
+
+Details logged to:
+{0}</value></data>
+  <data name="App_ErrCriticalTitle" xml:space="preserve"><value>Critical Error</value></data>
+  <data name="App_ErrDbInit" xml:space="preserve"><value>The database could not be initialised:
+
+{0}
+
+Check the log files at:
+{1}</value></data>
+  <data name="App_ErrStartupTitle" xml:space="preserve"><value>Startup Error</value></data>
+  <data name="App_VcRuntimeMissing" xml:space="preserve"><value>The Microsoft Visual C++ 2015–2022 Runtime was not found. OpenAdoration will run, but video playback may not work.
+
+Install it from:
+https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
+  <data name="App_VcRuntimeMissingTitle" xml:space="preserve"><value>Optional component missing</value></data>
+
   <data name="Nav_Songs" xml:space="preserve"><value>🎵  Songs</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Bible</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Service Schedule</value></data>

@@ -69,9 +69,15 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
 
     private async Task DebounceSearchAsync(CancellationToken ct)
     {
-        await Task.Delay(300);
-        if (!ct.IsCancellationRequested)
-            SearchCommand.Execute(null);
+        try
+        {
+            await Task.Delay(300, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return; // superseded by a newer keystroke — don't search
+        }
+        SearchCommand.Execute(null);
     }
 
     // -- Commands --------------------------------------------------------------
@@ -228,11 +234,19 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
 
     private async void OnSongSaved(object? sender, Song song)
     {
-        IsEditing = false;
-        UpdateLiveProjection(song);
-        // Tell other live consumers (e.g. a service projecting this song) to re-render too.
-        _songNotifier.NotifySongSaved(song.Id);
-        await LoadAsync();
+        // async void: guard the whole body so an escaped exception isn't lost to TaskScheduler.
+        try
+        {
+            IsEditing = false;
+            UpdateLiveProjection(song);
+            // Tell other live consumers (e.g. a service projecting this song) to re-render too.
+            _songNotifier.NotifySongSaved(song.Id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Song-saved handler failed for {SongId}", song.Id);
+        }
     }
 
     // If this exact song is on the projector standalone right now, push the edits live

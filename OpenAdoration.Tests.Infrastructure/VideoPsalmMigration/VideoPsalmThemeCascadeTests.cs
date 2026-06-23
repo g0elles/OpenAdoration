@@ -136,6 +136,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
 
         // ── IAppSettingsService ──
         public Task SaveAsync(AppSettings settings, CancellationToken ct = default) => Task.CompletedTask;
+        public Task FlushAsync() => Task.CompletedTask;
 
         // ── ISongService ──
         public Task<Song?> GetBySourceGuidAsync(string sourceGuid, CancellationToken ct = default) => Task.FromResult<Song?>(null);

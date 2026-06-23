@@ -13,6 +13,25 @@ public class GitHubUpdateServiceTests
     }
 
     [Fact]
+    public void AssetDigest_ParsedIntoSha256()
+    {
+        const string json = """
+            {"tag_name":"v1.2.0","html_url":"https://example/release","assets":[
+              {"name":"x.msi","browser_download_url":"https://example/x.msi","size":1,
+               "digest":"sha256:ABCDEF0123456789"}]}
+            """;
+        var info = GitHubUpdateService.ParseLatestRelease(json, new Version(1, 1, 0));
+        Assert.Equal("ABCDEF0123456789", info!.Sha256);
+    }
+
+    [Fact]
+    public void NoDigest_LeavesSha256Null()
+    {
+        var info = GitHubUpdateService.ParseLatestRelease(Release("v1.2.0", "x.msi"), new Version(1, 1, 0));
+        Assert.Null(info!.Sha256);
+    }
+
+    [Fact]
     public void NewerVersionWithMsi_ReturnsUpdate()
     {
         var info = GitHubUpdateService.ParseLatestRelease(

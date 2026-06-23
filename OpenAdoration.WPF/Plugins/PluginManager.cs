@@ -79,7 +79,9 @@ public sealed class PluginManager
         // Load from bytes, not the path: LoadFromAssemblyPath would lock the DLL on disk,
         // which blocks removing the plugin (the file stays open until process exit). Deps
         // still resolve via the resolver built from the path inside PluginLoadContext.
-        var assembly = new PluginLoadContext(assemblyPath).LoadFromStream(new MemoryStream(File.ReadAllBytes(assemblyPath)));
+        // LoadFromStream copies the PE image during the call, so the stream is done after it returns.
+        using var peStream = new MemoryStream(File.ReadAllBytes(assemblyPath));
+        var assembly = new PluginLoadContext(assemblyPath).LoadFromStream(peStream);
 
         var type = assembly.GetTypes().FirstOrDefault(t => typeof(IPlugin).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false })
             ?? throw new InvalidDataException($"No IPlugin implementation in {manifest.EntryAssembly}.");
