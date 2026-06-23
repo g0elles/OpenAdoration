@@ -19,7 +19,7 @@ from pywinauto import Application
 
 REPO = Path(__file__).resolve().parents[1]
 APP = os.environ.get("OA_EXE", str(REPO / "OpenAdoration.WPF/bin/Debug/net10.0-windows/OpenAdoration.exe"))
-OAPLUGIN = Path(os.environ.get("APIBIBLE_OAPLUGIN", r"D:\Projects\OpenAdoration-apibible\dist\apibible.oaplugin"))
+OAPLUGIN = Path(os.environ.get("APIBIBLE_OAPLUGIN", r"D:\Projects\OpenAdoration-plugin-connectors\dist\apibible.oaplugin"))
 KEY = os.environ.get("APIBIBLE_KEY")
 TITLE = "OpenAdoration"
 LAUNCH_TIMEOUT = 30
