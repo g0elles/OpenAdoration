@@ -150,6 +150,23 @@ public sealed class BibleService : IBibleService
         }
     }
 
+    public async Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Deleting Bible versions from plugin {PluginId}", sourcePluginId);
+
+        try
+        {
+            var removed = await _repository.DeleteVersionsBySourceAsync(sourcePluginId, ct);
+            _logger.LogInformation("Removed {Count} Bible version(s) from plugin {PluginId}", removed, sourcePluginId);
+            return removed;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete Bible versions from plugin {PluginId}", sourcePluginId);
+            throw;
+        }
+    }
+
     public Slide GenerateSlide(IReadOnlyList<BibleVerse> verses, int? themeId = null, BibleVersion? version = null)
     {
         ArgumentNullException.ThrowIfNull(verses);

@@ -205,7 +205,16 @@ public sealed class BibleRepository : IBibleRepository
         var existing = await context.BibleVersions
             .FirstOrDefaultAsync(bv => EF.Functions.Like(bv.Abbreviation, version.Abbreviation), ct);
 
-        if (existing is not null) return existing.Id;
+        if (existing is not null)
+        {
+            // Tag an untagged version with the importing plugin so plugin removal can clean it up.
+            if (existing.SourcePluginId is null && version.SourcePluginId is not null)
+            {
+                existing.SourcePluginId = version.SourcePluginId;
+                await context.SaveChangesAsync(ct);
+            }
+            return existing.Id;
+        }
 
         version.Id = 0;
         context.BibleVersions.Add(version);
@@ -297,5 +306,26 @@ public sealed class BibleRepository : IBibleRepository
 
         context.BibleVersions.Remove(version);
         await context.SaveChangesAsync(ct);
+    }
+
+    public async Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var versions = await context.BibleVersions
+            .Where(bv => bv.SourcePluginId == sourcePluginId)
+            .ToListAsync(ct);
+        if (versions.Count == 0) return 0;
+
+        // Clear FTS rows per version (reusing the parameterized single-version pattern) before EF's
+        // cascade delete removes the BibleVerses the subquery relies on.
+        foreach (var v in versions)
+            await context.Database.ExecuteSqlAsync(
+                $"DELETE FROM BibleVersesFts WHERE rowid IN (SELECT Id FROM BibleVerses WHERE BibleVersionId = {v.Id})",
+                ct);
+
+        context.BibleVersions.RemoveRange(versions);
+        await context.SaveChangesAsync(ct);
+        return versions.Count;
     }
 }

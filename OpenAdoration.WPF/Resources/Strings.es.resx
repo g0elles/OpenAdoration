@@ -105,6 +105,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Obtener versiones</value></data>
   <data name="Plugins_Import" xml:space="preserve"><value>Importar seleccionadas</value></data>
   <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filtrar</value></data>
+  <data name="Plugins_AlreadyDownloaded" xml:space="preserve"><value>Descargada</value></data>
   <data name="Plugins_ImportStarting" xml:space="preserve"><value>Importando {0}…</value></data>
   <data name="Plugins_ImportProgress" xml:space="preserve"><value>Descargados {0} versículos…</value></data>
 
@@ -448,6 +449,7 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Plugins_Installed" xml:space="preserve"><value>Complemento instalado.</value></data>
   <data name="Plugins_ErrInstall" xml:space="preserve"><value>No se pudo instalar el complemento.</value></data>
   <data name="Plugins_ConfirmRemove" xml:space="preserve"><value>¿Quitar el complemento '{0}'? Se descarga por completo tras reiniciar.</value></data>
+  <data name="Plugins_ConfirmRemoveWithBibles" xml:space="preserve"><value>¿Quitar el complemento '{0}'? Esto también eliminará permanentemente {1} versión(es) de la Biblia que descargó.</value></data>
   <data name="Plugins_RemoveTitle" xml:space="preserve"><value>Quitar complemento</value></data>
   <data name="Plugins_ErrRemove" xml:space="preserve"><value>No se pudo quitar el complemento.</value></data>
   <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Configuración guardada.</value></data>

@@ -27,9 +27,9 @@
             <!-- Installed list -->
             <DockPanel Grid.Column="0" Margin="0,0,16,0">
                 <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
-                    <Button Content="{loc:Loc Plugins_Add}" Style="{StaticResource SecondaryButton}"
+                    <Button x:Name="AddPluginButton" Content="{loc:Loc Plugins_Add}" Style="{StaticResource SecondaryButton}"
                             Command="{Binding AddPluginCommand}" />
-                    <Button Content="{loc:Loc Plugins_Remove}" Style="{StaticResource DangerButton}"
+                    <Button x:Name="RemovePluginButton" Content="{loc:Loc Plugins_Remove}" Style="{StaticResource DangerButton}"
                             Margin="8,0,0,0" Command="{Binding RemovePluginCommand}"
                             IsEnabled="{Binding HasSelection}" />
                 </StackPanel>
@@ -93,9 +93,18 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Foreground="{DynamicResource TextPrimaryBrush}">
-                                        <TextBlock Foreground="{DynamicResource TextPrimaryBrush}">
-                                            <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
-                                        </TextBlock>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center">
+                                                <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
+                                            </TextBlock>
+                                            <!-- Already in the library (matched by abbreviation): re-import only tops up missing verses. -->
+                                            <Border Margin="6,0,0,0" Padding="4,0" CornerRadius="3" VerticalAlignment="Center"
+                                                    Background="{DynamicResource SuccessSurfaceBrush}" BorderBrush="{DynamicResource SuccessBorderBrush}" BorderThickness="1"
+                                                    Visibility="{Binding AlreadyDownloaded, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{loc:Loc Plugins_AlreadyDownloaded}" FontSize="9"
+                                                           Foreground="{DynamicResource SuccessBrush}" />
+                                            </Border>
+                                        </StackPanel>
                                     </CheckBox>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

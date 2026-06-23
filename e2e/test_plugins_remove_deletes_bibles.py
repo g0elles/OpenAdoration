@@ -1,11 +1,9 @@
-"""Phase A proof for M13.4 plugin UI: the Settings -> Plugins tab is now visible, a
-loaded Bible-source plugin offers a checkbox version list + filter box, and "Import
-selected" imports the ticked versions into the Bible library.
+"""Legal-protection proof: removing a Bible-source plugin deletes the Bible versions it
+downloaded, so licensed content never outlives the plugin/licence that provided it.
 
-Isolation: the plugin is pre-seeded into the sandbox plugins dir (which honours
-OA_DATA_DIR), so the real %LOCALAPPDATA% plugins are never touched. The import is
-asserted at the DB level (BibleVersion 'ECHO'), language-independently; the dialog is
-dismissed with ENTER so the title's locale doesn't matter.
+Drives the real app: pre-seed sample.echo, import its ECHO version (asserted in the DB),
+then remove the plugin and assert the version + verses are gone from the DB. Isolated via
+OA_DATA_DIR; dialogs dismissed with ENTER so locale doesn't matter.
 """
 import os, sqlite3, subprocess, time, zipfile
 from pathlib import Path
@@ -23,7 +21,6 @@ LAUNCH_TIMEOUT = 30
 
 @pytest.fixture
 def oa_plugin(request, tmp_path):
-    """Fresh isolated app with sample.echo pre-installed in the sandbox plugins dir."""
     assert Path(APP).exists(), f"build first -- missing {APP}"
     assert SAMPLE.exists(), f"missing fixture {SAMPLE}"
     data_dir = tmp_path / "oa"
@@ -55,34 +52,31 @@ def _echo_version_count(db: Path):
         return 0
     con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     try:
-        n_ver = con.execute("SELECT COUNT(*) FROM BibleVersions WHERE Abbreviation='ECHO'").fetchone()[0]
-        n_vrs = con.execute("SELECT COUNT(*) FROM BibleVerses").fetchone()[0]
-        return n_ver and n_vrs
+        return con.execute("SELECT COUNT(*) FROM BibleVersions WHERE Abbreviation='ECHO'").fetchone()[0]
     finally:
         con.close()
 
 
-def test_plugins_tab_import_flow(oa_plugin, request):
-    oa = oa_plugin
-    data_dir = Path(request.node.data_dir)
-
-    # 1. Settings -> Plugins tab (visible again after un-hiding).
+def _open_plugins_tab(oa):
     oa.child_window(auto_id="NavSettingsButton", control_type="Button").wrapper_object().click_input()
     tab = oa.child_window(auto_id="PluginsTab", control_type="TabItem")
-    tab.wait("visible", timeout=10)  # Settings page renders async (scope-per-navigation)
+    tab.wait("visible", timeout=10)
     tab.wrapper_object().select()
-
-    # 2. Select the pre-loaded plugin -> reveals the bible-source panel.
     plugins = oa.child_window(auto_id="InstalledPluginsList", control_type="List")
     plugins.wait("visible", timeout=10)
-    plugins.descendants(control_type="ListItem")[0].click_input()
+    return plugins
 
-    # 3. Fetch versions (Echo returns one), confirm filter box + checkbox list rendered.
+
+def test_removing_plugin_deletes_its_bibles(oa_plugin, request):
+    oa = oa_plugin
+    db = Path(request.node.data_dir) / "openadoration.db"
+
+    # 1. Import ECHO via the plugin.
+    plugins = _open_plugins_tab(oa)
+    plugins.descendants(control_type="ListItem")[0].click_input()
     oa.child_window(auto_id="FetchVersionsButton", control_type="Button").wrapper_object().invoke()
-    oa.child_window(auto_id="VersionFilterBox", control_type="Edit").wait("visible", timeout=10)
     versions = oa.child_window(auto_id="VersionsList", control_type="List")
     versions.wait("visible", timeout=10)
-
     deadline = time.time() + 10
     checks = []
     while time.time() < deadline:
@@ -90,24 +84,35 @@ def test_plugins_tab_import_flow(oa_plugin, request):
         if checks:
             break
         time.sleep(0.3)
-    assert checks, "fetched versions did not render as checkboxes"
-
-    # Screenshot for the human reviewer: tab visible, filter box, checkbox version list.
-    oa.capture_as_image().save(str(data_dir.parent / "plugins_tab.png"))
-
-    # 4. Tick the version and import.
+    assert checks, "fetched versions did not render"
     checks[0].toggle()
     oa.child_window(auto_id="ImportSelectedButton", control_type="Button").wrapper_object().invoke()
 
-    # 5. The import writes to the DB, then an Inform dialog pops. Poll the DB (the write
-    #    precedes the dialog), then ENTER to dismiss the (localized-title) dialog.
     deadline = time.time() + 15
-    ok = 0
     while time.time() < deadline:
-        ok = _echo_version_count(data_dir / "openadoration.db")
-        if ok:
+        if _echo_version_count(db):
             break
         send_keys("{ENTER}")
         time.sleep(0.5)
-    assert ok, "ECHO version / verses were not imported into the sandbox DB"
-    send_keys("{ENTER}")  # clear the confirmation dialog so the app can close
+    assert _echo_version_count(db), "ECHO was not imported — precondition failed"
+    send_keys("{ENTER}")  # dismiss the import-complete dialog
+
+    # 2. Remove the plugin → confirm. The version it downloaded must be gone.
+    plugins.descendants(control_type="ListItem")[0].click_input()
+    oa.child_window(auto_id="RemovePluginButton", control_type="Button").wrapper_object().invoke()
+
+    deadline = time.time() + 15
+    gone = False
+    while time.time() < deadline:
+        send_keys("{ENTER}")  # accept the "this also deletes N Bibles" confirmation
+        time.sleep(0.5)
+        if _echo_version_count(db) == 0:
+            gone = True
+            break
+    assert gone, "ECHO version survived plugin removal — licensed content would outlive the plugin"
+
+    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    try:
+        assert con.execute("SELECT COUNT(*) FROM BibleVerses").fetchone()[0] == 0, "verses orphaned after removal"
+    finally:
+        con.close()

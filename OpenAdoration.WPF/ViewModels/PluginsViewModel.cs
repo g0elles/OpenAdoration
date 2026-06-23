@@ -4,6 +4,7 @@ using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Services;
 using OpenAdoration.Plugins.Abstractions;
 using OpenAdoration.WPF.Plugins;
 using OpenAdoration.WPF.Services;
@@ -18,6 +19,7 @@ public partial class PluginsViewModel : BaseViewModel
 {
     private readonly PluginManager _manager;
     private readonly PluginBibleImporter _bibleImporter;
+    private readonly IBibleService _bibleService;
     private readonly IDialogService _dialog;
     private readonly ILogger<PluginsViewModel> _logger;
 
@@ -41,10 +43,12 @@ public partial class PluginsViewModel : BaseViewModel
     public bool SelectedIsBibleSource => SelectedPlugin?.IsBibleSource == true;
 
     public PluginsViewModel(
-        PluginManager manager, PluginBibleImporter bibleImporter, IDialogService dialog, ILogger<PluginsViewModel> logger)
+        PluginManager manager, PluginBibleImporter bibleImporter, IBibleService bibleService,
+        IDialogService dialog, ILogger<PluginsViewModel> logger)
     {
         _manager = manager;
         _bibleImporter = bibleImporter;
+        _bibleService = bibleService;
         _dialog = dialog;
         _logger = logger;
 
@@ -85,15 +89,27 @@ public partial class PluginsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void RemovePlugin()
+    private async Task RemovePluginAsync()
     {
         if (SelectedPlugin is null || IsBusy) return;
-        if (!_dialog.Confirm(L("Plugins_ConfirmRemove", SelectedPlugin.Name), L("Plugins_RemoveTitle")))
-            return;
+        var pluginId = SelectedPlugin.Id;
+
+        // Bibles this plugin downloaded are deleted with it, so licensed content never outlives the
+        // plugin/licence that provided it. Warn with the count when there are any.
+        var owned = (await _bibleService.GetVersionsAsync()).Count(v => v.SourcePluginId == pluginId);
+        var confirmed = owned > 0
+            ? _dialog.Confirm(L("Plugins_ConfirmRemoveWithBibles", SelectedPlugin.Name, owned), L("Plugins_RemoveTitle"))
+            : _dialog.Confirm(L("Plugins_ConfirmRemove", SelectedPlugin.Name), L("Plugins_RemoveTitle"));
+        if (!confirmed) return;
 
         IsBusy = true;
         ClearError();
-        try { _manager.Remove(SelectedPlugin.Id); RefreshList(); }
+        try
+        {
+            if (owned > 0) await _bibleService.DeleteVersionsBySourceAsync(pluginId);
+            _manager.Remove(pluginId);
+            RefreshList();
+        }
         catch (Exception ex) { _logger.LogError(ex, "Plugin remove failed"); SetError(L("Plugins_ErrRemove")); }
         finally { IsBusy = false; }
     }
@@ -120,9 +136,17 @@ public partial class PluginsViewModel : BaseViewModel
         try
         {
             var versions = await bible.GetAvailableVersionsAsync();
+            // Flag versions already in the library (matched by abbreviation, the same key the upsert
+            // merges on) so operators don't spend API quota re-downloading them.
+            var existing = (await _bibleService.GetVersionsAsync())
+                .Select(x => x.Abbreviation)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             _allVersions.Clear();
             foreach (var v in versions)
-                _allVersions.Add(new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language));
+                _allVersions.Add(new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language)
+                {
+                    AlreadyDownloaded = existing.Contains(v.Abbreviation)
+                });
             VersionFilter = string.Empty;
             VersionsView.Refresh();
         }
@@ -149,6 +173,8 @@ public partial class PluginsViewModel : BaseViewModel
                 _logger.LogInformation("Importing Bible version {Name} ({Id}) via plugin {Plugin}",
                     v.Name, v.Id, SelectedPlugin!.Id);
                 await _bibleImporter.ImportAsync(bible, v.Id, progress, ct);
+                v.AlreadyDownloaded = true;   // reflect the new library state in the picker
+                v.IsSelected = false;
             }
             _dialog.Inform(L("Plugins_ImportedCount", selected.Count), L("Plugins_Title"));
         }
@@ -207,4 +233,5 @@ public partial class PluginVersionRow(string id, string name, string abbreviatio
     public string Abbreviation { get; } = abbreviation;
     public string Language { get; } = language;
     [ObservableProperty] private bool _isSelected;
+    [ObservableProperty] private bool _alreadyDownloaded;
 }

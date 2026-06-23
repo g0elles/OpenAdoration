@@ -22,6 +22,12 @@ public interface IBibleService
     Task DeleteVersionAsync(int versionId, CancellationToken ct = default);
 
     /// <summary>
+    /// Removes every Bible version a plugin downloaded (matched by source plugin id); returns the
+    /// number removed. Called when a plugin is uninstalled so licensed content does not outlive it.
+    /// </summary>
+    Task<int> DeleteVersionsBySourceAsync(string sourcePluginId, CancellationToken ct = default);
+
+    /// <summary>
     /// Generates a slide for one or more consecutive verses.
     /// Pass <paramref name="themeId"/> to override the default theme on the generated slide.
     /// When null, the default theme is used.

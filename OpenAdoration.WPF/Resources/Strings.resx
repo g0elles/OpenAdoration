@@ -105,6 +105,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Fetch versions</value></data>
   <data name="Plugins_Import" xml:space="preserve"><value>Import selected</value></data>
   <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filter</value></data>
+  <data name="Plugins_AlreadyDownloaded" xml:space="preserve"><value>Downloaded</value></data>
   <data name="Plugins_ImportStarting" xml:space="preserve"><value>Importing {0}…</value></data>
   <data name="Plugins_ImportProgress" xml:space="preserve"><value>Downloaded {0} verses…</value></data>
 
@@ -448,6 +449,7 @@ This action cannot be undone.</value></data>
   <data name="Plugins_Installed" xml:space="preserve"><value>Plugin installed.</value></data>
   <data name="Plugins_ErrInstall" xml:space="preserve"><value>Could not install the plugin.</value></data>
   <data name="Plugins_ConfirmRemove" xml:space="preserve"><value>Remove plugin '{0}'? It is fully unloaded after a restart.</value></data>
+  <data name="Plugins_ConfirmRemoveWithBibles" xml:space="preserve"><value>Remove plugin '{0}'? This will also permanently delete {1} Bible version(s) it downloaded.</value></data>
   <data name="Plugins_RemoveTitle" xml:space="preserve"><value>Remove Plugin</value></data>
   <data name="Plugins_ErrRemove" xml:space="preserve"><value>Could not remove the plugin.</value></data>
   <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>

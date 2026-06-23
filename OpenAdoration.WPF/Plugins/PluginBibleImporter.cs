@@ -20,11 +20,12 @@ public sealed class PluginBibleImporter
         IBibleSourcePlugin plugin, string versionId, IProgress<int>? progress = null, CancellationToken ct = default)
     {
         var data = await plugin.FetchAsync(versionId, progress, ct);
-        await _bible.UpsertVersionVersesAsync(MapVersion(data.Version), MapBooks(data.Books), MapVerses(data.Verses), progress, ct);
+        await _bible.UpsertVersionVersesAsync(MapVersion(data.Version, plugin.Id), MapBooks(data.Books), MapVerses(data.Verses), progress, ct);
     }
 
-    private static BibleVersion MapVersion(PluginBibleVersionInfo v) =>
-        new() { Name = v.Name, Abbreviation = v.Abbreviation, Language = v.Language };
+    // SourcePluginId tags the version with its owning plugin so it can be removed if the plugin is.
+    private static BibleVersion MapVersion(PluginBibleVersionInfo v, string sourcePluginId) =>
+        new() { Name = v.Name, Abbreviation = v.Abbreviation, Language = v.Language, SourcePluginId = sourcePluginId };
 
     private static List<BibleBook> MapBooks(IReadOnlyList<PluginBibleBook> books) =>
         [.. books.Select(b => new BibleBook
