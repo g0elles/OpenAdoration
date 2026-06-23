@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -27,10 +29,13 @@ public partial class PluginsViewModel : BaseViewModel
     private PluginRow? _selectedPlugin;
 
     [ObservableProperty] private ObservableCollection<SettingRow> _settings = [];
-    [ObservableProperty] private ObservableCollection<PluginVersionRow> _availableVersions = [];
     [ObservableProperty] private string _versionFilter = string.Empty;
+    [ObservableProperty] private string _importStatus = string.Empty;
 
-    private List<PluginVersionRow> _allVersions = [];
+    private readonly ObservableCollection<PluginVersionRow> _allVersions = [];
+
+    /// <summary>Fetched versions, grouped by language and live-filtered for the picker.</summary>
+    public ICollectionView VersionsView { get; }
 
     public bool HasSelection => SelectedPlugin is not null;
     public bool SelectedIsBibleSource => SelectedPlugin?.IsBibleSource == true;
@@ -42,6 +47,12 @@ public partial class PluginsViewModel : BaseViewModel
         _bibleImporter = bibleImporter;
         _dialog = dialog;
         _logger = logger;
+
+        VersionsView = CollectionViewSource.GetDefaultView(_allVersions);
+        VersionsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(PluginVersionRow.Language)));
+        VersionsView.SortDescriptions.Add(new SortDescription(nameof(PluginVersionRow.Language), ListSortDirection.Ascending));
+        VersionsView.SortDescriptions.Add(new SortDescription(nameof(PluginVersionRow.Name), ListSortDirection.Ascending));
+        VersionsView.Filter = MatchesFilter;
     }
 
     [RelayCommand]
@@ -109,16 +120,18 @@ public partial class PluginsViewModel : BaseViewModel
         try
         {
             var versions = await bible.GetAvailableVersionsAsync();
-            _allVersions = versions.Select(v => new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language)).ToList();
+            _allVersions.Clear();
+            foreach (var v in versions)
+                _allVersions.Add(new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language));
             VersionFilter = string.Empty;
-            ApplyVersionFilter();
+            VersionsView.Refresh();
         }
         catch (Exception ex) { _logger.LogError(ex, "Fetch versions failed"); SetError(L("Plugins_ErrFetch")); }
         finally { IsBusy = false; }
     }
 
     [RelayCommand]
-    private async Task ImportSelectedAsync()
+    private async Task ImportSelectedAsync(CancellationToken ct)
     {
         if (SelectedPlugin?.Source.Instance is not IBibleSourcePlugin bible || IsBusy) return;
         var selected = _allVersions.Where(r => r.IsSelected).ToList();
@@ -126,33 +139,41 @@ public partial class PluginsViewModel : BaseViewModel
 
         IsBusy = true;
         ClearError();
+        // Progress<int> marshals back to the UI thread; the plugin reports cumulative verses fetched.
+        var progress = new Progress<int>(n => ImportStatus = L("Plugins_ImportProgress", n));
         try
         {
             foreach (var v in selected)
-                await _bibleImporter.ImportAsync(bible, v.Id);
+            {
+                ImportStatus = L("Plugins_ImportStarting", v.Name);
+                _logger.LogInformation("Importing Bible version {Name} ({Id}) via plugin {Plugin}",
+                    v.Name, v.Id, SelectedPlugin!.Id);
+                await _bibleImporter.ImportAsync(bible, v.Id, progress, ct);
+            }
             _dialog.Inform(L("Plugins_ImportedCount", selected.Count), L("Plugins_Title"));
         }
+        catch (OperationCanceledException) { /* operator cancelled — no error banner */ }
         catch (Exception ex) { _logger.LogError(ex, "Plugin Bible import failed"); SetError(L("Plugins_ErrImport")); }
-        finally { IsBusy = false; }
+        finally { IsBusy = false; ImportStatus = string.Empty; }
     }
 
-    private void ApplyVersionFilter()
+    private bool MatchesFilter(object item)
     {
-        var q = VersionFilter?.Trim() ?? string.Empty;
-        IEnumerable<PluginVersionRow> rows = _allVersions;
-        if (q.Length > 0)
-            rows = rows.Where(r => r.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
-                                || r.Abbreviation.Contains(q, StringComparison.OrdinalIgnoreCase));
-        AvailableVersions = new(rows);
+        if (string.IsNullOrWhiteSpace(VersionFilter)) return true;
+        var r = (PluginVersionRow)item;
+        var q = VersionFilter.Trim();
+        return r.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+            || r.Abbreviation.Contains(q, StringComparison.OrdinalIgnoreCase)
+            || r.Language.Contains(q, StringComparison.OrdinalIgnoreCase);
     }
 
-    partial void OnVersionFilterChanged(string value) => ApplyVersionFilter();
+    partial void OnVersionFilterChanged(string value) => VersionsView.Refresh();
 
     partial void OnSelectedPluginChanged(PluginRow? value)
     {
-        _allVersions = [];
-        AvailableVersions = [];
+        _allVersions.Clear();
         VersionFilter = string.Empty;
+        ImportStatus = string.Empty;
         if (value is null) { Settings = []; return; }
 
         var current = _manager.GetSettings(value.Id);

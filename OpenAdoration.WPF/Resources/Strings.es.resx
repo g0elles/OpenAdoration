@@ -105,6 +105,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Obtener versiones</value></data>
   <data name="Plugins_Import" xml:space="preserve"><value>Importar seleccionadas</value></data>
   <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filtrar</value></data>
+  <data name="Plugins_ImportStarting" xml:space="preserve"><value>Importando {0}…</value></data>
+  <data name="Plugins_ImportProgress" xml:space="preserve"><value>Descargados {0} versículos…</value></data>
 
   <data name="Menu_Help" xml:space="preserve"><value>Ayuda</value></data>
   <data name="Menu_About" xml:space="preserve"><value>Acerca de OpenAdoration</value></data>
