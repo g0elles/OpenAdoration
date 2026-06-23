@@ -255,7 +255,9 @@ public partial class App : WpfApp
         services.AddSingleton(sp => new PluginManager(
             Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0),
             sp.GetRequiredService<ILoggerFactory>(),
-            sp.GetRequiredService<ILogger<PluginManager>>()));
+            sp.GetRequiredService<ILogger<PluginManager>>(),
+            // Root the plugins dir at the active data dir (honours OA_DATA_DIR), not raw %LOCALAPPDATA%.
+            Path.Combine(Path.GetDirectoryName(sp.GetRequiredService<OpenAdoration.Application.Common.AppPaths>().DbPath)!, "plugins")));
         services.AddTransient<PluginBibleImporter>();
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SongsViewModel>();

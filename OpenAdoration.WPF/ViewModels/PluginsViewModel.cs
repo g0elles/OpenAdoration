@@ -28,7 +28,9 @@ public partial class PluginsViewModel : BaseViewModel
 
     [ObservableProperty] private ObservableCollection<SettingRow> _settings = [];
     [ObservableProperty] private ObservableCollection<PluginVersionRow> _availableVersions = [];
-    [ObservableProperty] private PluginVersionRow? _selectedVersion;
+    [ObservableProperty] private string _versionFilter = string.Empty;
+
+    private List<PluginVersionRow> _allVersions = [];
 
     public bool HasSelection => SelectedPlugin is not null;
     public bool SelectedIsBibleSource => SelectedPlugin?.IsBibleSource == true;
@@ -107,32 +109,50 @@ public partial class PluginsViewModel : BaseViewModel
         try
         {
             var versions = await bible.GetAvailableVersionsAsync();
-            AvailableVersions = new(versions.Select(v => new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language)));
+            _allVersions = versions.Select(v => new PluginVersionRow(v.Id, v.Name, v.Abbreviation, v.Language)).ToList();
+            VersionFilter = string.Empty;
+            ApplyVersionFilter();
         }
         catch (Exception ex) { _logger.LogError(ex, "Fetch versions failed"); SetError(L("Plugins_ErrFetch")); }
         finally { IsBusy = false; }
     }
 
     [RelayCommand]
-    private async Task ImportVersionAsync()
+    private async Task ImportSelectedAsync()
     {
-        if (SelectedPlugin?.Source.Instance is not IBibleSourcePlugin bible || SelectedVersion is null || IsBusy) return;
+        if (SelectedPlugin?.Source.Instance is not IBibleSourcePlugin bible || IsBusy) return;
+        var selected = _allVersions.Where(r => r.IsSelected).ToList();
+        if (selected.Count == 0) return;
 
         IsBusy = true;
         ClearError();
         try
         {
-            await _bibleImporter.ImportAsync(bible, SelectedVersion.Id);
-            _dialog.Inform(L("Plugins_Imported", SelectedVersion.Name), L("Plugins_Title"));
+            foreach (var v in selected)
+                await _bibleImporter.ImportAsync(bible, v.Id);
+            _dialog.Inform(L("Plugins_ImportedCount", selected.Count), L("Plugins_Title"));
         }
         catch (Exception ex) { _logger.LogError(ex, "Plugin Bible import failed"); SetError(L("Plugins_ErrImport")); }
         finally { IsBusy = false; }
     }
 
+    private void ApplyVersionFilter()
+    {
+        var q = VersionFilter?.Trim() ?? string.Empty;
+        IEnumerable<PluginVersionRow> rows = _allVersions;
+        if (q.Length > 0)
+            rows = rows.Where(r => r.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                                || r.Abbreviation.Contains(q, StringComparison.OrdinalIgnoreCase));
+        AvailableVersions = new(rows);
+    }
+
+    partial void OnVersionFilterChanged(string value) => ApplyVersionFilter();
+
     partial void OnSelectedPluginChanged(PluginRow? value)
     {
+        _allVersions = [];
         AvailableVersions = [];
-        SelectedVersion = null;
+        VersionFilter = string.Empty;
         if (value is null) { Settings = []; return; }
 
         var current = _manager.GetSettings(value.Id);
@@ -159,4 +179,11 @@ public partial class SettingRow(string key, string label, bool secret) : Observa
     [ObservableProperty] private string _value = string.Empty;
 }
 
-public sealed record PluginVersionRow(string Id, string Name, string Abbreviation, string Language);
+public partial class PluginVersionRow(string id, string name, string abbreviation, string language) : ObservableObject
+{
+    public string Id { get; } = id;
+    public string Name { get; } = name;
+    public string Abbreviation { get; } = abbreviation;
+    public string Language { get; } = language;
+    [ObservableProperty] private bool _isSelected;
+}

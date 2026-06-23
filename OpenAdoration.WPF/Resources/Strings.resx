@@ -103,7 +103,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Plugins_Save" xml:space="preserve"><value>Save settings</value></data>
   <data name="Plugins_Versions" xml:space="preserve"><value>BIBLE VERSIONS</value></data>
   <data name="Plugins_FetchVersions" xml:space="preserve"><value>Fetch versions</value></data>
-  <data name="Plugins_Import" xml:space="preserve"><value>Import selected version</value></data>
+  <data name="Plugins_Import" xml:space="preserve"><value>Import selected</value></data>
+  <data name="Plugins_FilterVersions" xml:space="preserve"><value>Filter</value></data>
 
   <data name="Menu_Help" xml:space="preserve"><value>Help</value></data>
   <data name="Menu_About" xml:space="preserve"><value>About OpenAdoration</value></data>
@@ -449,6 +450,6 @@ This action cannot be undone.</value></data>
   <data name="Plugins_ErrRemove" xml:space="preserve"><value>Could not remove the plugin.</value></data>
   <data name="Plugins_SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>
   <data name="Plugins_ErrFetch" xml:space="preserve"><value>Could not fetch versions from the plugin.</value></data>
-  <data name="Plugins_Imported" xml:space="preserve"><value>Imported '{0}' into your Bible library.</value></data>
+  <data name="Plugins_ImportedCount" xml:space="preserve"><value>Imported {0} version(s) into your Bible library.</value></data>
   <data name="Plugins_ErrImport" xml:space="preserve"><value>Could not import the version.</value></data>
 </root>

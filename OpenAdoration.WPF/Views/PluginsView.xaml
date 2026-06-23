@@ -33,7 +33,7 @@
                             Margin="8,0,0,0" Command="{Binding RemovePluginCommand}"
                             IsEnabled="{Binding HasSelection}" />
                 </StackPanel>
-                <ListBox ItemsSource="{Binding InstalledPlugins}" SelectedItem="{Binding SelectedPlugin}"
+                <ListBox x:Name="InstalledPluginsList" ItemsSource="{Binding InstalledPlugins}" SelectedItem="{Binding SelectedPlugin}"
                          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
@@ -65,7 +65,11 @@
                                 <StackPanel Margin="0,0,0,8">
                                     <TextBlock Text="{Binding Label}" Style="{StaticResource FieldLabel}" />
                                     <TextBox Style="{StaticResource FieldTextBox}" Width="340" HorizontalAlignment="Left"
-                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                             Visibility="{Binding Secret, Converter={StaticResource InverseBoolToVis}}" />
+                                    <PasswordBox Width="340" HorizontalAlignment="Left"
+                                                 Loaded="OnSecretLoaded" PasswordChanged="OnSecretChanged"
+                                                 Visibility="{Binding Secret, Converter={StaticResource BoolToVis}}" />
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -77,22 +81,27 @@
                     <StackPanel Visibility="{Binding SelectedIsBibleSource, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{loc:Loc Plugins_Versions}" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <Button Content="{loc:Loc Plugins_FetchVersions}" Style="{StaticResource SecondaryButton}"
+                        <Button x:Name="FetchVersionsButton" Content="{loc:Loc Plugins_FetchVersions}" Style="{StaticResource SecondaryButton}"
                                 HorizontalAlignment="Left" Command="{Binding FetchVersionsCommand}" Margin="0,0,0,8" />
-                        <ListBox ItemsSource="{Binding AvailableVersions}" SelectedItem="{Binding SelectedVersion}"
-                                 MaxHeight="200" Width="340" HorizontalAlignment="Left"
+                        <TextBlock Text="{loc:Loc Plugins_FilterVersions}" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="VersionFilterBox" Style="{StaticResource FieldTextBox}" Width="340" HorizontalAlignment="Left" Margin="0,0,0,8"
+                                 Text="{Binding VersionFilter, UpdateSourceTrigger=PropertyChanged}" />
+                        <ListBox x:Name="VersionsList" ItemsSource="{Binding AvailableVersions}"
+                                 MaxHeight="220" Width="340" HorizontalAlignment="Left"
                                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Foreground="{DynamicResource TextPrimaryBrush}">
-                                        <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
-                                    </TextBlock>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Foreground="{DynamicResource TextPrimaryBrush}">
+                                        <TextBlock Foreground="{DynamicResource TextPrimaryBrush}">
+                                            <Run Text="{Binding Name, Mode=OneWay}" /><Run Text=" (" /><Run Text="{Binding Abbreviation, Mode=OneWay}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </CheckBox>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Content="{loc:Loc Plugins_Import}" Style="{StaticResource PrimaryButton}"
+                        <Button x:Name="ImportSelectedButton" Content="{loc:Loc Plugins_Import}" Style="{StaticResource PrimaryButton}"
                                 HorizontalAlignment="Left" Margin="0,8,0,0"
-                                Command="{Binding ImportVersionCommand}" />
+                                Command="{Binding ImportSelectedCommand}" />
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
