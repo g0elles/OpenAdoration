@@ -2,6 +2,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Plugins.Abstractions;
 
@@ -113,7 +114,7 @@ public sealed class PluginManager
             manifest = JsonSerializer.Deserialize<PluginManifest>(s, JsonOpts)
                        ?? throw new InvalidDataException("Invalid manifest.json.");
 
-        var dir = Path.Combine(Root, manifest.Id);
+        var dir = PluginDir(manifest.Id);
         if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); // reinstall / upgrade
         Directory.CreateDirectory(dir);
 
@@ -134,18 +135,18 @@ public sealed class PluginManager
     /// <summary>Deletes a plugin's files and drops it from the loaded set (full unload on restart).</summary>
     public void Remove(string id)
     {
-        var dir = Path.Combine(Root, id);
+        var dir = PluginDir(id);
         if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         _loaded.RemoveAll(p => p.Manifest.Id == id);
     }
 
     /// <summary>Current persisted settings for a plugin (empty if none saved yet).</summary>
-    public IReadOnlyDictionary<string, string> GetSettings(string id) => LoadSettings(Path.Combine(Root, id));
+    public IReadOnlyDictionary<string, string> GetSettings(string id) => LoadSettings(PluginDir(id));
 
     /// <summary>Persists a plugin's settings and re-initializes it so they take effect immediately.</summary>
     public void UpdateSettings(string id, IReadOnlyDictionary<string, string> settings)
     {
-        var dir = Path.Combine(Root, id);
+        var dir = PluginDir(id);
         Directory.CreateDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "settings.json"), JsonSerializer.Serialize(settings, JsonOpts));
 
@@ -154,6 +155,23 @@ public sealed class PluginManager
     }
 
     private const long MaxCompressionRatio = 50;
+
+    // Plugin id comes from an untrusted .oaplugin manifest and is used as a directory name.
+    // Restrict it to a narrow identifier grammar so it can't carry separators, drive roots, or
+    // ".." traversal (first char excludes '.'), then bound the resolved path to Root.
+    private static readonly Regex IdPattern = new(@"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$", RegexOptions.Compiled);
+
+    private string PluginDir(string id)
+    {
+        if (string.IsNullOrEmpty(id) || !IdPattern.IsMatch(id))
+            throw new InvalidDataException($"Invalid plugin id: '{id}'.");
+
+        var rootFull = Path.GetFullPath(Root) + Path.DirectorySeparatorChar;
+        var full = Path.GetFullPath(Path.Combine(Root, id));
+        if (!(full + Path.DirectorySeparatorChar).StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException($"Plugin id escapes the plugins root: '{id}'.");
+        return full;
+    }
 
     private static string SafeCombine(string root, string relative)
     {

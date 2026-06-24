@@ -1,5 +1,6 @@
 using System.IO;
 using System.IO.Compression;
+using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenAdoration.Plugins.Abstractions;
 using OpenAdoration.WPF.Plugins;
@@ -96,6 +97,25 @@ public sealed class PluginManagerTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(installRoot, "sample.echo")));
     }
 
+    [Theory]
+    [InlineData("../evil")]
+    [InlineData("..\\evil")]
+    [InlineData("a/../../evil")]
+    [InlineData("C:\\temp\\evil")]
+    [InlineData("\\\\unc\\evil")]
+    [InlineData("")]
+    public void Install_RejectsTraversingPluginId_WithoutTouchingFilesystem(string maliciousId)
+    {
+        var installRoot = Path.Combine(_root, "installed");
+        var manager = new PluginManager(new Version(1, 1, 0), NullLoggerFactory.Instance, NullLogger<PluginManager>.Instance, installRoot);
+        var sentinel = Path.Combine(_root, "evil");
+        Directory.CreateDirectory(sentinel); // would be deleted by an escaping id's reinstall path
+
+        // Safe archive filename, malicious id only inside the manifest — so any throw is from Install.
+        Assert.ThrowsAny<Exception>(() => manager.Install(BuildOaplugin("safe-name", manifestId: maliciousId)));
+        Assert.True(Directory.Exists(sentinel)); // never escaped Root
+    }
+
     [Fact]
     public void UpdateSettings_PersistsAndIsReadBack()
     {
@@ -108,14 +128,14 @@ public sealed class PluginManagerTests : IDisposable
         Assert.Equal("secret123", manager.GetSettings("sample.echo")["apiKey"]);
     }
 
-    private string BuildOaplugin(string id)
+    private string BuildOaplugin(string id, string? manifestId = null)
     {
         Directory.CreateDirectory(_root);
         var path = Path.Combine(_root, id + ".oaplugin");
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
         using (var w = new StreamWriter(zip.CreateEntry("manifest.json").Open()))
             w.Write($$"""
-                {"id":"{{id}}","name":"Sample Echo","version":"1.0.0","capability":"bible-source","minOaVersion":"1.0.0","entryAssembly":"OpenAdoration.Plugins.Sample.dll"}
+                {"id":{{JsonSerializer.Serialize(manifestId ?? id)}},"name":"Sample Echo","version":"1.0.0","capability":"bible-source","minOaVersion":"1.0.0","entryAssembly":"OpenAdoration.Plugins.Sample.dll"}
                 """);
         zip.CreateEntryFromFile(
             Path.Combine(AppContext.BaseDirectory, "OpenAdoration.Plugins.Sample.dll"), "OpenAdoration.Plugins.Sample.dll");
