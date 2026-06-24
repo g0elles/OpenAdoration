@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -404,15 +405,14 @@
                                 <Image Source="{Binding BackgroundImagePath, Converter={StaticResource FilePathToImage}}"
                                        Stretch="UniformToFill"
                                        Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}" />
-                                <!-- Video preview — static frame only (MediaElement is heavyweight) -->
-                                <Border Background="#CC000000"
-                                        Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{loc:Loc ThemeEdit_VideoActive}"
-                                               Foreground="#AAFFFFFF"
-                                               FontSize="48"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                </Border>
+                                <!-- Video preview — live muted, looped playback (FFME: any codec). Source managed in code-behind. -->
+                                <ffme:MediaElement x:Name="PreviewVideo"
+                                                   LoadedBehavior="Play"
+                                                   UnloadedBehavior="Manual"
+                                                   Stretch="UniformToFill"
+                                                   IsMuted="True"
+                                                   Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}"
+                                                   MediaEnded="OnPreviewVideoEnded" />
                                 <TextBlock Text="{loc:Loc ThemeEdit_SampleLyrics}"
                                            FontFamily="{Binding FontFamily}"
                                            FontSize="{Binding FontSize}"
