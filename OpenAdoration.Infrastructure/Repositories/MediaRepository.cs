@@ -36,6 +36,16 @@ public sealed class MediaRepository : IMediaRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<string>> GetAllPathsAsync(CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.MediaFiles
+            .AsNoTracking()
+            .Select(mf => mf.FilePath)
+            .ToListAsync(ct);
+    }
+
     public async Task<MediaFile?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

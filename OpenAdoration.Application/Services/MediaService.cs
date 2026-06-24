@@ -95,6 +95,40 @@ public sealed class MediaService : IMediaService
         }, ct);
     }
 
+    public async Task<int> ReconcileBackgroundsAsync(IEnumerable<string> themeBackgroundPaths, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(themeBackgroundPaths);
+
+        // Cheap diff: one query for the paths already registered (any category), then adopt only
+        // the store-resident theme paths missing from it. No hashing in the steady state.
+        var known = new HashSet<string>(await _repository.GetAllPathsAsync(ct), StringComparer.OrdinalIgnoreCase);
+        var storeRoot = Path.GetFullPath(_appPaths.MediaDirectory) + Path.DirectorySeparatorChar;
+
+        var adopted = 0;
+        foreach (var path in themeBackgroundPaths.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (known.Contains(path) || !File.Exists(path)) continue;
+            // Only adopt files inside the managed store — never reach out to foreign folders.
+            if (!Path.GetFullPath(path).StartsWith(storeRoot, StringComparison.OrdinalIgnoreCase)) continue;
+
+            var hash = ComputeHash(path);
+            if (await _repository.GetByContentHashAsync(hash, isBackground: true, ct) is not null) continue;
+
+            await _repository.AddAsync(new MediaFile
+            {
+                FileName     = Path.GetFileName(path),
+                FilePath     = path,
+                Type         = MediaFormats.IsVideo(path) ? MediaType.Video : MediaType.Image,
+                ContentHash  = hash,
+                IsBackground = true
+            }, ct);
+            adopted++;
+        }
+
+        if (adopted > 0) _logger.LogInformation("Adopted {Count} legacy theme background(s) into the library", adopted);
+        return adopted;
+    }
+
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         _logger.LogInformation("Deleting media file {MediaId}", id);

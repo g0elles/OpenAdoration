@@ -66,6 +66,34 @@ public sealed class MediaRepositoryTests : IDisposable
         Assert.Single(await repo.GetBackgroundsAsync());
     }
 
+    [Fact]
+    public async Task ReconcileBackgroundsAsync_AdoptsStoreResidentThemePaths_Idempotently()
+    {
+        var store = Directory.CreateTempSubdirectory("oarec_");
+        _tempDirs.Add(store.FullName);
+
+        var repo    = new MediaRepository(_factory);
+        var service = new MediaService(repo, new AppPaths("x.db", store.FullName, "s.json"), NullLogger<MediaService>.Instance);
+
+        // A legacy theme background sitting in the store with no MediaFile row yet.
+        var inStore = Path.Combine(store.FullName, "legacy-bg.png");
+        File.WriteAllText(inStore, "bg");
+        // A foreign-folder path must NOT be adopted (we never reach outside the store).
+        var foreign = Path.Combine(Path.GetTempPath(), $"foreign_{Guid.NewGuid():N}.png");
+        File.WriteAllText(foreign, "x");
+        _tempFiles.Add(foreign);
+
+        var adopted = await service.ReconcileBackgroundsAsync([inStore, foreign, null!, "  "]);
+        Assert.Equal(1, adopted);
+        var bg = Assert.Single(await repo.GetBackgroundsAsync());
+        Assert.Equal(inStore, bg.FilePath);
+        Assert.True(bg.IsBackground);
+
+        // Idempotent: a second run adopts nothing and creates no duplicate (safe on every launch).
+        Assert.Equal(0, await service.ReconcileBackgroundsAsync([inStore, foreign]));
+        Assert.Single(await repo.GetBackgroundsAsync());
+    }
+
     private MediaFile NewFile(string name, string hash, bool isBackground)
     {
         // AddAsync guards File.Exists, so back each record with a real temp file.

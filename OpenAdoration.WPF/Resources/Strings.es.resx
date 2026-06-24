@@ -197,6 +197,9 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Selecciona un libro y luego toca el número de capítulo</value></data>
   <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18, o escribe palabra(s) clave para buscar</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
+  <data name="Media_TabMedia" xml:space="preserve"><value>Multimedia</value></data>
+  <data name="Media_TabBackgrounds" xml:space="preserve"><value>Fondos</value></data>
+  <data name="Media_BgInUse" xml:space="preserve"><value>No se puede eliminar: este fondo lo usan {0} tema(s). Quítalo de los temas primero.</value></data>
   <data name="Media_Import" xml:space="preserve"><value>+ Importar</value></data>
   <data name="Media_ImportFolder" xml:space="preserve"><value>+ Importar carpeta</value></data>
   <data name="Media_ImportCta" xml:space="preserve"><value>+ Importar multimedia</value></data>

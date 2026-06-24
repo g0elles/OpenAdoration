@@ -19,6 +19,14 @@ public interface IMediaService
     /// background with identical bytes instead of duplicating the file.
     /// </summary>
     Task<MediaFile> ImportBackgroundAsync(string sourcePath, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adopts store-resident theme background paths that aren't yet <see cref="MediaFile"/> rows
+    /// (e.g. backgrounds extracted before the Background category existed) so they appear in the
+    /// library. Idempotent and additive-only — never modifies or deletes existing data, so it is
+    /// safe to run on every launch (incl. after an auto-update). Returns the number adopted.
+    /// </summary>
+    Task<int> ReconcileBackgroundsAsync(IEnumerable<string> themeBackgroundPaths, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 
     /// <summary>

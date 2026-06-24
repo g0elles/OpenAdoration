@@ -131,6 +131,10 @@ public partial class App : WpfApp
             return;
         }
 
+        // Adopt legacy store-resident theme backgrounds into the Background library (idempotent,
+        // additive-only, best-effort — never blocks startup or alters existing data).
+        await _host.Services.ReconcileBackgroundsAsync();
+
         // Apply the saved/OS UI language before any window is created so the first
         // frame renders in the correct language (the service applies it in its ctor).
         _host.Services.GetRequiredService<ILocalizationService>();

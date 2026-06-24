@@ -10,6 +10,8 @@ public interface IMediaRepository
     Task<IReadOnlyList<MediaFile>> GetBackgroundsAsync(CancellationToken ct = default);
     Task<MediaFile?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default);
+    /// <summary>All stored file paths (any category), for cheap reconcile diffs.</summary>
+    Task<IReadOnlyList<string>> GetAllPathsAsync(CancellationToken ct = default);
     Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 }

@@ -29,10 +29,31 @@
                     Background="{DynamicResource PrimaryBrush}"
                     Padding="20,14">
                 <Grid>
-                    <TextBlock Text="{loc:Loc Media_Title}"
-                               FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:Loc Media_Title}"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,20,0" />
+                        <!-- Media / Backgrounds subsection toggle -->
+                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                ClipToBounds="True"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ToggleButton Content="{loc:Loc Media_TabMedia}"
+                                              Style="{StaticResource AlignToggleButton}"
+                                              IsChecked="{Binding IsMediaTab, Mode=OneWay}"
+                                              Command="{Binding ShowMediaTabCommand}" />
+                                <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
+                                <ToggleButton Content="{loc:Loc Media_TabBackgrounds}"
+                                              Style="{StaticResource AlignToggleButton}"
+                                              IsChecked="{Binding ShowBackgrounds, Mode=OneWay}"
+                                              Command="{Binding ShowBackgroundsTabCommand}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="{loc:Loc Media_ImportFolder}"
                                 Style="{StaticResource SecondaryButton}"
@@ -61,7 +82,7 @@
                 <!-- Empty state -->
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Visibility="{Binding HasMedia, Converter={StaticResource InverseBoolToVis}}">
+                            Visibility="{Binding HasDisplayed, Converter={StaticResource InverseBoolToVis}}">
                     <TextBlock Text="&#xE91B;"
                                FontFamily="Segoe Fluent Icons"
                                FontSize="56"
@@ -87,8 +108,8 @@
 
                 <!-- Media grid -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
-                    <ItemsControl ItemsSource="{Binding MediaFiles}" Margin="12">
+                              Visibility="{Binding HasDisplayed, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding DisplayedFiles}" Margin="12">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel />
