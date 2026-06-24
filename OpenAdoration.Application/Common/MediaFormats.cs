@@ -27,4 +27,7 @@ public static class MediaFormats
 
     /// <summary>A path the app can project — either a known image or video extension.</summary>
     public static bool IsSupported(string? path) => IsImage(path) || IsVideo(path);
+
+    /// <summary>Max import size for any media file (general or theme background). 1 GB.</summary>
+    public const long MaxFileSizeBytes = 1L * 1024 * 1024 * 1024;
 }

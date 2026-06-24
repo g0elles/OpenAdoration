@@ -31,7 +31,10 @@ A malicious plugin archive can cause arbitrary directory deletion or arbitrary f
 Suggested fix:
 Validate plugin IDs before any filesystem operation. Allow only a narrow identifier grammar such as `^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$`, reject path separators/drive roots, and resolve the final plugin directory through a root-bounded helper. Reuse that helper for `Install`, `Remove`, `GetSettings`, and `UpdateSettings`. Add tests with `../evil`, `..\evil`, `C:\temp\evil`, UNC paths, and valid IDs.
 
-### S2 - High - Vulnerable transitive SQLite native package
+### S2 - High - Vulnerable transitive SQLite native package — ✅ RESOLVED 2026-06-23 (pending publish smoke-test)
+
+Resolved: added a direct `SQLitePCLRaw.bundle_e_sqlite3` 3.0.3 reference in Infrastructure, overriding EF Core 10's transitive 2.1.11 (advisory range `<= 2.1.11`). `dotnet list package --vulnerable --include-transitive` now reports **no vulnerable packages**; build is 0 warnings / 0 errors; 82/82 infra tests pass (real SQLite open + migrations + FTS). **Manual verify still owed** (major 2.x→3.x bump touches native loading): run `win-x64` single-file publish + MSI and confirm GUI startup, Bible SQLite import, migrations, and backup/restore.
+
 
 Location:
 - `OpenAdoration.Infrastructure/OpenAdoration.Infrastructure.csproj` references `Microsoft.EntityFrameworkCore.Sqlite` 10.0.9
@@ -46,7 +49,10 @@ This app imports and opens user-supplied SQLite Bible files (`BibleSuperSearchSq
 Suggested fix:
 Plan a dependency update that moves the resolved SQLitePCLRaw native package to a non-vulnerable version. Because native SQLite loading affects single-file publish and installer behavior, verify GUI startup, Bible SQLite import, migrations, backup/restore, and the win-x64 publish/MSI path after the bump.
 
-### S3 - Medium - Auto-update can run an MSI without a required digest or Authenticode trust check
+### S3 - Medium - Auto-update can run an MSI without a required digest or Authenticode trust check — 🔶 PARTIAL 2026-06-23
+
+Resolved (digest half): `GitHubUpdateService.VerifyIntegrityAsync` now **requires** a SHA256 digest — a release asset without one is deleted and rejected (throws) instead of proceeding with a warning. Still open: Authenticode signer-identity verification before launching `msiexec` (needs code signing to exist first); tracked as the S3 follow-up.
+
 
 Location:
 - `OpenAdoration.Infrastructure/Update/GitHubUpdateService.cs:95-106`
@@ -61,7 +67,10 @@ If a release asset lacks a digest, the update path becomes unauthenticated beyon
 Suggested fix:
 Require a valid SHA256 digest for all updates and refuse unsigned/unknown-publisher installers once code signing is available. Longer term, verify Authenticode signer identity before launching and document the expected certificate subject.
 
-### S4 - Medium - Theme background import skips media size and signature validation
+### S4 - Medium - Theme background import skips media size and signature validation — ✅ RESOLVED 2026-06-23
+
+Resolved: `MediaSignatureValidator` moved to `Application/Common` (reachable by the service layer), the 1 GB cap centralized as `MediaFormats.MaxFileSizeBytes`, and `MediaService.ImportBackgroundAsync` now enforces both the size cap and the content-signature check (throws `InvalidDataException`) before hashing/copying — the same policy the general importer applies. `MediaViewModel` consumes the shared const. Covered by `MediaRepositoryTests.ImportBackgroundAsync_RejectsSpoofedContent`.
+
 
 Location:
 - `OpenAdoration.Application/Services/MediaService.cs:66-86`
@@ -77,7 +86,10 @@ An operator can select a very large or spoofed background file. That can cause d
 Suggested fix:
 Move media validation into `MediaService` or a shared application-level helper so both general media and background imports enforce the same size, signature, and supported-format policy. Pass cancellation tokens through hashing/copying where possible.
 
-### S5 - Medium - Plugin settings store API keys in plaintext
+### S5 - Medium - Plugin settings store API keys in plaintext — ⏸ AWAITING DECISION
+
+Open 2026-06-23: fix requires a choice — (a) `System.Security.Cryptography.ProtectedData` NuGet package (DPAPI wrapper, not in the net10 shared framework) vs. a direct `CryptProtectData` P/Invoke (no new dependency, ~30 lines); and (b) encrypt the whole `settings.json` blob (simple, protects at-rest) vs. per-field secret marking in the manifest (needs a manifest schema change). No plugin ships secrets yet, so this isn't live. Pending the user's call on dependency vs. P/Invoke before implementing.
+
 
 Location:
 - `OpenAdoration.WPF/Plugins/PluginManager.cs:96-102`
@@ -112,7 +124,10 @@ Importing multiple videos or near-1 GB files can freeze the WPF UI even though `
 Suggested fix:
 Move hashing/copying behind async file streams or `Task.Run` with a cancellation token. Report progress per file. Centralize import in `IMediaService` so UI code orchestrates and the service owns validation, hashing, copy, and dedup.
 
-### P2 - Medium - Song list/search queries eagerly load all sections
+### P2 - Medium - Song list/search queries eagerly load all sections — ⏸ DEFERRED (needs care)
+
+Traced 2026-06-23: the list/search results are not display-only — `SongsViewModel.EditSong` passes the list item straight into `InitialiseEdit` (reads `song.Sections`) and `SongsViewModel.ProjectSong` calls `GenerateSlides(song, …)` off the same item. So simply dropping the `Include(Sections)` would (a) blank lyrics on save via the RemoveRange+re-add path and (b) project empty slides. The correct fix is to drop the includes **and** re-fetch the full song by id at both the edit and project call sites (the schedule picker already uses only `.Id`, so it's safe). That touches the projection path for a scale-dependent win — deferred to its own focused change with a test rather than bundled here.
+
 
 Location:
 - `OpenAdoration.Infrastructure/Repositories/SongRepository.cs:40-49`
@@ -128,7 +143,10 @@ Large song libraries will fetch many unnecessary section rows on initial load an
 Suggested fix:
 Add a song summary query/model for list/search views, or split list retrieval from full song retrieval. Keep sections in `GetByIdAsync` and in projection/edit flows that actually need lyrics.
 
-### P3 - Medium - Bible upsert materializes all existing verse keys in memory
+### P3 - Medium - Bible upsert materializes all existing verse keys in memory — ⏸ DEFERRED (acceptable at scale)
+
+Deferred 2026-06-23: the fix (unique index + SQLite `INSERT OR IGNORE`, or temp-table anti-join) needs a schema migration and a raw-SQL rewrite of the EF batch path. The audit itself rates the current HashSet approach "acceptable at current scale"; not worth a speculative migration until library size actually makes it bite (YAGNI). The in-memory guard is correct, just not optimal.
+
 
 Location:
 - `OpenAdoration.Infrastructure/Repositories/BibleRepository.cs:247-260`
@@ -142,7 +160,10 @@ For full Bibles, this means tens of thousands of keys are loaded on every re-imp
 Suggested fix:
 Prefer a database-native idempotent insert strategy, such as a unique index plus SQLite `INSERT OR IGNORE`, or stage incoming rows into a temp table and insert only anti-join misses.
 
-### P4 - Low - Plugin loading reads the entire entry assembly into memory
+### P4 - Low - Plugin loading reads the entire entry assembly into memory — ✅ RESOLVED 2026-06-23
+
+Resolved (the practical half): `PluginManager.Install` now rejects an `.oaplugin` whose total uncompressed payload exceeds `MaxPluginTotalBytes` (100 MB) before extracting, capping the disk + load-into-memory cost. The `File.ReadAllBytes`→`MemoryStream` load is kept deliberately (delete-without-restart); live unload is left as a future option.
+
 
 Location:
 - `OpenAdoration.WPF/Plugins/PluginManager.cs:78-84`

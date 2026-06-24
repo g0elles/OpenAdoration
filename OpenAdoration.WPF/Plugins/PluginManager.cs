@@ -114,6 +114,12 @@ public sealed class PluginManager
             manifest = JsonSerializer.Deserialize<PluginManifest>(s, JsonOpts)
                        ?? throw new InvalidDataException("Invalid manifest.json.");
 
+        // P4: bound the total uncompressed payload before extracting — LoadPlugin reads the entry
+        // assembly fully into memory, and a huge bundle would balloon disk + startup allocations.
+        var totalBytes = zip.Entries.Sum(e => e.Length);
+        if (totalBytes > MaxPluginTotalBytes)
+            throw new InvalidDataException($"Plugin exceeds the {MaxPluginTotalBytes / (1024 * 1024)} MB size limit.");
+
         var dir = PluginDir(manifest.Id);
         if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); // reinstall / upgrade
         Directory.CreateDirectory(dir);
@@ -155,6 +161,7 @@ public sealed class PluginManager
     }
 
     private const long MaxCompressionRatio = 50;
+    private const long MaxPluginTotalBytes = 100L * 1024 * 1024; // 100 MB uncompressed (P4)
 
     // Plugin id comes from an untrusted .oaplugin manifest and is used as a directory name.
     // Restrict it to a narrow identifier grammar so it can't carry separators, drive roots, or

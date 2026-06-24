@@ -23,8 +23,6 @@ public partial class MediaViewModel : BaseViewModel
     // Canonical store path (honours OA_DATA_DIR via AppPaths, unlike a hardcoded LocalAppData path).
     private string MediaStore => _appPaths.MediaDirectory;
 
-    private const long MaxMediaFileSizeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
-
     [ObservableProperty] private ObservableCollection<MediaFile> _mediaFiles = new();
     [ObservableProperty] private ObservableCollection<MediaFile> _backgrounds = new();
     [ObservableProperty] private MediaFile? _selectedFile;
@@ -264,7 +262,7 @@ public partial class MediaViewModel : BaseViewModel
     private (string Hash, bool IsVideo)? ValidateForImport(string sourcePath)
     {
         var fileSize = new FileInfo(sourcePath).Length;
-        if (fileSize > MaxMediaFileSizeBytes)
+        if (fileSize > MediaFormats.MaxFileSizeBytes)
         {
             _logger.LogWarning("Skipping '{FileName}' — size {SizeMb} MB exceeds limit",
                 Path.GetFileName(sourcePath), fileSize / 1_048_576);

@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace OpenAdoration.WPF.Helpers;
+namespace OpenAdoration.Application.Common;
 
 /// <summary>
 /// Validates that a media file's leading bytes match a known image/video signature,
