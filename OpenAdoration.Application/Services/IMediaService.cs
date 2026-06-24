@@ -12,6 +12,13 @@ public interface IMediaService
     Task<MediaFile?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default);
     Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default);
+
+    /// <summary>
+    /// Copies <paramref name="sourcePath"/> into the managed media store as a reusable
+    /// background (deduped by content), returning the stored record. Reuses an existing
+    /// background with identical bytes instead of duplicating the file.
+    /// </summary>
+    Task<MediaFile> ImportBackgroundAsync(string sourcePath, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 
     /// <summary>

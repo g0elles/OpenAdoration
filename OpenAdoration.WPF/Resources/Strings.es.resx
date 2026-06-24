@@ -287,6 +287,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="ThemeEdit_BgVideo" xml:space="preserve"><value>Video</value></data>
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>Ninguna imagen seleccionada</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>Ningún video seleccionado</value></data>
+  <data name="ThemeEdit_OrChooseExisting" xml:space="preserve"><value>O elige un fondo existente</value></data>
+  <data name="ThemeEdit_ErrBackgroundImport" xml:space="preserve"><value>No se pudo importar el archivo de fondo.</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Usar como tema predeterminado para todas las diapositivas</value></data>
   <data name="ThemeEdit_Transition" xml:space="preserve"><value>Transición de diapositiva</value></data>
   <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Usar predeterminado global</value></data>

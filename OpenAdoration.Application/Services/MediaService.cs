@@ -1,18 +1,22 @@
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.Domain.Enums;
 
 namespace OpenAdoration.Application.Services;
 
 public sealed class MediaService : IMediaService
 {
     private readonly IMediaRepository _repository;
+    private readonly AppPaths _appPaths;
     private readonly ILogger<MediaService> _logger;
 
-    public MediaService(IMediaRepository repository, ILogger<MediaService> logger)
+    public MediaService(IMediaRepository repository, AppPaths appPaths, ILogger<MediaService> logger)
     {
         _repository = repository;
+        _appPaths = appPaths;
         _logger = logger;
     }
 
@@ -59,6 +63,38 @@ public sealed class MediaService : IMediaService
         }
     }
 
+    public async Task<MediaFile> ImportBackgroundAsync(string sourcePath, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
+
+        if (!File.Exists(sourcePath))
+            throw new FileNotFoundException("Background source file not found.", sourcePath);
+        if (!MediaFormats.IsSupported(sourcePath))
+            throw new NotSupportedException($"Unsupported background format: {Path.GetExtension(sourcePath)}");
+
+        // Dedup by content within the background category: re-importing the same file (or one
+        // already shared by another theme) reuses the stored copy instead of duplicating it.
+        var hash = ComputeHash(sourcePath);
+        if (await _repository.GetByContentHashAsync(hash, isBackground: true, ct) is { } existing)
+        {
+            _logger.LogInformation("Reusing existing background {MediaId}: {FileName}", existing.Id, existing.FileName);
+            return existing;
+        }
+
+        Directory.CreateDirectory(_appPaths.MediaDirectory);
+        var destPath = UniqueDestination(_appPaths.MediaDirectory, Path.GetFileName(sourcePath));
+        File.Copy(sourcePath, destPath);
+
+        return await AddAsync(new MediaFile
+        {
+            FileName     = Path.GetFileName(destPath),
+            FilePath     = destPath,
+            Type         = MediaFormats.IsVideo(sourcePath) ? MediaType.Video : MediaType.Image,
+            ContentHash  = hash,
+            IsBackground = true
+        }, ct);
+    }
+
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         _logger.LogInformation("Deleting media file {MediaId}", id);
@@ -89,5 +125,25 @@ public sealed class MediaService : IMediaService
             label: file.FileName,
             mediaPath: file.FilePath,
             themeId: themeId);
+    }
+
+    private static string ComputeHash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream));
+    }
+
+    // Avoid clobbering an existing store file with the same name (different content).
+    private static string UniqueDestination(string directory, string fileName)
+    {
+        var destPath = Path.Combine(directory, fileName);
+        if (!File.Exists(destPath)) return destPath;
+
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        var ext  = Path.GetExtension(fileName);
+        var n    = 1;
+        do { destPath = Path.Combine(directory, $"{name} ({n++}){ext}"); }
+        while (File.Exists(destPath));
+        return destPath;
     }
 }

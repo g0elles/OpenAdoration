@@ -177,6 +177,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         Task<MediaFile?> IMediaService.GetByIdAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<MediaFile> ImportBackgroundAsync(string sourcePath, CancellationToken ct = default) => throw new NotImplementedException();
         Task IMediaService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public Slide GenerateSlide(MediaFile file, int? themeId = null) => throw new NotImplementedException();
 

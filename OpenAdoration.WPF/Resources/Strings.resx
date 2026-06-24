@@ -287,6 +287,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="ThemeEdit_BgVideo" xml:space="preserve"><value>Video</value></data>
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>No image selected</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>No video selected</value></data>
+  <data name="ThemeEdit_OrChooseExisting" xml:space="preserve"><value>Or choose an existing background</value></data>
+  <data name="ThemeEdit_ErrBackgroundImport" xml:space="preserve"><value>Could not import the background file.</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Use as default theme for all slides</value></data>
   <data name="ThemeEdit_Transition" xml:space="preserve"><value>Slide transition</value></data>
   <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Use global default</value></data>

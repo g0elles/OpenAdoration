@@ -1,5 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using OpenAdoration.Application.Common;
+using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
 using OpenAdoration.Infrastructure.Persistence;
@@ -18,6 +21,7 @@ public sealed class MediaRepositoryTests : IDisposable
 {
     private readonly SqliteFactory _factory = new();
     private readonly List<string> _tempFiles = [];
+    private readonly List<string> _tempDirs = [];
 
     [Fact]
     public async Task BackgroundsAreExclusiveCategory_WithPerCategoryDedup()
@@ -39,6 +43,29 @@ public sealed class MediaRepositoryTests : IDisposable
         Assert.True((await repo.GetByContentHashAsync(sharedHash, isBackground: true))!.IsBackground);
     }
 
+    [Fact]
+    public async Task ImportBackgroundAsync_CopiesIntoStore_AndDedupsByContent()
+    {
+        var store = Directory.CreateTempSubdirectory("oabg_");
+        _tempDirs.Add(store.FullName);
+
+        var repo    = new MediaRepository(_factory);
+        var service = new MediaService(repo, new AppPaths("x.db", store.FullName, "s.json"), NullLogger<MediaService>.Instance);
+
+        var src = Path.Combine(Path.GetTempPath(), $"src_{Guid.NewGuid():N}.png");
+        File.WriteAllText(src, "image-bytes");
+        _tempFiles.Add(src);
+
+        var first = await service.ImportBackgroundAsync(src);
+        Assert.True(first.IsBackground);
+        Assert.StartsWith(store.FullName, first.FilePath); // copied into the managed store
+        Assert.True(File.Exists(first.FilePath));
+
+        var second = await service.ImportBackgroundAsync(src); // identical bytes
+        Assert.Equal(first.Id, second.Id);                     // reused, not duplicated
+        Assert.Single(await repo.GetBackgroundsAsync());
+    }
+
     private MediaFile NewFile(string name, string hash, bool isBackground)
     {
         // AddAsync guards File.Exists, so back each record with a real temp file.
@@ -53,6 +80,8 @@ public sealed class MediaRepositoryTests : IDisposable
         _factory.Dispose();
         foreach (var f in _tempFiles)
             if (File.Exists(f)) File.Delete(f);
+        foreach (var d in _tempDirs)
+            if (Directory.Exists(d)) Directory.Delete(d, recursive: true);
     }
 
     /// <summary>In-memory SQLite context factory; one shared open connection keeps the schema alive.</summary>

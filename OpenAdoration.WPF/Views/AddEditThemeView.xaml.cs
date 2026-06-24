@@ -72,7 +72,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         box.Focus();
     }
 
-    private void OnBrowseImageClick(object sender, System.Windows.RoutedEventArgs e)
+    private async void OnBrowseImageClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -81,7 +81,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         };
 
         if (dialog.ShowDialog() == true && DataContext is AddEditThemeViewModel vm)
-            vm.BackgroundImagePath = dialog.FileName;
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: false);
     }
 
     private void OnClearImageClick(object sender, System.Windows.RoutedEventArgs e)
@@ -90,7 +90,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
             vm.BackgroundImagePath = null;
     }
 
-    private void OnBrowseVideoClick(object sender, System.Windows.RoutedEventArgs e)
+    private async void OnBrowseVideoClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -99,7 +99,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         };
 
         if (dialog.ShowDialog() == true && DataContext is AddEditThemeViewModel vm)
-            vm.BackgroundVideoPath = dialog.FileName;
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: true);
     }
 
     private void OnClearVideoClick(object sender, System.Windows.RoutedEventArgs e)
