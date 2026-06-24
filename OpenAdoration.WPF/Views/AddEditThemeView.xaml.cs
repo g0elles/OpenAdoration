@@ -1,3 +1,5 @@
+using System;
+using System.ComponentModel;
 using Microsoft.Win32;
 using OpenAdoration.WPF.ViewModels;
 
@@ -5,7 +7,50 @@ namespace OpenAdoration.WPF.Views;
 
 public partial class AddEditThemeView : System.Windows.Controls.UserControl
 {
-    public AddEditThemeView() => InitializeComponent();
+    private AddEditThemeViewModel? _vm;
+    private string? _openedVideoPath;
+
+    public AddEditThemeView()
+    {
+        InitializeComponent();
+        Loaded             += (_, _) => SyncPreviewVideo();
+        Unloaded           += (_, _) => { _openedVideoPath = null; _ = PreviewVideo.Close(); };
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (_vm != null) _vm.PropertyChanged -= OnVmPropertyChanged;
+        _vm = DataContext as AddEditThemeViewModel;
+        if (_vm != null) _vm.PropertyChanged += OnVmPropertyChanged;
+        SyncPreviewVideo();
+    }
+
+    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AddEditThemeViewModel.BackgroundVideoPath)
+                           or nameof(AddEditThemeViewModel.HasBackgroundVideo))
+            SyncPreviewVideo();
+    }
+
+    // Open the chosen video for muted looped preview, or release it when there's none.
+    private void SyncPreviewVideo()
+    {
+        if (!IsLoaded) return;
+        var path = _vm is { HasBackgroundVideo: true } ? _vm.BackgroundVideoPath : null;
+        if (path == _openedVideoPath) return;
+        _openedVideoPath = path;
+        if (!string.IsNullOrWhiteSpace(path))
+            _ = PreviewVideo.Open(new Uri(path, UriKind.Absolute));
+        else
+            _ = PreviewVideo.Close();
+    }
+
+    private async void OnPreviewVideoEnded(object? sender, EventArgs e)
+    {
+        await PreviewVideo.Seek(TimeSpan.Zero);
+        await PreviewVideo.Play();
+    }
 
     private void OnInsertHeaderToken(object sender, System.Windows.RoutedEventArgs e)
     {
@@ -27,7 +72,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         box.Focus();
     }
 
-    private void OnBrowseImageClick(object sender, System.Windows.RoutedEventArgs e)
+    private async void OnBrowseImageClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -36,7 +81,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         };
 
         if (dialog.ShowDialog() == true && DataContext is AddEditThemeViewModel vm)
-            vm.BackgroundImagePath = dialog.FileName;
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: false);
     }
 
     private void OnClearImageClick(object sender, System.Windows.RoutedEventArgs e)
@@ -45,7 +90,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
             vm.BackgroundImagePath = null;
     }
 
-    private void OnBrowseVideoClick(object sender, System.Windows.RoutedEventArgs e)
+    private async void OnBrowseVideoClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -54,7 +99,7 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         };
 
         if (dialog.ShowDialog() == true && DataContext is AddEditThemeViewModel vm)
-            vm.BackgroundVideoPath = dialog.FileName;
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: true);
     }
 
     private void OnClearVideoClick(object sender, System.Windows.RoutedEventArgs e)

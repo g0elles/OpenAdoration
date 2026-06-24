@@ -197,6 +197,9 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Select a book, then tap a chapter number</value></data>
   <data name="Bible_PlaceholderRef" xml:space="preserve"><value>e.g. John 3:16-18, or type keyword(s) to search</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Media Library</value></data>
+  <data name="Media_TabMedia" xml:space="preserve"><value>Media</value></data>
+  <data name="Media_TabBackgrounds" xml:space="preserve"><value>Backgrounds</value></data>
+  <data name="Media_BgInUse" xml:space="preserve"><value>Can't delete — this background is used by {0} theme(s). Remove it from the theme(s) first.</value></data>
   <data name="Media_Import" xml:space="preserve"><value>+ Import</value></data>
   <data name="Media_ImportFolder" xml:space="preserve"><value>+ Import Folder</value></data>
   <data name="Media_ImportCta" xml:space="preserve"><value>+ Import Media</value></data>
@@ -287,6 +290,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="ThemeEdit_BgVideo" xml:space="preserve"><value>Video</value></data>
   <data name="ThemeEdit_NoImage" xml:space="preserve"><value>No image selected</value></data>
   <data name="ThemeEdit_NoVideo" xml:space="preserve"><value>No video selected</value></data>
+  <data name="ThemeEdit_OrChooseExisting" xml:space="preserve"><value>Or choose an existing background</value></data>
+  <data name="ThemeEdit_ErrBackgroundImport" xml:space="preserve"><value>Could not import the background file.</value></data>
   <data name="ThemeEdit_UseDefault" xml:space="preserve"><value>Use as default theme for all slides</value></data>
   <data name="ThemeEdit_Transition" xml:space="preserve"><value>Slide transition</value></data>
   <data name="ThemeEdit_TransitionInherit" xml:space="preserve"><value>Use global default</value></data>

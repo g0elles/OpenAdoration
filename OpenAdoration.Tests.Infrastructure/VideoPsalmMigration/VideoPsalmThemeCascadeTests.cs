@@ -173,9 +173,12 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null) => throw new NotImplementedException();
 
         Task<IReadOnlyList<MediaFile>> IMediaService.GetAllAsync(CancellationToken ct) => throw new NotImplementedException();
+        Task<IReadOnlyList<MediaFile>> IMediaService.GetBackgroundsAsync(CancellationToken ct) => throw new NotImplementedException();
         Task<MediaFile?> IMediaService.GetByIdAsync(int id, CancellationToken ct) => throw new NotImplementedException();
-        public Task<MediaFile?> GetByContentHashAsync(string contentHash, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<MediaFile> ImportBackgroundAsync(string sourcePath, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<int> ReconcileBackgroundsAsync(IEnumerable<string> themeBackgroundPaths, CancellationToken ct = default) => throw new NotImplementedException();
         Task IMediaService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public Slide GenerateSlide(MediaFile file, int? themeId = null) => throw new NotImplementedException();
 

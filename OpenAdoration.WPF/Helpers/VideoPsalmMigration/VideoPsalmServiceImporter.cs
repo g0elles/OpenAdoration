@@ -199,8 +199,8 @@ public sealed class VideoPsalmServiceImporter
         if (ctx.ThemeCache.TryGetValue(signature, out var cached)) return cached;
 
         var defaults = new Theme();
-        var videoPath = ExtractBackground(ctx, style.BackgroundVideo);
-        var imagePath = videoPath is null ? ExtractBackground(ctx, style.BackgroundImage) : null;
+        var videoPath = await ExtractBackgroundAsync(ctx, style.BackgroundVideo, ct);
+        var imagePath = videoPath is null ? await ExtractBackgroundAsync(ctx, style.BackgroundImage, ct) : null;
 
         var theme = await _themes.CreateAsync(new Theme
         {
@@ -243,8 +243,10 @@ public sealed class VideoPsalmServiceImporter
             await _themes.SetDefaultAsync(themeId, ct);
     }
 
-    /// <summary>Extracts a style background (image/video) by basename to the media store; cached per import.</summary>
-    private static string? ExtractBackground(ImportContext ctx, string? basename)
+    /// <summary>Extracts a style background (image/video) by basename to the media store as a
+    /// reusable background <see cref="MediaFile"/> (deduped by content across imports so a video
+    /// shared by many themes is one file), returning its stored path. Cached per import.</summary>
+    private async Task<string?> ExtractBackgroundAsync(ImportContext ctx, string? basename, CancellationToken ct)
     {
         if (basename is null) return null;
         if (ctx.BackgroundCache.TryGetValue(basename, out var existing)) return existing;
@@ -254,9 +256,28 @@ public sealed class VideoPsalmServiceImporter
             string.Equals(Path.GetFileName(e.FullName), basename, StringComparison.OrdinalIgnoreCase));
         if (entry is null) return null;
 
-        var path = ExtractToStore(entry);
+        var hash = HashEntry(entry);
+        var path = await _media.GetByContentHashAsync(hash, isBackground: true, ct) is { } reused
+            ? reused.FilePath
+            : await StoreBackgroundAsync(entry, hash, ct);
+
         ctx.BackgroundCache[basename] = path;
         return path;
+    }
+
+    /// <summary>Extracts a new background entry to the store and registers it as a background MediaFile.</summary>
+    private async Task<string> StoreBackgroundAsync(ZipArchiveEntry entry, string hash, CancellationToken ct)
+    {
+        var destPath = ExtractToStore(entry);
+        await _media.AddAsync(new MediaFile
+        {
+            FileName     = Path.GetFileName(destPath),
+            FilePath     = destPath,
+            Type         = VideoExtensions.Contains(Path.GetExtension(destPath)) ? MediaType.Video : MediaType.Image,
+            ContentHash  = hash,
+            IsBackground = true
+        }, ct);
+        return destPath;
     }
 
     // ── Media ───────────────────────────────────────────────────────────────
@@ -268,7 +289,7 @@ public sealed class VideoPsalmServiceImporter
         if (entry is null) return null;
 
         var hash = HashEntry(entry);
-        var existing = await _media.GetByContentHashAsync(hash, ct);
+        var existing = await _media.GetByContentHashAsync(hash, ct: ct);
         if (existing is not null) return (existing.Id, true);
 
         var destPath = ExtractToStore(entry);

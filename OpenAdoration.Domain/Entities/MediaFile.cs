@@ -14,4 +14,11 @@ public class MediaFile : BaseEntity
     /// from multiple import sources. Null for files imported before hashing existed.
     /// </summary>
     public string? ContentHash { get; set; }
+
+    /// <summary>
+    /// Exclusive category flag: true = a theme background (shown only in the Backgrounds
+    /// library + theme picker), false = general media projectable as a slide. A file is one
+    /// or the other, never both; dedup by <see cref="ContentHash"/> is scoped per-category.
+    /// </summary>
+    public bool IsBackground { get; set; }
 }

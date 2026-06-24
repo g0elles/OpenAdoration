@@ -103,6 +103,32 @@ public static class InfrastructureServiceExtensions
         }
     }
 
+    /// <summary>
+    /// Adopts store-resident theme backgrounds that predate the Background media category into the
+    /// library so they show in the Backgrounds subsection + picker. Best-effort and additive-only:
+    /// any failure is logged and swallowed — it never blocks startup or touches existing data, so an
+    /// auto-updated user keeps everything they had set up. Idempotent (no-op once adopted).
+    /// </summary>
+    public static async Task ReconcileBackgroundsAsync(this IServiceProvider services)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BackgroundReconcile");
+        try
+        {
+            var themes = await scope.ServiceProvider.GetRequiredService<IThemeService>().GetAllAsync();
+            var paths  = themes
+                .SelectMany(t => new[] { t.BackgroundImagePath, t.BackgroundVideoPath })
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p!);
+
+            await scope.ServiceProvider.GetRequiredService<IMediaService>().ReconcileBackgroundsAsync(paths);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Background reconcile skipped (non-fatal) — existing data untouched");
+        }
+    }
+
     private static void EnsureDirectoryExists(string dbPath)
     {
         var directory = Path.GetDirectoryName(dbPath);

@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -21,6 +22,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
 {
     private readonly IThemeService _themeService;
     private readonly IProjectionService _projectionService;
+    private readonly IMediaService _mediaService;
     private readonly ILogger<AddEditThemeViewModel> _logger;
 
     private int _themeId; // 0 = new
@@ -78,6 +80,23 @@ public partial class AddEditThemeViewModel : BaseViewModel
     public bool HasBackgroundVideo =>
         !string.IsNullOrWhiteSpace(BackgroundVideoPath) && File.Exists(BackgroundVideoPath);
 
+    // Existing backgrounds in the managed library, for re-picking without hunting in foreign folders.
+    public ObservableCollection<MediaFile> BackgroundImages { get; } = [];
+    public ObservableCollection<MediaFile> BackgroundVideos { get; } = [];
+
+    [ObservableProperty] private MediaFile? _selectedLibraryImage;
+    [ObservableProperty] private MediaFile? _selectedLibraryVideo;
+
+    partial void OnSelectedLibraryImageChanged(MediaFile? value)
+    {
+        if (value is not null) BackgroundImagePath = value.FilePath;
+    }
+
+    partial void OnSelectedLibraryVideoChanged(MediaFile? value)
+    {
+        if (value is not null) BackgroundVideoPath = value.FilePath;
+    }
+
     public static IReadOnlyList<string> AvailableFontFamilies { get; } =
     [
         "Arial",
@@ -93,10 +112,11 @@ public partial class AddEditThemeViewModel : BaseViewModel
     public event EventHandler<Theme>? Saved;
     public event EventHandler?        Cancelled;
 
-    public AddEditThemeViewModel(IThemeService themeService, IProjectionService projectionService, ILogger<AddEditThemeViewModel> logger)
+    public AddEditThemeViewModel(IThemeService themeService, IProjectionService projectionService, IMediaService mediaService, ILogger<AddEditThemeViewModel> logger)
     {
         _themeService      = themeService;
         _projectionService = projectionService;
+        _mediaService      = mediaService;
         _logger            = logger;
 
         AvailableTransitions =
@@ -128,6 +148,7 @@ public partial class AddEditThemeViewModel : BaseViewModel
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
+        _ = LoadBackgroundLibraryAsync();
     }
 
     public void InitialiseEdit(Theme theme)
@@ -154,6 +175,54 @@ public partial class AddEditThemeViewModel : BaseViewModel
         ClearError();
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(FormTitle));
+        _ = LoadBackgroundLibraryAsync();
+    }
+
+    // ── Background library ──────────────────────────────────────────────────────
+
+    /// <summary>Loads the managed background library into the image/video pickers.</summary>
+    public async Task LoadBackgroundLibraryAsync()
+    {
+        try
+        {
+            var backgrounds = await _mediaService.GetBackgroundsAsync();
+            ReplaceAll(BackgroundImages, backgrounds.Where(b => b.Type == Domain.Enums.MediaType.Image));
+            ReplaceAll(BackgroundVideos, backgrounds.Where(b => b.Type == Domain.Enums.MediaType.Video));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load background library");
+        }
+    }
+
+    /// <summary>Imports a chosen file into the managed store as a background, then selects it.</summary>
+    public async Task ImportBackgroundFileAsync(string sourcePath, bool isVideo)
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var media = await _mediaService.ImportBackgroundAsync(sourcePath);
+            if (isVideo) BackgroundVideoPath = media.FilePath;
+            else         BackgroundImagePath = media.FilePath;
+            await LoadBackgroundLibraryAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import background from {Source}", sourcePath);
+            SetError(L("ThemeEdit_ErrBackgroundImport"));
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private static void ReplaceAll(ObservableCollection<MediaFile> target, IEnumerable<MediaFile> items)
+    {
+        target.Clear();
+        foreach (var item in items) target.Add(item);
     }
 
     // ── Commands ──────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ namespace OpenAdoration.WPF.ViewModels;
 public partial class MediaViewModel : BaseViewModel
 {
     private readonly IMediaService       _mediaService;
+    private readonly IThemeService       _themeService;
     private readonly IProjectionService  _projectionService;
     private readonly IAppSettingsService _appSettings;
     private readonly AppPaths            _appPaths;
@@ -25,23 +26,41 @@ public partial class MediaViewModel : BaseViewModel
     private const long MaxMediaFileSizeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
 
     [ObservableProperty] private ObservableCollection<MediaFile> _mediaFiles = new();
+    [ObservableProperty] private ObservableCollection<MediaFile> _backgrounds = new();
     [ObservableProperty] private MediaFile? _selectedFile;
 
-    public bool HasMedia => MediaFiles.Count > 0;
+    // Backgrounds are an exclusive subsection: the toggle swaps which list (and import target) is active.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayedFiles))]
+    [NotifyPropertyChangedFor(nameof(HasDisplayed))]
+    [NotifyPropertyChangedFor(nameof(IsMediaTab))]
+    private bool _showBackgrounds;
+
+    public bool IsMediaTab => !ShowBackgrounds;
+    public ObservableCollection<MediaFile> DisplayedFiles => ShowBackgrounds ? Backgrounds : MediaFiles;
+    public bool HasDisplayed => DisplayedFiles.Count > 0;
 
     public MediaViewModel(
         IMediaService       mediaService,
+        IThemeService       themeService,
         IProjectionService  projectionService,
         IAppSettingsService appSettings,
         AppPaths            appPaths,
         ILogger<MediaViewModel> logger)
     {
         _mediaService      = mediaService;
+        _themeService      = themeService;
         _projectionService = projectionService;
         _appSettings       = appSettings;
         _appPaths          = appPaths;
         _logger            = logger;
     }
+
+    [RelayCommand]
+    private void ShowMediaTab() => ShowBackgrounds = false;
+
+    [RelayCommand]
+    private void ShowBackgroundsTab() => ShowBackgrounds = true;
 
     // ── Load ──────────────────────────────────────────────────────────────
 
@@ -68,7 +87,13 @@ public partial class MediaViewModel : BaseViewModel
         var files = await _mediaService.GetAllAsync();
         MediaFiles.Clear();
         foreach (var f in files) MediaFiles.Add(f);
-        OnPropertyChanged(nameof(HasMedia));
+
+        var backgrounds = await _mediaService.GetBackgroundsAsync();
+        Backgrounds.Clear();
+        foreach (var b in backgrounds) Backgrounds.Add(b);
+
+        OnPropertyChanged(nameof(DisplayedFiles));
+        OnPropertyChanged(nameof(HasDisplayed));
     }
 
     // ── Import ────────────────────────────────────────────────────────────
@@ -139,9 +164,10 @@ public partial class MediaViewModel : BaseViewModel
                     continue;
                 }
 
-                // Dedup by content: the same bytes already in the library reuse that record (no copy).
+                // Dedup by content within the active category: the same bytes already there reuse
+                // that record (no copy). Background and general media dedup independently.
                 var hash = ComputeHash(sourcePath);
-                if (await _mediaService.GetByContentHashAsync(hash) is not null)
+                if (await _mediaService.GetByContentHashAsync(hash, isBackground: ShowBackgrounds) is not null)
                 {
                     _logger.LogInformation("Skipping '{FileName}' — already in the library (same content)",
                         Path.GetFileName(sourcePath));
@@ -154,10 +180,11 @@ public partial class MediaViewModel : BaseViewModel
 
                 await _mediaService.AddAsync(new MediaFile
                 {
-                    FileName    = Path.GetFileName(destPath),
-                    FilePath    = destPath,
-                    Type        = isVideo ? MediaType.Video : MediaType.Image,
-                    ContentHash = hash
+                    FileName     = Path.GetFileName(destPath),
+                    FilePath     = destPath,
+                    Type         = isVideo ? MediaType.Video : MediaType.Image,
+                    ContentHash  = hash,
+                    IsBackground = ShowBackgrounds
                 });
             }
 
@@ -184,6 +211,20 @@ public partial class MediaViewModel : BaseViewModel
         ClearError();
         try
         {
+            // Delete-guard: a background still referenced by themes must not be removed out from
+            // under them. Block and tell the operator to detach it in the theme(s) first.
+            if (file.IsBackground)
+            {
+                var inUse = (await _themeService.GetAllAsync())
+                    .Count(t => PathEquals(t.BackgroundImagePath, file.FilePath)
+                             || PathEquals(t.BackgroundVideoPath, file.FilePath));
+                if (inUse > 0)
+                {
+                    SetError(L("Media_BgInUse", inUse));
+                    return;
+                }
+            }
+
             await _mediaService.DeleteAsync(file.Id);
 
             var resolvedPath = Path.GetFullPath(file.FilePath);
@@ -237,6 +278,9 @@ public partial class MediaViewModel : BaseViewModel
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
     }
+
+    private static bool PathEquals(string? a, string? b) =>
+        !string.IsNullOrEmpty(a) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     private string GetUniqueDestinationPath(string sourcePath)
     {

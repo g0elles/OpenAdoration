@@ -4,6 +4,8 @@
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+             xmlns:behaviors="clr-namespace:OpenAdoration.WPF.Behaviors"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -229,56 +231,102 @@
                             </StackPanel>
 
                             <!-- Background Image (visible when type = Image) -->
-                            <Grid Visibility="{Binding IsBackgroundImage, Converter={StaticResource BoolToVis}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="4" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0"
-                                         Style="{StaticResource FieldTextBox}"
-                                         Tag="{loc:Loc ThemeEdit_NoImage}"
-                                         IsReadOnly="True"
-                                         Text="{Binding BackgroundImagePath}" />
-                                <Button Grid.Column="2"
-                                        Content="{loc:Loc Common_Browse}"
-                                        Style="{StaticResource SecondaryButton}"
-                                        Padding="10,8"
-                                        Click="OnBrowseImageClick" />
-                                <Button Grid.Column="4"
-                                        Content="✕"
-                                        Style="{StaticResource IconDangerButton}"
-                                        Click="OnClearImageClick"
-                                        Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}" />
-                            </Grid>
+                            <StackPanel Visibility="{Binding IsBackgroundImage, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Style="{StaticResource FieldTextBox}"
+                                             Tag="{loc:Loc ThemeEdit_NoImage}"
+                                             IsReadOnly="True"
+                                             Text="{Binding BackgroundImagePath}" />
+                                    <Button Grid.Column="2"
+                                            Content="{loc:Loc Common_Browse}"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Padding="10,8"
+                                            Click="OnBrowseImageClick" />
+                                    <Button Grid.Column="4"
+                                            Content="✕"
+                                            Style="{StaticResource IconDangerButton}"
+                                            Click="OnClearImageClick"
+                                            Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+
+                                <!-- Re-pick an existing background from the managed library -->
+                                <TextBlock Text="{loc:Loc ThemeEdit_OrChooseExisting}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           FontSize="11"
+                                           Margin="0,10,0,4" />
+                                <ComboBox Style="{StaticResource FieldComboBox}"
+                                          ItemsSource="{Binding BackgroundImages}"
+                                          SelectedItem="{Binding SelectedLibraryImage}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
+                                                       Width="48" Height="27"
+                                                       Stretch="UniformToFill"
+                                                       Margin="0,0,8,0" />
+                                                <TextBlock Text="{Binding FileName}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
 
                             <!-- Background Video (visible when type = Video) -->
-                            <Grid Visibility="{Binding IsBackgroundVideo, Converter={StaticResource BoolToVis}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="4" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0"
-                                         Style="{StaticResource FieldTextBox}"
-                                         Tag="{loc:Loc ThemeEdit_NoVideo}"
-                                         IsReadOnly="True"
-                                         Text="{Binding BackgroundVideoPath}" />
-                                <Button Grid.Column="2"
-                                        Content="{loc:Loc Common_Browse}"
-                                        Style="{StaticResource SecondaryButton}"
-                                        Padding="10,8"
-                                        Click="OnBrowseVideoClick" />
-                                <Button Grid.Column="4"
-                                        Content="✕"
-                                        Style="{StaticResource IconDangerButton}"
-                                        Click="OnClearVideoClick"
-                                        Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}" />
-                            </Grid>
+                            <StackPanel Visibility="{Binding IsBackgroundVideo, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Style="{StaticResource FieldTextBox}"
+                                             Tag="{loc:Loc ThemeEdit_NoVideo}"
+                                             IsReadOnly="True"
+                                             Text="{Binding BackgroundVideoPath}" />
+                                    <Button Grid.Column="2"
+                                            Content="{loc:Loc Common_Browse}"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Padding="10,8"
+                                            Click="OnBrowseVideoClick" />
+                                    <Button Grid.Column="4"
+                                            Content="✕"
+                                            Style="{StaticResource IconDangerButton}"
+                                            Click="OnClearVideoClick"
+                                            Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+
+                                <!-- Re-pick an existing background from the managed library -->
+                                <TextBlock Text="{loc:Loc ThemeEdit_OrChooseExisting}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           FontSize="11"
+                                           Margin="0,10,0,4" />
+                                <ComboBox Style="{StaticResource FieldComboBox}"
+                                          ItemsSource="{Binding BackgroundVideos}"
+                                          SelectedItem="{Binding SelectedLibraryVideo}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
+                                                       Width="48" Height="27"
+                                                       Stretch="UniformToFill"
+                                                       Margin="0,0,8,0" />
+                                                <TextBlock Text="{Binding FileName}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
 
                         </StackPanel>
                     </Border>
@@ -404,15 +452,14 @@
                                 <Image Source="{Binding BackgroundImagePath, Converter={StaticResource FilePathToImage}}"
                                        Stretch="UniformToFill"
                                        Visibility="{Binding HasBackgroundImage, Converter={StaticResource BoolToVis}}" />
-                                <!-- Video preview — static frame only (MediaElement is heavyweight) -->
-                                <Border Background="#CC000000"
-                                        Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{loc:Loc ThemeEdit_VideoActive}"
-                                               Foreground="#AAFFFFFF"
-                                               FontSize="48"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                </Border>
+                                <!-- Video preview — live muted, looped playback (FFME: any codec). Source managed in code-behind. -->
+                                <ffme:MediaElement x:Name="PreviewVideo"
+                                                   LoadedBehavior="Play"
+                                                   UnloadedBehavior="Manual"
+                                                   Stretch="UniformToFill"
+                                                   IsMuted="True"
+                                                   Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}"
+                                                   MediaEnded="OnPreviewVideoEnded" />
                                 <TextBlock Text="{loc:Loc ThemeEdit_SampleLyrics}"
                                            FontFamily="{Binding FontFamily}"
                                            FontSize="{Binding FontSize}"
