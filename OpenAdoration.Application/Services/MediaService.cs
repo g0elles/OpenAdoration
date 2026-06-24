@@ -22,16 +22,22 @@ public sealed class MediaService : IMediaService
         return await _repository.GetAllAsync(ct);
     }
 
+    public async Task<IReadOnlyList<MediaFile>> GetBackgroundsAsync(CancellationToken ct = default)
+    {
+        _logger.LogDebug("Fetching background media files");
+        return await _repository.GetBackgroundsAsync(ct);
+    }
+
     public async Task<MediaFile?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         _logger.LogDebug("Fetching media file {MediaId}", id);
         return await _repository.GetByIdAsync(id, ct);
     }
 
-    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, CancellationToken ct = default)
+    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
-        return await _repository.GetByContentHashAsync(contentHash, ct);
+        return await _repository.GetByContentHashAsync(contentHash, isBackground, ct);
     }
 
     public async Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default)

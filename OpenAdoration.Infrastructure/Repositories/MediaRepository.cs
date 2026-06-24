@@ -20,6 +20,18 @@ public sealed class MediaRepository : IMediaRepository
 
         return await context.MediaFiles
             .AsNoTracking()
+            .Where(mf => !mf.IsBackground)
+            .OrderBy(mf => mf.FileName)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<MediaFile>> GetBackgroundsAsync(CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.MediaFiles
+            .AsNoTracking()
+            .Where(mf => mf.IsBackground)
             .OrderBy(mf => mf.FileName)
             .ToListAsync(ct);
     }
@@ -33,7 +45,7 @@ public sealed class MediaRepository : IMediaRepository
             .FirstOrDefaultAsync(mf => mf.Id == id, ct);
     }
 
-    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, CancellationToken ct = default)
+    public async Task<MediaFile?> GetByContentHashAsync(string contentHash, bool isBackground = false, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
 
@@ -41,7 +53,7 @@ public sealed class MediaRepository : IMediaRepository
 
         return await context.MediaFiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(mf => mf.ContentHash == contentHash, ct);
+            .FirstOrDefaultAsync(mf => mf.ContentHash == contentHash && mf.IsBackground == isBackground, ct);
     }
 
     public async Task<MediaFile> AddAsync(MediaFile file, CancellationToken ct = default)

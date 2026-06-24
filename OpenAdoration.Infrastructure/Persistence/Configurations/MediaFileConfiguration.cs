@@ -25,7 +25,8 @@ public sealed class MediaFileConfiguration : IEntityTypeConfiguration<MediaFile>
         builder.Property(mf => mf.ContentHash)
             .HasMaxLength(64);
 
-        // Dedup lookup for media extracted from multiple import sources
-        builder.HasIndex(mf => mf.ContentHash);
+        // Dedup lookup is per-category (a background and a general file with the same bytes
+        // are distinct records), so index on both.
+        builder.HasIndex(mf => new { mf.ContentHash, mf.IsBackground });
     }
 }
