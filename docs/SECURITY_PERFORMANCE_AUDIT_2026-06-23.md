@@ -86,9 +86,9 @@ An operator can select a very large or spoofed background file. That can cause d
 Suggested fix:
 Move media validation into `MediaService` or a shared application-level helper so both general media and background imports enforce the same size, signature, and supported-format policy. Pass cancellation tokens through hashing/copying where possible.
 
-### S5 - Medium - Plugin settings store API keys in plaintext — ⏸ AWAITING DECISION
+### S5 - Medium - Plugin settings store API keys in plaintext — ✅ RESOLVED 2026-06-23
 
-Open 2026-06-23: fix requires a choice — (a) `System.Security.Cryptography.ProtectedData` NuGet package (DPAPI wrapper, not in the net10 shared framework) vs. a direct `CryptProtectData` P/Invoke (no new dependency, ~30 lines); and (b) encrypt the whole `settings.json` blob (simple, protects at-rest) vs. per-field secret marking in the manifest (needs a manifest schema change). No plugin ships secrets yet, so this isn't live. Pending the user's call on dependency vs. P/Invoke before implementing.
+Resolved: DPAPI-protected the per-plugin settings blob (`CurrentUser` scope + a static entropy tag) using `System.Security.Cryptography.ProtectedData` — which ships in the `net10.0-windows` framework, so **no new package dependency** (an explicit reference drew NU1510 and was removed). `PluginManager` now writes encrypted bytes to `settings.dat` (renamed from `settings.json`, which previously held plaintext) and decrypts on load — secrets are no longer readable as plaintext on disk/backups. Whole-blob encryption (no per-field manifest marking) was chosen as the lazy-correct scope; per-field marking can come if a plugin ever needs mixed plaintext/secret fields. Covered by the existing `UpdateSettings_PersistsAndIsReadBack` round-trip test (now exercises encrypt→decrypt).
 
 
 Location:

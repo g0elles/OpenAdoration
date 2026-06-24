@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -94,12 +95,18 @@ public sealed class PluginManager
         return new LoadedPlugin { Manifest = manifest, Instance = instance };
     }
 
+    // S5: per-plugin settings (incl. bring-your-own-key API keys) are DPAPI-protected at rest,
+    // keyed to the current Windows user, so they aren't readable as plaintext on disk/backups.
+    // ProtectedData ships in the net10.0-windows framework — no package reference needed.
+    private const string SettingsFile = "settings.dat";
+    private static readonly byte[] SettingsEntropy = "OpenAdoration.Plugins.Settings"u8.ToArray();
+
     private static IReadOnlyDictionary<string, string> LoadSettings(string dir)
     {
-        // ponytail: plaintext per-plugin settings (incl. API keys) for v1; DPAPI is a later hardening.
-        var path = Path.Combine(dir, "settings.json");
+        var path = Path.Combine(dir, SettingsFile);
         if (!File.Exists(path)) return new Dictionary<string, string>();
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path), JsonOpts)
+        var json = ProtectedData.Unprotect(File.ReadAllBytes(path), SettingsEntropy, DataProtectionScope.CurrentUser);
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOpts)
                ?? new Dictionary<string, string>();
     }
 
@@ -154,7 +161,9 @@ public sealed class PluginManager
     {
         var dir = PluginDir(id);
         Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "settings.json"), JsonSerializer.Serialize(settings, JsonOpts));
+        var json = JsonSerializer.SerializeToUtf8Bytes(settings, JsonOpts);
+        var encrypted = ProtectedData.Protect(json, SettingsEntropy, DataProtectionScope.CurrentUser);
+        File.WriteAllBytes(Path.Combine(dir, SettingsFile), encrypted);
 
         if (_loaded.FirstOrDefault(p => p.Manifest.Id == id) is { } plugin)
             plugin.Instance.Initialize(new PluginHost(settings, _loggerFactory.CreateLogger($"Plugin.{id}")));
