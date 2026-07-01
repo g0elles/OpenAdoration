@@ -501,7 +501,8 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ FileName  TEXT  NOT NULL                                     │
 │ FilePath  TEXT  NOT NULL  (absolute path in managed store)   │
 │ Type      TEXT  (MediaType enum name: "Image" / "Video")     │
-│ ContentHash TEXT NULL  (SHA-256; dedup across import sources)│
+│ ContentHash TEXT NULL  (SHA-256; dedup per category)         │
+│ IsBackground BOOL  (exclusive: theme background vs slide media)│
 │ CreatedAt / UpdatedAt DATETIME                               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -524,6 +525,8 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | `20260616211931_AddVideoPsalmMigrationFields` | VideoPsalm-migration provenance fields (M12.1) |
 | `20260619011133_AddSongThemeId` | `ThemeId` FK (SetNull) + index on Songs — content-level theming (M14.1) |
 | `20260619211758_AddThemeSlideTransition` | `SlideTransition` (nullable) on Themes — per-theme transition override (M14.3) |
+| `20260623212235_AddBibleVersionSourcePluginId` | `SourcePluginId` on BibleVersions — delete a plugin's Bibles on removal (M13.4) |
+| `20260624031508_AddMediaFileIsBackground` | `IsBackground` on MediaFiles + composite `(ContentHash, IsBackground)` index — managed background-media library |
 
 > Note: app **Settings** (church name/CCLI, default auto-advance, verses-per-slide,
 > announcement duration, transition ms + kind, **per-content-type default themes**

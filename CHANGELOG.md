@@ -4,6 +4,30 @@ All notable changes to OpenAdoration are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Managed background-media library.** Theme backgrounds are now a first-class, reusable
+  media category. Picking a background in the theme editor copies it into the managed media
+  store (deduped by content, so a video shared across a service's themes is one file) instead
+  of referencing a foreign folder. A new **Media → Backgrounds** subsection lists/imports them,
+  and the theme editor gains a "choose an existing background" picker so a previously-used
+  background can be re-applied without hunting for the file. Backgrounds are an *exclusive*
+  category — a file is either a background or general slide media, never both.
+- **Background delete-guard.** A background still referenced by a theme can't be deleted; the
+  app blocks it with a "used by N theme(s)" message so projection can't lose its background.
+
+### Fixed
+- **Theme editor preview plays the background video.** The Live Preview in the theme editor
+  showed a static "video background active" placeholder; it now plays the chosen background
+  video (muted, looping, any codec via FFME), matching the projector and the Stage View fix.
+
+### Notes
+- Upgrade-safe: the schema change is additive and a startup reconcile only *adds* library rows
+  pointing at files already on disk — it never modifies or deletes themes/media, so an updated
+  user keeps everything they had set up. Pre-existing VideoPsalm-imported backgrounds are
+  adopted into the new library automatically.
+
 ## [2.0.1] — 2026-06-20
 
 Patch release: Stage View and localization fixes.

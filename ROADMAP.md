@@ -61,9 +61,9 @@ A church operator opens this app 15 minutes before a service and uses it under p
 |---|---|---|
 | Songs | ✅ Done | CRUD, two-step search, projection, VerseOrder, Copyright/CCLI, import (OpenLyrics / OpenSong / plain text) |
 | Bible | ✅ Done | 3-column browser, FTS keyword+phrase search, 8-format import, verses-per-slide |
-| Themes | ✅ Done | CRUD, 3-zone Header/Body/Footer, token chips, background colour/image/video |
+| Themes | ✅ Done | CRUD, 3-zone Header/Body/Footer, token chips, background colour/image/video; backgrounds stored in the managed library + re-pickable, live video preview |
 | Service Schedule | ✅ Done | Builder + live mode + per-item auto-advance + per-item verse-order override |
-| Media | ✅ Done | Import, project, delete (images **and** video) |
+| Media | ✅ Done | Import, project, delete (images **and** video); **Backgrounds** subsection — exclusive reusable theme-background library (store-backed, content-deduped, delete-guarded) |
 | Keyboard shortcuts | ✅ Done | Space/arrows/B/Esc/1–9/Ctrl+1–5 |
 | Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal) |
 | Projection | ✅ Done | 3-zone tokens, announcement banner, configurable fade transition |
