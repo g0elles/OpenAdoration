@@ -75,8 +75,9 @@ Bibles/
 ## Internal dev docs — kept locally, never published
 /CLAUDE.md
 /AGENTS.md
-/SESSION_STATUS.md
-/SESSION_STATUS_ARCHIVE.md
+/DEVELOPER_GUIDE.md
+/regen-devguide.ps1
+/session_status/
 /VIDEOPSALM_REFERENCE.md
 
 ## Local agent config & skills — kept locally, never published (same rule as CLAUDE.md)

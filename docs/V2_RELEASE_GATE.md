@@ -19,7 +19,6 @@ bottom; don't start a new milestone until they pass.
 ## Gate 1 — Reconcile before RC
 - [x] `ROADMAP.md` top progress table realigned to `dev`'s actual state (the v2.0 snapshot table is
       current as of 2026-06-19).
-- [x] `SESSION_STATUS.md` reconciled with reality (kept current each session).
 - [x] **Feature freeze** — M14 (incl. G27 theming) is now complete; remaining work is QA + ship-safety
       + release mechanics, not new milestones.
 
