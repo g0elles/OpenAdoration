@@ -155,7 +155,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Settings_AnnouncementDurationHelp" xml:space="preserve"><value>Cuánto tiempo permanece el anuncio en pantalla antes de desaparecer. Mínimo 1.</value></data>
   <data name="Settings_Transition" xml:space="preserve"><value>Transición de diapositiva (milisegundos)</value></data>
   <data name="Settings_TransitionHelp" xml:space="preserve"><value>Duración del fundido al cambiar de diapositiva. 0 = sin transición.</value></data>
-  <data name="Settings_LowerThirdSection" xml:space="preserve"><value>TERCIO INFERIOR</value></data>
+  <data name="Settings_LowerThirdSection" xml:space="preserve"><value>BANDA INFERIOR</value></data>
   <data name="Settings_LowerThirdScroll" xml:space="preserve"><value>Desplazar el texto continuamente (marquesina)</value></data>
   <data name="Settings_LowerThirdSpeed" xml:space="preserve"><value>Velocidad de desplazamiento (píxeles por segundo)</value></data>
   <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Color de la banda (hex, p. ej. #CC101018)</value></data>
