@@ -146,6 +146,46 @@
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
 
+                <TextBlock Text="{loc:Loc Settings_LowerThirdSection}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+
+                <CheckBox Content="{loc:Loc Settings_LowerThirdScroll}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          IsChecked="{Binding LowerThirdScroll}" Margin="0,0,0,8" />
+
+                <TextBlock Text="{loc:Loc Settings_LowerThirdSpeed}" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="90"
+                         Text="{Binding LowerThirdScrollSpeed, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,16" />
+
+                <TextBlock Text="{loc:Loc Settings_LowerThirdBandColor}" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="#CC101018"
+                         Text="{Binding LowerThirdBandColor, UpdateSourceTrigger=PropertyChanged}"
+                         Width="160" HorizontalAlignment="Left"
+                         Margin="0,0,0,16" />
+
+                <TextBlock Text="{loc:Loc Settings_LowerThirdTextColor}" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="#FFFFFF"
+                         Text="{Binding LowerThirdTextColor, UpdateSourceTrigger=PropertyChanged}"
+                         Width="160" HorizontalAlignment="Left"
+                         Margin="0,0,0,16" />
+
+                <TextBlock Text="{loc:Loc Settings_LowerThirdFontSize}" Style="{StaticResource FieldLabel}" />
+                <TextBox Style="{StaticResource FieldTextBox}"
+                         Tag="40"
+                         Text="{Binding LowerThirdFontSize, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" HorizontalAlignment="Left"
+                         Margin="0,0,0,4" />
+                <TextBlock Text="{loc:Loc Settings_LowerThirdHelp}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="11" Margin="0,0,0,24" TextWrapping="Wrap" />
+
                 <TextBlock Text="{loc:Loc Settings_ThemesSection}"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="11" FontWeight="SemiBold"

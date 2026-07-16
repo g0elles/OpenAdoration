@@ -31,6 +31,55 @@ public partial class AddEditThemeView : System.Windows.Controls.UserControl
         if (e.PropertyName is nameof(AddEditThemeViewModel.BackgroundVideoPath)
                            or nameof(AddEditThemeViewModel.HasBackgroundVideo))
             SyncPreviewVideo();
+
+        if (e.PropertyName is nameof(AddEditThemeViewModel.SelectedTransition))
+            PlayTransitionPreview();
+    }
+
+    // Replays the picked transition on the sample lyrics so the operator sees it before Sunday.
+    // Mirrors ProjectionWindow's kinds; only the text animates (theme background stays static there too).
+    // ponytail: fixed 400 ms preview — the real duration is the global Settings value.
+    private void PlayTransitionPreview()
+    {
+        var kind = _vm?.SelectedTransition?.Kind;
+        if (kind is null || !IsLoaded) return;
+
+        var duration = TimeSpan.FromMilliseconds(400);
+        var ease = new System.Windows.Media.Animation.CubicEase
+        {
+            EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+        };
+
+        PreviewLyrics.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+        PreviewLyrics.Opacity = 1;
+        PreviewLyrics.RenderTransform = System.Windows.Media.Transform.Identity;
+
+        switch (kind)
+        {
+            case OpenAdoration.Domain.Common.SlideTransitionKind.Slide:
+                var translate = new System.Windows.Media.TranslateTransform();
+                PreviewLyrics.RenderTransform = translate;
+                translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(1920, 0, duration) { EasingFunction = ease });
+                break;
+
+            case OpenAdoration.Domain.Common.SlideTransitionKind.Zoom:
+                PreviewLyrics.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+                var scale = new System.Windows.Media.ScaleTransform(0.85, 0.85);
+                PreviewLyrics.RenderTransform = scale;
+                scale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.85, 1, duration) { EasingFunction = ease });
+                scale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.85, 1, duration) { EasingFunction = ease });
+                PreviewLyrics.BeginAnimation(System.Windows.UIElement.OpacityProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+                break;
+
+            default: // Fade
+                PreviewLyrics.BeginAnimation(System.Windows.UIElement.OpacityProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+                break;
+        }
     }
 
     // Open the chosen video for muted looped preview, or release it when there's none.

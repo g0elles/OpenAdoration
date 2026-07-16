@@ -460,7 +460,8 @@
                                                    IsMuted="True"
                                                    Visibility="{Binding HasBackgroundVideo, Converter={StaticResource BoolToVis}}"
                                                    MediaEnded="OnPreviewVideoEnded" />
-                                <TextBlock Text="{loc:Loc ThemeEdit_SampleLyrics}"
+                                <TextBlock x:Name="PreviewLyrics"
+                                           Text="{loc:Loc ThemeEdit_SampleLyrics}"
                                            FontFamily="{Binding FontFamily}"
                                            FontSize="{Binding FontSize}"
                                            Foreground="{Binding FontColor, Converter={StaticResource ColorToBrush}}"

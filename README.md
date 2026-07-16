@@ -17,9 +17,9 @@ A single operator runs OpenAdoration during a church service to control what app
 | **Themes** | Control fonts, colors, and backgrounds (solid color, image, or looping video); assign a theme to content (per song + per-content-type defaults) resolved by one cascade; optional per-theme slide transition |
 | **Media** | Import images and videos (single files or a whole folder); thumbnails for both — incl. HEVC/iPhone `.MOV`; project full-screen with a click; transport controls (restart / ±10s / play-pause / seek); any codec via FFmpeg |
 | **Service Schedule** | Build a setlist; add songs, Bible passages, and media; reorder with drag-and-drop or ▲▼; per-item auto-advance and verse-order override; import a full VideoPsalm agenda; go live and navigate; add to the queue on the fly |
-| **Projection** | Full-screen output on a secondary monitor; header/body/footer zones with template tokens; announcement banner; persistent lower-third; Cut/Fade/Slide/Zoom transitions; blank screen with one key; theme applies per slide |
+| **Projection** | Full-screen output on a secondary monitor; header/body/footer zones with template tokens; announcement banner; persistent lower-third (static or continuously scrolling ticker, configurable band); crossfading Cut/Fade/Slide/Zoom transitions; blank screen with one key; theme applies per slide |
 | **Stage View** | Operator monitor: themed preview of the current slide + UP NEXT (including the next schedule item); Prev/Next item controls |
-| **Settings** | Church name + CCLI tokens; UI **language** (English/Spanish) and **Light/Dark appearance**; default auto-advance; verses-per-slide; announcement duration; transition speed; backup/restore; opt-in update check |
+| **Settings** | Church name + CCLI tokens; UI **language** (English/Spanish) and **Light/Dark appearance**; default auto-advance; verses-per-slide; announcement duration; transition speed; lower-third band style; backup/restore; opt-in update check |
 
 ---
 

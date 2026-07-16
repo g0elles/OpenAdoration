@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Crossfade slide transitions (M15.1).** Slide changes now truly crossfade: the outgoing
+  slide stays on screen as a still and fades/pushes out while the new one enters, so the
+  projection never blanks between slides. Applies to Fade (real crossfade), Slide (old exits
+  left in step with the new entering) and Zoom (old fades over the incoming zoom).
+- **Transition preview in the theme editor (M15.2).** Picking a transition replays it on the
+  Live Preview's sample lyrics so the operator sees the motion before Sunday.
+- **Ticker lower-third with configurable band (M15.3).** The persistent lower-third can now
+  scroll its text continuously right-to-left (marquee) until cleared — for welcome messages,
+  announcements longer than the screen, or a news-style band. Settings → General gains a
+  "Lower third" group: scroll on/off, speed, band colour (incl. opacity), text colour and size.
+- **Stage View mirrors the lower-third (M15.4)** so the operator/stage sees what overlay is live.
 - **Managed background-media library.** Theme backgrounds are now a first-class, reusable
   media category. Picking a background in the theme editor copies it into the managed media
   store (deduped by content, so a video shared across a service's themes is one file) instead

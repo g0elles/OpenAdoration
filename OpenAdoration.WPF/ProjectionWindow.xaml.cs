@@ -33,6 +33,10 @@ public partial class ProjectionWindow : Window
     // has already taken over, and abandons the render if so (P1-2: stale slide guard).
     private int _renderSequence;
 
+    // Monotonic counter for crossfade snapshots (UI thread only): a superseded transition's
+    // Completed callback must not hide the snapshot a newer transition is animating.
+    private int _transitionToken;
+
     // Per-session theme resolution cache.  Both fields are written from
     // thread-pool continuations (inside async void OnSlideChanged), so
     // _themeCache uses ConcurrentDictionary for safe concurrent puts.
@@ -212,15 +216,69 @@ public partial class ProjectionWindow : Window
             var text = _projectionService.CurrentLowerThird;
             if (string.IsNullOrWhiteSpace(text))
             {
+                StopLowerThirdTicker();
                 LowerThirdBar.Visibility = Visibility.Collapsed;
                 LowerThirdText.Text = string.Empty;
             }
             else
             {
+                ApplyLowerThirdStyle();
                 LowerThirdText.Text = text;
                 LowerThirdBar.Visibility = Visibility.Visible;
+                if (_appSettings.Current.LowerThirdScroll) StartLowerThirdTicker();
+                else StopLowerThirdTicker();
             }
         });
+    }
+
+    // Band styling comes from settings at show-time (set up once in Settings → General).
+    private void ApplyLowerThirdStyle()
+    {
+        var s = _appSettings.Current;
+        LowerThirdBar.Background   = HexToBrush(s.LowerThirdBandColor);
+        LowerThirdText.Foreground  = HexToBrush(s.LowerThirdTextColor);
+        LowerThirdText.FontSize    = Math.Max(12, s.LowerThirdFontSize);
+    }
+
+    /// <summary>
+    /// Continuous right-to-left marquee: the text enters from the right edge, exits fully
+    /// left, and repeats until cleared. Constant speed (no easing — tickers must not pulse).
+    /// </summary>
+    private void StartLowerThirdTicker()
+    {
+        // Ticker layout: single line, left-anchored, free to overflow the clipped band.
+        LowerThirdText.TextWrapping        = TextWrapping.NoWrap;
+        LowerThirdText.TextAlignment       = TextAlignment.Left;
+        LowerThirdText.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+
+        // Measure after the pending Text/style changes so widths are current.
+        LowerThirdBar.UpdateLayout();
+        var textWidth = LowerThirdText.ActualWidth;
+        var barWidth  = LowerThirdBar.ActualWidth;
+        if (textWidth <= 0 || barWidth <= 0) return;
+
+        var speed    = Math.Max(10, _appSettings.Current.LowerThirdScrollSpeed);
+        var duration = TimeSpan.FromSeconds((barWidth + textWidth) / speed);
+
+        var translate = new System.Windows.Media.TranslateTransform();
+        LowerThirdText.RenderTransform = translate;
+        translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(barWidth, -textWidth, duration)
+            {
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever
+            });
+    }
+
+    private void StopLowerThirdTicker()
+    {
+        if (LowerThirdText.RenderTransform is System.Windows.Media.TranslateTransform t)
+            t.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        LowerThirdText.RenderTransform = System.Windows.Media.Transform.Identity;
+
+        // Restore the static-band layout.
+        LowerThirdText.TextWrapping        = TextWrapping.Wrap;
+        LowerThirdText.TextAlignment       = TextAlignment.Center;
+        LowerThirdText.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
     }
 
     // -- Theme -----------------------------------------------------------------
@@ -490,6 +548,9 @@ public partial class ProjectionWindow : Window
             return;
         }
 
+        // Capture the outgoing content BEFORE the layers mutate, so old and new can overlap.
+        var snapshot = CaptureContentSnapshot();
+
         ApplyTheme();
         UpdateCornerLabel(slide);
 
@@ -514,17 +575,49 @@ public partial class ProjectionWindow : Window
                 break;
         }
 
-        PlayTransition();
+        PlayTransition(snapshot);
     }
 
-    // Animates the foreground content in on each slide change (Fade/Slide/Zoom).
+    /// <summary>
+    /// Renders the current <see cref="ContentLayers"/> to a frozen still for the crossfade.
+    /// Null when there is nothing to crossfade from (first slide, hidden window, Cut) or
+    /// when the capture fails — the transition then runs incoming-only, as before.
+    /// </summary>
+    private BitmapSource? CaptureContentSnapshot()
+    {
+        if (_appSettings.Current.SlideTransitionMilliseconds <= 0) return null;
+
+        var width  = (int)Math.Round(ContentLayers.ActualWidth);
+        var height = (int)Math.Round(ContentLayers.ActualHeight);
+        if (width <= 0 || height <= 0 || !HasVisibleContent()) return null;
+
+        try
+        {
+            var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(ContentLayers);
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Outgoing-slide snapshot failed -- transitioning without crossfade");
+            return null;
+        }
+    }
+
+    private bool HasVisibleContent() =>
+        TextZoneGrid.Visibility   == Visibility.Visible ||
+        BackgroundImage.Visibility == Visibility.Visible ||
+        ContentVideo.Visibility   == Visibility.Visible ||
+        BlankOverlay.Visibility   == Visibility.Visible;
+
+    // Animates the slide change (Fade/Slide/Zoom): the outgoing snapshot exits on top while
+    // the incoming content enters underneath, so the screen is never blank mid-transition.
     // Theme background stays static so it never flickers between slides.
-    private void PlayTransition()
+    private void PlayTransition(BitmapSource? snapshot)
     {
         // Reset any prior animation so transitions never stack or leave residue.
-        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
-        ContentLayers.Opacity = 1;
-        ContentLayers.RenderTransform = System.Windows.Media.Transform.Identity;
+        ResetTransitionState();
 
         var ms = _appSettings.Current.SlideTransitionMilliseconds;
         if (ms <= 0) return; // Cut
@@ -537,6 +630,45 @@ public partial class ProjectionWindow : Window
 
         // Per-theme transition overrides the global default; duration stays global.
         var kind = _activeTheme?.SlideTransition ?? _appSettings.Current.SlideTransition;
+        if (snapshot is not null) BeginSnapshotExit(snapshot, kind, duration, ease);
+        BeginContentEnter(kind, duration, ease, crossfading: snapshot is not null);
+    }
+
+    /// <summary>Shows the outgoing still above the incoming content and animates it out.</summary>
+    private void BeginSnapshotExit(
+        BitmapSource snapshot,
+        Domain.Common.SlideTransitionKind kind,
+        TimeSpan duration,
+        System.Windows.Media.Animation.IEasingFunction ease)
+    {
+        TransitionSnapshot.Source     = snapshot;
+        TransitionSnapshot.Visibility = Visibility.Visible;
+
+        if (kind == Domain.Common.SlideTransitionKind.Slide)
+        {
+            // Push: the old slide exits left in step with the new one entering from the right.
+            var translate = new System.Windows.Media.TranslateTransform();
+            TransitionSnapshot.RenderTransform = translate;
+            translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0, -ContentLayers.ActualWidth, duration)
+                { EasingFunction = ease });
+        }
+
+        // The opacity fade doubles as the cleanup trigger; a stale Completed (superseded by a
+        // newer transition) must not tear down that newer transition's snapshot — hence the token.
+        var token = ++_transitionToken;
+        var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(1, 0, duration);
+        fadeOut.Completed += (_, _) => { if (token == _transitionToken) HideTransitionSnapshot(); };
+        TransitionSnapshot.BeginAnimation(System.Windows.UIElement.OpacityProperty, fadeOut);
+    }
+
+    /// <summary>Animates the incoming <see cref="ContentLayers"/> per the transition kind.</summary>
+    private void BeginContentEnter(
+        Domain.Common.SlideTransitionKind kind,
+        TimeSpan duration,
+        System.Windows.Media.Animation.IEasingFunction ease,
+        bool crossfading)
+    {
         switch (kind)
         {
             case Domain.Common.SlideTransitionKind.Slide:
@@ -559,11 +691,33 @@ public partial class ProjectionWindow : Window
                     new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
                 break;
 
-            default: // Fade
-                ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+            default: // Fade — with a snapshot fading out on top this is a true crossfade;
+                     // fading the incoming half too would dim the whole screen mid-transition.
+                if (!crossfading)
+                    ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty,
+                        new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
                 break;
         }
+    }
+
+    /// <summary>Cancels in-flight transition animations and clears the snapshot overlay.</summary>
+    private void ResetTransitionState()
+    {
+        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+        ContentLayers.Opacity = 1;
+        ContentLayers.RenderTransform = System.Windows.Media.Transform.Identity;
+        HideTransitionSnapshot();
+    }
+
+    private void HideTransitionSnapshot()
+    {
+        TransitionSnapshot.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+        if (TransitionSnapshot.RenderTransform is System.Windows.Media.TranslateTransform t)
+            t.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        TransitionSnapshot.RenderTransform = System.Windows.Media.Transform.Identity;
+        TransitionSnapshot.Opacity    = 1;
+        TransitionSnapshot.Visibility = Visibility.Collapsed;
+        TransitionSnapshot.Source     = null;
     }
 
     private void ShowText(string content, SlideContext context)
@@ -670,10 +824,8 @@ public partial class ProjectionWindow : Window
 
     private void StopAndHide()
     {
-        // Drop any in-flight transition so the next session starts clean.
-        ContentLayers.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
-        ContentLayers.Opacity = 1;
-        ContentLayers.RenderTransform = System.Windows.Media.Transform.Identity;
+        // Drop any in-flight transition (incl. the crossfade snapshot) so the next session starts clean.
+        ResetTransitionState();
 
         StopThemeVideo();
         StopContentVideo();

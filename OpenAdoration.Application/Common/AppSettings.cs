@@ -57,6 +57,24 @@ public sealed class AppSettings
     /// </summary>
     public bool CheckForUpdatesOnStartup { get; set; }
 
+    // ── Lower-third band (M15.3) ─────────────────────────────────────────────────
+    // App-level "set up once" styling for the persistent lower-third overlay.
+
+    /// <summary>When true the lower-third text scrolls continuously right-to-left (ticker) until cleared.</summary>
+    public bool LowerThirdScroll { get; set; }
+
+    /// <summary>Ticker speed in device-independent pixels per second. Default 90.</summary>
+    public int LowerThirdScrollSpeed { get; set; } = 90;
+
+    /// <summary>Band background as #AARRGGBB/#RRGGBB hex. Default is the classic translucent dark band.</summary>
+    public string LowerThirdBandColor { get; set; } = "#CC101018";
+
+    /// <summary>Band text colour as hex. Default white.</summary>
+    public string LowerThirdTextColor { get; set; } = "#FFFFFF";
+
+    /// <summary>Band font size in WPF units. Default 40.</summary>
+    public int LowerThirdFontSize { get; set; } = 40;
+
     // ── Per-content-type default themes (M14 cascade) ────────────────────────────
     // Null = fall back to the app-wide default theme (Theme.IsDefault). These sit between
     // the content's own theme and the app default in the resolution cascade.

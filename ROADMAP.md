@@ -29,7 +29,7 @@ GitHub release + `OpenAdoration-2.0.0-win-x64.msi` published. Ship-safety gates 
 | M10.5 Media transport controls | ✅ Done (v1.1) + FFME any-codec engine (bonus) |
 | M11 i18n | ✅ en/es done — full externalization, `MultiLanguageEnabled` ON, Settings language picker; more languages = add a resx |
 | M12 VideoPsalm migration | ✅ Done (GUI-verified 2026-06-16) |
-| M13 Plugins | 🔶 Core DONE (13.1–13.3: contract, loader, Settings→Plugins UX, GUI-verified); **13.4 api.bible connector NOT started (separate repo)** |
+| M13 Plugins | ✅ Done — core 13.1–13.3 (contract, loader, Settings→Plugins UX, GUI-verified) **and 13.4 Bible connectors shipped in the separate connector repo** (api.bible bring-your-own-key + helloao free-Bible plugin, both live-verified 2026-06-23) |
 | M14 Content-level theming | ✅ Done — **14.1–14.4 + per-theme `SlideTransition`** (`Song.ThemeId` + per-content-type defaults + migration; `ThemeCascade` resolver everywhere; song-editor + Settings "Content themes" pickers; VP import folded into the cascade, guarded; `Theme.SlideTransition` nullable override → projection falls back to global, theme-editor picker, e2e round-trip verified; M14.5 color-emoji → Segoe Fluent Icons (🔍🖼🎬📖, GUI-verified); **G27 runtime Light/Dark theme swap done (phases 1–5, ✅ENFORCED)** — DynamicResource brushes, `Colors.{Dark,Light}.xaml`, `IAppThemeService` live swap, Settings toggle, all views verified both themes). Remaining: M14.5 optional full geometric-glyph unification (✕✎★▲▼◀▶+− render consistently already — deferred as churn/risk) |
 
 ---
@@ -679,6 +679,60 @@ Converted the app chrome from a single hardcoded dark palette to runtime-swappab
 **Milestone 14 done when:** a song carries its own theme that shows whether projected standalone or in a service; per-content-type defaults exist; the projection theme is chosen by one cascade everywhere; and VideoPsalm import assigns themes at content level rather than per schedule item.
 
 ---
+---
+
+# Version 3.0 — planned (2026-07-15)
+
+> Scope set from operator priorities + a July-2026 feature survey of ProPresenter 8, EasyWorship 7,
+> OpenLP and FreeShow. Same rules as ever: offline-first, operator-safe, MIT-clean.
+> M15–M16 are the active plan; M17–M20 are recorded so the survey's findings aren't lost.
+
+## Milestone 15 — Presentation polish
+
+**Why:** transitions currently animate only the *incoming* slide (the outgoing one vanishes, then the new content fades/slides in) — every peer crossfades. And the lower-third is a fixed static bar; churches expect a configurable band with an optional continuously scrolling ticker (EasyWorship's "scrolling message alerts").
+
+### 15.1 — Crossfade transitions
+- Snapshot the outgoing `ContentLayers` visual (`RenderTargetBitmap`) into a topmost overlay image, render the new slide beneath, and animate both halves: **Fade** = true crossfade; **Slide** = old pushes out left as new enters from right; **Zoom** = old fades as new scales in; **Cut** unchanged.
+- Respects the existing stale-render guard; snapshot cleared on Stop/blank. No dual video pipelines — the snapshot is a still.
+
+### 15.2 — Transition preview in the theme editor
+- Re-trigger the chosen transition in the editor's existing Live Preview when the kind changes, so the operator sees it before Sunday.
+
+### 15.3 — Ticker lower-third + configurable band
+- New app-level overlay settings: static (today) vs **scroll** mode (continuous right→left marquee, constant speed, loops until cleared), band colour + opacity, text colour, font size, scroll speed.
+- Settings → General "Lower third" group; band styled from settings at show-time. Scroll mode doubles as the fix for text longer than the screen.
+
+### 15.4 — Stage View parity
+- Stage View mirrors the lower-third state (text indicator) like it already does announcements.
+
+**Milestone 15 done when:** slide changes crossfade with no blank frame, the theme editor previews the chosen transition, and the operator can run a continuously scrolling, band-styled lower-third configured from Settings.
+
+## Milestone 16 — Operator UX (intuitive interface)
+
+**Why:** verified UI-review findings (2026-06-20) plus a structured UX audit. A volunteer under service pressure needs obvious selection states, big targets, and to see what a song contains before projecting it.
+
+### 16.1 — Verified fixes
+- Songs list: real row selection/hover states + whole-row actions (double-click edit, Enter project); today rows are only actionable via the small icon buttons.
+- Click targets raised to the 44×44 DIU rule (`IconButton` is 28×28 today).
+- Schedule view virtualization (remove ScrollViewer-wrapped item lists).
+- **Song preview panel** — selected song's sections visible before projecting (pairs with the P2 backlog perf fix: list queries drop sections, detail re-fetches by id).
+
+### 16.2 — Structured UX audit
+- Nielsen-heuristics + accessibility + cognitive-load review of every page (both themes, en+es) driven via UI automation; ranked findings triaged with the operator before any fix lands.
+
+### 16.3 — Audit-driven fixes
+- Scope decided at triage. Known candidates: clearer edit-vs-live visual distinction, first-run guidance, remaining icon unification (M14.5 leftover).
+
+## Milestones 17–20 — recorded (not yet scheduled)
+
+| # | Feature | Notes |
+|---|---|---|
+| M17 | **CCLI usage report** | Log each projected song (CCLI # already on Song) → exportable report. Fully offline; adoption lever for licensed churches. SongSelect *import* would be a plugin, never core. |
+| M18 | **Countdown + pre-service loop + alerts** | Countdown-to-service slide; loop a slide set until the operator advances; nursery/parent alert workflow on the announcement plumbing. Table stakes across all surveyed peers. |
+| M19 | **Remote control (LAN)** | Phone/tablet operator remote + read-only stage view over a local HTTP server. OpenLP and FreeShow both have it; deferred once in v2 — this is the revisit. LAN-only, no cloud. |
+| M20 | **Clean output** | Borderless clean window for OBS capture first (no native dep); NDI only if a church asks (backlog M10.4 graduates here). |
+
+---
 
 ## Backlog (deferred — not blocking v2.0)
 
@@ -763,5 +817,15 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **10 — Presentation Richness** | Transition library, persistent lower-thirds, video transport controls (dual scripture dropped; clean output → backlog) | ✅ |
 | **11 — Internationalization** | Multi-language UI (.resx infra, language setting, full Spanish translation) | ✅ |
 | **12 — VideoPsalm Migration** | Full-agenda import (songs/scripture/media/schedule/themes), references-only scripture (verse text omitted as licensed), centralized enrichable Bible, batch + dedup | ✅ |
-| **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); api.bible bring-your-own-key connector ships as a separate plugin repo (backlog) | ✅ core |
+| **13 — Plugins** | GitHub-distributed add-ons (`IPlugin` + `.oaplugin` loader, Settings UX); Bible connectors shipped in the separate connector repo (api.bible + helloao, 2026-06-23) | ✅ |
 | **14 — Content-level theming** | Theme on content (Song + per-type defaults) resolved by one cascade everywhere; standalone projection themed; folds in M12.4's per-item themes; runtime Light/Dark chrome (G27) | ✅ |
+
+### v3.0 — planned (2026-07-15)
+| Milestone | Goal | Status |
+|---|---|---|
+| **15 — Presentation polish** | Crossfade transitions, theme-editor transition preview, ticker lower-third + configurable band, stage parity | ✅ Done 2026-07-15 (e2e-verified) |
+| **16 — Operator UX** | Songs row selection + preview panel, 44×44 targets, schedule virtualization, structured UX audit + fixes | Planned |
+| **17 — CCLI usage report** | Offline projection log → exportable CCLI report | Recorded |
+| **18 — Countdown / loop / alerts** | Countdown-to-service, pre-service loop, nursery alerts | Recorded |
+| **19 — Remote control (LAN)** | Phone/tablet remote + stage view over local HTTP | Recorded |
+| **20 — Clean output** | Clean OBS window; NDI only on demand (graduates backlog M10.4) | Recorded |

@@ -35,6 +35,11 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _slideTransitionMilliseconds = 300;
     [ObservableProperty] private SlideTransitionKind _selectedTransition = SlideTransitionKind.Fade;
     [ObservableProperty] private bool _checkForUpdatesOnStartup;
+    [ObservableProperty] private bool _lowerThirdScroll;
+    [ObservableProperty] private int _lowerThirdScrollSpeed = 90;
+    [ObservableProperty] private string _lowerThirdBandColor = "#CC101018";
+    [ObservableProperty] private string _lowerThirdTextColor = "#FFFFFF";
+    [ObservableProperty] private int _lowerThirdFontSize = 40;
 
     public IReadOnlyList<SlideTransitionKind> AvailableTransitions { get; } = Enum.GetValues<SlideTransitionKind>();
 
@@ -119,6 +124,11 @@ public partial class SettingsViewModel : BaseViewModel
             SlideTransitionMilliseconds = current.SlideTransitionMilliseconds;
             SelectedTransition          = current.SlideTransition;
             CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
+            LowerThirdScroll            = current.LowerThirdScroll;
+            LowerThirdScrollSpeed       = current.LowerThirdScrollSpeed;
+            LowerThirdBandColor         = current.LowerThirdBandColor;
+            LowerThirdTextColor         = current.LowerThirdTextColor;
+            LowerThirdFontSize          = current.LowerThirdFontSize;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
             LoadAppearances(current);
@@ -196,6 +206,11 @@ public partial class SettingsViewModel : BaseViewModel
                 AnnouncementDurationSeconds = AnnouncementDurationSeconds < 1 ? 1 : AnnouncementDurationSeconds,
                 SlideTransitionMilliseconds = SlideTransitionMilliseconds < 0 ? 0 : SlideTransitionMilliseconds,
                 SlideTransition             = SelectedTransition,
+                LowerThirdScroll            = LowerThirdScroll,
+                LowerThirdScrollSpeed       = LowerThirdScrollSpeed < 10 ? 10 : LowerThirdScrollSpeed,
+                LowerThirdBandColor         = string.IsNullOrWhiteSpace(LowerThirdBandColor) ? "#CC101018" : LowerThirdBandColor.Trim(),
+                LowerThirdTextColor         = string.IsNullOrWhiteSpace(LowerThirdTextColor) ? "#FFFFFF" : LowerThirdTextColor.Trim(),
+                LowerThirdFontSize          = LowerThirdFontSize < 12 ? 12 : LowerThirdFontSize,
                 Appearance                  = SelectedAppearance?.Mode ?? AppearanceMode.Dark,
                 UiCulture                   = SelectedLanguage?.Code,
                 CheckForUpdatesOnStartup    = CheckForUpdatesOnStartup,
@@ -347,4 +362,9 @@ public partial class SettingsViewModel : BaseViewModel
     partial void OnDefaultBibleVersesPerSlideChanged(int value) => MarkDirty();
     partial void OnAnnouncementDurationSecondsChanged(int value) => MarkDirty();
     partial void OnSlideTransitionMillisecondsChanged(int value) => MarkDirty();
+    partial void OnLowerThirdScrollChanged(bool value) => MarkDirty();
+    partial void OnLowerThirdScrollSpeedChanged(int value) => MarkDirty();
+    partial void OnLowerThirdBandColorChanged(string value) => MarkDirty();
+    partial void OnLowerThirdTextColorChanged(string value) => MarkDirty();
+    partial void OnLowerThirdFontSizeChanged(int value) => MarkDirty();
 }
