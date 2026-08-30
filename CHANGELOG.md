@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] — 2026-08-30
+
 ### Added
 - **Crossfade slide transitions (M15.1).** Slide changes now truly crossfade: the outgoing
   slide stays on screen as a still and fades/pushes out while the new one enters, so the
@@ -32,6 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Theme editor preview plays the background video.** The Live Preview in the theme editor
   showed a static "video background active" placeholder; it now plays the chosen background
   video (muted, looping, any codec via FFME), matching the projector and the Stage View fix.
+- **Media import no longer freezes the window.** Hashing/copying files during import now runs
+  off the UI thread, so large or multiple imports stay responsive.
+
+### Security
+- Plugin install now validates the plugin id before using it in a file path, closing a path-
+  traversal risk from a malicious `.oaplugin`.
+- The bundled SQLite native library was updated past a known vulnerability
+  (GHSA-2m69-gcr7-jv3q).
+- Auto-update now requires and verifies a SHA-256 digest on the downloaded release asset before
+  installing it.
+- Background image/video imports are now validated for size and content signature, matching the
+  general media-import policy.
+- Plugin packages larger than 100 MB (uncompressed) are rejected before extraction.
+- Plugin settings, including bring-your-own-key API keys, are now encrypted at rest (DPAPI,
+  current-user scope) instead of stored as plaintext JSON.
 
 ### Notes
 - Upgrade-safe: the schema change is additive and a startup reconcile only *adds* library rows
@@ -172,6 +189,7 @@ First public release. Free, fully offline, SQLite-only worship presentation for 
 - **Packaging:** self-contained single-file `OpenAdoration.exe` (no .NET prerequisite)
   and a per-machine WiX v5 MSI with Start Menu + Desktop shortcuts.
 
+[2.1.0]: https://github.com/g0elles/openadoration/releases/tag/v2.1.0
 [2.0.1]: https://github.com/g0elles/openadoration/releases/tag/v2.0.1
 [2.0.0]: https://github.com/g0elles/openadoration/releases/tag/v2.0.0
 [1.1.0]: https://github.com/g0elles/openadoration/releases/tag/v1.1.0

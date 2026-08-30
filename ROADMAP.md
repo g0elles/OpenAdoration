@@ -687,7 +687,7 @@ Converted the app chrome from a single hardcoded dark palette to runtime-swappab
 > OpenLP and FreeShow. Same rules as ever: offline-first, operator-safe, MIT-clean.
 > M15–M16 are the active plan; M17–M20 are recorded so the survey's findings aren't lost.
 
-## Milestone 15 — Presentation polish
+## Milestone 15 — Presentation polish ✅ DONE (2026-07-15)
 
 **Why:** transitions currently animate only the *incoming* slide (the outgoing one vanishes, then the new content fades/slides in) — every peer crossfades. And the lower-third is a fixed static bar; churches expect a configurable band with an optional continuously scrolling ticker (EasyWorship's "scrolling message alerts").
 
