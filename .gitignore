@@ -82,3 +82,8 @@ Bibles/
 
 ## Local agent config & skills — kept locally, never published (same rule as CLAUDE.md)
 /.claude/
+/.cursor/
+/.gemini/
+/GEMINI.md
+/.mcp.json
+/skills-lock.json
