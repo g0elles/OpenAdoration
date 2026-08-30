@@ -183,6 +183,16 @@
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Border>
 
+                        <!-- Persistent lower-third mirror (static indicator; the ticker runs on the projector) -->
+                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                Padding="60,18"
+                                Background="#CC101018"
+                                Visibility="{Binding HasLowerThird, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding LowerThirdText}"
+                                       Foreground="White" FontSize="40" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" TextAlignment="Center" />
+                        </Border>
+
                         <!-- Layer 8: not-projecting dim -->
                         <Border Background="#CC12121E"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource InverseBoolToVis}}">

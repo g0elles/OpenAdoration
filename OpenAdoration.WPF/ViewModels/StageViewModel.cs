@@ -79,6 +79,13 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     public bool HasAnnouncement => !string.IsNullOrEmpty(AnnouncementText);
 
+    // Persistent lower-third mirror (text indicator only — the ticker animation stays on the projector)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLowerThird))]
+    private string _lowerThirdText = string.Empty;
+
+    public bool HasLowerThird => !string.IsNullOrEmpty(LowerThirdText);
+
     public StageViewModel(
         IProjectionService projectionService,
         IServiceScopeFactory scopeFactory,
@@ -114,9 +121,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             _projectionService.ServiceScheduleActiveChanged   += OnServiceScheduleActiveChanged;
             _projectionService.NextScheduleItemPreviewChanged += OnNextScheduleItemPreviewChanged;
             _projectionService.AnnouncementChanged            += OnAnnouncementChanged;
+            _projectionService.LowerThirdChanged              += OnLowerThirdChanged;
             _projectionService.MediaTransportChanged          += OnMediaTransportChanged;
 
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty;
+            LowerThirdText   = _projectionService.CurrentLowerThird ?? string.Empty;
             await RefreshAsync();
         }
         catch (Exception ex)
@@ -164,6 +173,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty);
+    }
+
+    private void OnLowerThirdChanged(object? sender, EventArgs e)
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            LowerThirdText = _projectionService.CurrentLowerThird ?? string.Empty);
     }
 
     private void OnMediaTransportChanged(object? sender, EventArgs e)
@@ -352,6 +367,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         _projectionService.ServiceScheduleActiveChanged   -= OnServiceScheduleActiveChanged;
         _projectionService.NextScheduleItemPreviewChanged -= OnNextScheduleItemPreviewChanged;
         _projectionService.AnnouncementChanged            -= OnAnnouncementChanged;
+        _projectionService.LowerThirdChanged              -= OnLowerThirdChanged;
         _projectionService.MediaTransportChanged          -= OnMediaTransportChanged;
     }
 }

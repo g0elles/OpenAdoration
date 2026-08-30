@@ -23,8 +23,6 @@ public partial class MediaViewModel : BaseViewModel
     // Canonical store path (honours OA_DATA_DIR via AppPaths, unlike a hardcoded LocalAppData path).
     private string MediaStore => _appPaths.MediaDirectory;
 
-    private const long MaxMediaFileSizeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
-
     [ObservableProperty] private ObservableCollection<MediaFile> _mediaFiles = new();
     [ObservableProperty] private ObservableCollection<MediaFile> _backgrounds = new();
     [ObservableProperty] private MediaFile? _selectedFile;
@@ -146,27 +144,14 @@ public partial class MediaViewModel : BaseViewModel
                     continue;
                 }
 
-                var fileSize = new FileInfo(sourcePath).Length;
-                if (fileSize > MaxMediaFileSizeBytes)
-                {
-                    _logger.LogWarning("Skipping '{FileName}' — size {SizeMb} MB exceeds limit",
-                        Path.GetFileName(sourcePath), fileSize / 1_048_576);
-                    skipped++;
-                    continue;
-                }
-
-                var isVideo = MediaFormats.IsVideo(sourcePath);
-                if (!MediaSignatureValidator.IsValid(sourcePath, isVideo))
-                {
-                    _logger.LogWarning("Skipping '{FileName}' — contents do not match a supported {Kind} format",
-                        Path.GetFileName(sourcePath), isVideo ? "video" : "image");
-                    skipped++;
-                    continue;
-                }
+                // Size check + signature validation + hashing read the whole file; keep them off the
+                // UI thread so importing big/many videos doesn't freeze the window (P1).
+                var prepared = await Task.Run(() => ValidateForImport(sourcePath));
+                if (prepared is not { } prep) { skipped++; continue; }
+                var (hash, isVideo) = prep;
 
                 // Dedup by content within the active category: the same bytes already there reuse
                 // that record (no copy). Background and general media dedup independently.
-                var hash = ComputeHash(sourcePath);
                 if (await _mediaService.GetByContentHashAsync(hash, isBackground: ShowBackgrounds) is not null)
                 {
                     _logger.LogInformation("Skipping '{FileName}' — already in the library (same content)",
@@ -176,7 +161,7 @@ public partial class MediaViewModel : BaseViewModel
                 }
 
                 var destPath  = GetUniqueDestinationPath(sourcePath);
-                File.Copy(sourcePath, destPath);
+                await Task.Run(() => File.Copy(sourcePath, destPath));
 
                 await _mediaService.AddAsync(new MediaFile
                 {
@@ -272,6 +257,28 @@ public partial class MediaViewModel : BaseViewModel
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
+
+    // Runs off the UI thread (Task.Run). Returns null + logs the reason when a file is rejected.
+    private (string Hash, bool IsVideo)? ValidateForImport(string sourcePath)
+    {
+        var fileSize = new FileInfo(sourcePath).Length;
+        if (fileSize > MediaFormats.MaxFileSizeBytes)
+        {
+            _logger.LogWarning("Skipping '{FileName}' — size {SizeMb} MB exceeds limit",
+                Path.GetFileName(sourcePath), fileSize / 1_048_576);
+            return null;
+        }
+
+        var isVideo = MediaFormats.IsVideo(sourcePath);
+        if (!MediaSignatureValidator.IsValid(sourcePath, isVideo))
+        {
+            _logger.LogWarning("Skipping '{FileName}' — contents do not match a supported {Kind} format",
+                Path.GetFileName(sourcePath), isVideo ? "video" : "image");
+            return null;
+        }
+
+        return (ComputeHash(sourcePath), isVideo);
+    }
 
     private static string ComputeHash(string path)
     {

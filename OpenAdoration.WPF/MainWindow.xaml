@@ -171,13 +171,15 @@
                             Visibility="{Binding IsAnnouncementActive, Converter={StaticResource BoolToVis}}" />
 
                     <!-- Persistent lower-third -->
-                    <TextBox Style="{StaticResource FieldTextBox}"
+                    <TextBox x:Name="LowerThirdInputBox"
+                             Style="{StaticResource FieldTextBox}"
                              Tag="{loc:Loc Projection_LowerThirdPlaceholder}"
                              Width="170"
                              VerticalAlignment="Center"
                              Margin="0,0,6,0"
                              Text="{Binding LowerThirdText, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Content="{loc:Loc Projection_LowerThird}"
+                    <Button x:Name="ShowLowerThirdButton"
+                            Content="{loc:Loc Projection_LowerThird}"
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowLowerThirdCommand}"
                             Padding="10,8"
@@ -247,7 +249,8 @@
                                 Style="{StaticResource ProjectionButton}"
                                 Command="{Binding ProjectionPreviousCommand}"
                                 Margin="0,0,4,0" />
-                        <Button Content="▶"
+                        <Button x:Name="ProjectionNextButton"
+                                Content="▶"
                                 Style="{StaticResource ProjectionButton}"
                                 Command="{Binding ProjectionNextCommand}"
                                 Margin="0,0,4,0" />

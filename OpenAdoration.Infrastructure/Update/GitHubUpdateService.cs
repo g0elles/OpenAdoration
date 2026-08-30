@@ -117,16 +117,18 @@ public sealed class GitHubUpdateService : IUpdateService
 
     /// <summary>
     /// Verifies the downloaded MSI against the API-supplied SHA256, deleting it and throwing on
-    /// mismatch (caught + logged by the caller, which then stays running). A genuine compromised
-    /// release can replace the digest too, so this only closes the download/CDN-MITM gap — Authenticode
-    /// signing of the MSI is the real defence. ponytail: no digest (old release) ⇒ can't verify, proceed.
+    /// mismatch or a missing digest (caught + logged by the caller, which then stays running). A
+    /// genuine compromised release can replace the digest too, so this only closes the download/CDN-MITM
+    /// gap — Authenticode signing of the MSI is the real defence (S3 follow-up). A digest is now
+    /// REQUIRED: an undigested asset can't be verified, so we refuse to launch it rather than proceed.
     /// </summary>
     private async Task VerifyIntegrityAsync(string msiPath, UpdateInfo info, CancellationToken ct)
     {
         if (info.Sha256 is not { Length: > 0 } expected)
         {
-            _logger.LogWarning("Release v{Version} has no asset digest — MSI integrity unverified.", info.Version);
-            return;
+            File.Delete(msiPath);
+            throw new InvalidDataException(
+                $"Release v{info.Version} has no asset digest — refusing to install an unverified MSI.");
         }
 
         await using var stream = File.OpenRead(msiPath);

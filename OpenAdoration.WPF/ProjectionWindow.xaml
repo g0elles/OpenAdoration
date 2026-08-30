@@ -110,6 +110,13 @@
 
         </Grid> <!-- end ContentLayers -->
 
+        <!-- Outgoing-slide snapshot: shown only while a transition runs, so the old content
+             overlaps the incoming slide (true crossfade instead of a blank gap). -->
+        <Image x:Name="TransitionSnapshot"
+               Stretch="Fill"
+               IsHitTestVisible="False"
+               Visibility="Collapsed" />
+
         <!-- Corner label: fallback when theme has no HeaderTemplate (top-left, subtle) -->
         <StackPanel x:Name="CornerLabel"
                     Orientation="Horizontal"
@@ -152,13 +159,15 @@
                        TextAlignment="Center" />
         </Border>
 
-        <!-- Persistent lower-third: stays across slides until cleared (speaker / sermon / ref) -->
+        <!-- Persistent lower-third: stays across slides until cleared (speaker / sermon / ticker).
+             Band colour/text/size come from settings at show-time; ClipToBounds contains the ticker. -->
         <Border x:Name="LowerThirdBar"
                 VerticalAlignment="Bottom"
                 HorizontalAlignment="Stretch"
                 Padding="60,18"
                 Background="#CC101018"
                 Panel.ZIndex="190"
+                ClipToBounds="True"
                 Visibility="Collapsed">
             <TextBlock x:Name="LowerThirdText"
                        Foreground="White"

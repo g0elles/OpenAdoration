@@ -72,9 +72,18 @@ public sealed class MediaService : IMediaService
         if (!MediaFormats.IsSupported(sourcePath))
             throw new NotSupportedException($"Unsupported background format: {Path.GetExtension(sourcePath)}");
 
+        // S4: same size cap + content-signature check the general media importer enforces, so a
+        // background can't smuggle an oversized or spoofed file into the projection renderers.
+        if (new FileInfo(sourcePath).Length > MediaFormats.MaxFileSizeBytes)
+            throw new InvalidDataException($"Background exceeds the {MediaFormats.MaxFileSizeBytes / 1_073_741_824} GB size limit.");
+        if (!MediaSignatureValidator.IsValid(sourcePath, MediaFormats.IsVideo(sourcePath)))
+            throw new InvalidDataException("Background contents do not match a supported image/video format.");
+
         // Dedup by content within the background category: re-importing the same file (or one
         // already shared by another theme) reuses the stored copy instead of duplicating it.
-        var hash = ComputeHash(sourcePath);
+        // Hashing + copying read the whole file; keep them off the caller's thread (P1) — this runs
+        // on the UI thread via AddEditThemeViewModel.
+        var hash = await Task.Run(() => ComputeHash(sourcePath), ct);
         if (await _repository.GetByContentHashAsync(hash, isBackground: true, ct) is { } existing)
         {
             _logger.LogInformation("Reusing existing background {MediaId}: {FileName}", existing.Id, existing.FileName);
@@ -83,7 +92,7 @@ public sealed class MediaService : IMediaService
 
         Directory.CreateDirectory(_appPaths.MediaDirectory);
         var destPath = UniqueDestination(_appPaths.MediaDirectory, Path.GetFileName(sourcePath));
-        File.Copy(sourcePath, destPath);
+        await Task.Run(() => File.Copy(sourcePath, destPath), ct);
 
         return await AddAsync(new MediaFile
         {

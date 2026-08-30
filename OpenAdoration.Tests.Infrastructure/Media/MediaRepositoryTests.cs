@@ -52,9 +52,7 @@ public sealed class MediaRepositoryTests : IDisposable
         var repo    = new MediaRepository(_factory);
         var service = new MediaService(repo, new AppPaths("x.db", store.FullName, "s.json"), NullLogger<MediaService>.Instance);
 
-        var src = Path.Combine(Path.GetTempPath(), $"src_{Guid.NewGuid():N}.png");
-        File.WriteAllText(src, "image-bytes");
-        _tempFiles.Add(src);
+        var src = WritePng($"src_{Guid.NewGuid():N}.png");
 
         var first = await service.ImportBackgroundAsync(src);
         Assert.True(first.IsBackground);
@@ -64,6 +62,31 @@ public sealed class MediaRepositoryTests : IDisposable
         var second = await service.ImportBackgroundAsync(src); // identical bytes
         Assert.Equal(first.Id, second.Id);                     // reused, not duplicated
         Assert.Single(await repo.GetBackgroundsAsync());
+    }
+
+    [Fact]
+    public async Task ImportBackgroundAsync_RejectsSpoofedContent()
+    {
+        var store = Directory.CreateTempSubdirectory("oabg_");
+        _tempDirs.Add(store.FullName);
+        var service = new MediaService(new MediaRepository(_factory),
+            new AppPaths("x.db", store.FullName, "s.json"), NullLogger<MediaService>.Instance);
+
+        // .png extension but the bytes aren't any known image/video signature (S4).
+        var src = Path.Combine(Path.GetTempPath(), $"spoof_{Guid.NewGuid():N}.png");
+        File.WriteAllText(src, "not really an image");
+        _tempFiles.Add(src);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => service.ImportBackgroundAsync(src));
+    }
+
+    // 16-byte file with a valid PNG signature so it passes the import signature check.
+    private string WritePng(string name)
+    {
+        var path = Path.Combine(Path.GetTempPath(), name);
+        File.WriteAllBytes(path, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0, 0, 0, 0, 0]);
+        _tempFiles.Add(path);
+        return path;
     }
 
     [Fact]

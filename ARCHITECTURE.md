@@ -89,6 +89,54 @@ Infrastructure  →  Application  →  Domain
 - Infrastructure references Application but never WPF.
 - Domain references nothing — it is the innermost ring.
 
+### 2.2b Dependency & DI Map (Mermaid)
+
+Clean-architecture rings + the main DI wiring the `LayerDependencyTests` (G28) enforce. Arrows point
+**inward** only; WPF is the sole project allowed to see Infrastructure (and only to compose it).
+
+```mermaid
+graph TD
+    subgraph WPF["WPF — Presentation (composition root)"]
+        MainWindow[MainWindow]
+        ProjectionWindow[ProjectionWindow]
+        App_xaml[App.xaml / DataTemplates]
+        MainViewModel[MainViewModel]
+        PageVMs[Page ViewModels: Songs, Bible, ...]
+        AppThemeService[AppThemeService]
+    end
+    subgraph App["Application — Ports + Engine"]
+        Services[IProjectionService, ISongService, IBibleService, ITokenResolver, ...]
+        RepoPorts[Repository interfaces]
+    end
+    subgraph Infra["Infrastructure — EF Core Adapters"]
+        AppDbContext[AppDbContext]
+        Factory[AppDbContextFactory]
+        Repositories[SongRepository, BibleRepository, ...]
+    end
+    subgraph Domain["Domain — innermost ring"]
+        Entities[Entities: Song, Theme, ScheduleItem, ...]
+    end
+
+    MainWindow --> MainViewModel
+    App_xaml -.->|"VM to View template match"| PageVMs
+    MainViewModel -->|"owns scopes, parks live VM"| PageVMs
+    PageVMs --> Services
+    MainViewModel --> Services
+    ProjectionWindow -->|"subscribes to events"| Services
+    Services --> RepoPorts
+    Repositories -. implements .-> RepoPorts
+    Repositories -->|"one fresh context per op"| Factory
+    Factory --> AppDbContext
+    Repositories --> Entities
+    Services --> Entities
+    PageVMs --> Entities
+```
+
+**DI lifetimes at a glance:** singletons — `MainViewModel`, `MainWindow`, `ProjectionWindow`,
+`IProjectionService`, `ITokenResolver`, `IAppSettingsService`, `ISongLibraryNotifier`; transients —
+page VMs; scoped — all services + repositories; `IDbContextFactory` is a singleton that creates
+scoped contexts. Page VMs are resolved from `MainViewModel`'s per-navigation scope (G11).
+
 ### 2.3 Key Design Decisions
 
 | Decision | Choice | Reason |
@@ -505,6 +553,103 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 │ IsBackground BOOL  (exclusive: theme background vs slide media)│
 │ CreatedAt / UpdatedAt DATETIME                               │
 └──────────────────────────────────────────────────────────────┘
+```
+
+### 5.1a Entity-Relationship Diagram (Mermaid)
+
+The same schema as §5.1, as an ERD. Note `ScheduleItems` is **one table for all three item types**
+(TPH — `ItemType` discriminates; type-specific FKs/columns are null in the other rows). FTS5 virtual
+tables (`BibleVersesFts`, `SongSectionsFts`) shadow `BibleVerses`/`SongSections` and are omitted here.
+
+```mermaid
+erDiagram
+    Themes {
+        int Id PK
+        string Name
+        string BackgroundImagePath "nullable"
+        string BackgroundVideoPath "nullable"
+        string HeaderTemplate "nullable, token string"
+        string FooterTemplate "nullable, token string"
+        int SlideTransition "nullable = inherit global"
+        bool IsDefault
+    }
+    Songs {
+        int Id PK
+        string Title
+        string Author "nullable"
+        string VerseOrder "nullable"
+        string SourceGuid "nullable, VP dedup"
+        int ThemeId FK "nullable, SetNull"
+    }
+    SongSections {
+        int Id PK
+        int SongId FK
+        int Type "SectionType"
+        string Lyrics
+        int Order
+    }
+    WorshipServices {
+        int Id PK
+        string Name
+        datetime Date
+        string SourceGuid "nullable, VP dedup"
+        string SourceArchivePath "nullable"
+    }
+    ScheduleItems {
+        int Id PK
+        int ServiceId FK
+        string ItemType "TPH discriminator"
+        int Order
+        int ThemeId FK "nullable, SetNull"
+        int AutoAdvanceSeconds "nullable"
+        int SongId FK "Song rows"
+        string VerseOrderOverride "Song rows, nullable"
+        string Book "Bible rows"
+        int Chapter "Bible rows"
+        int VerseStart "Bible rows"
+        int VerseEnd "Bible rows"
+        int BibleVersionId FK "Bible rows, nullable"
+        int MediaFileId FK "Media rows"
+    }
+    BibleVersions {
+        int Id PK
+        string Name
+        string Abbreviation
+        string Language
+        string SourcePluginId "nullable, owning plugin"
+    }
+    BibleBooks {
+        int Id PK
+        int BibleVersionId FK
+        int Testament "Old=0 / New=1"
+        int BookNumber
+        int ChapterCount
+    }
+    BibleVerses {
+        int Id PK
+        int BibleVersionId FK
+        string Book
+        int Chapter
+        int Verse
+        string Text
+    }
+    MediaFiles {
+        int Id PK
+        string FilePath
+        int Type "MediaType Image/Video"
+        string ContentHash "nullable, SHA-256"
+        bool IsBackground
+    }
+
+    Songs }o--o| Themes : "optional theme (SetNull)"
+    Songs ||--o{ SongSections : "cascade delete"
+    WorshipServices ||--o{ ScheduleItems : "cascade delete"
+    ScheduleItems }o--o| Themes : "override (SetNull)"
+    ScheduleItems }o--o| Songs : "Song rows"
+    ScheduleItems }o--o| MediaFiles : "Media rows"
+    ScheduleItems }o--o| BibleVersions : "Bible rows"
+    BibleVersions ||--o{ BibleBooks : "cascade delete"
+    BibleVersions ||--o{ BibleVerses : "cascade delete"
 ```
 
 ### 5.2 Applied Migrations

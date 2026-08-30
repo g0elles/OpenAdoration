@@ -6,7 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] — 2026-08-30
+
 ### Added
+- **Crossfade slide transitions (M15.1).** Slide changes now truly crossfade: the outgoing
+  slide stays on screen as a still and fades/pushes out while the new one enters, so the
+  projection never blanks between slides. Applies to Fade (real crossfade), Slide (old exits
+  left in step with the new entering) and Zoom (old fades over the incoming zoom).
+- **Transition preview in the theme editor (M15.2).** Picking a transition replays it on the
+  Live Preview's sample lyrics so the operator sees the motion before Sunday.
+- **Ticker lower-third with configurable band (M15.3).** The persistent lower-third can now
+  scroll its text continuously right-to-left (marquee) until cleared — for welcome messages,
+  announcements longer than the screen, or a news-style band. Settings → General gains a
+  "Lower third" group: scroll on/off, speed, band colour (incl. opacity), text colour and size.
+- **Stage View mirrors the lower-third (M15.4)** so the operator/stage sees what overlay is live.
 - **Managed background-media library.** Theme backgrounds are now a first-class, reusable
   media category. Picking a background in the theme editor copies it into the managed media
   store (deduped by content, so a video shared across a service's themes is one file) instead
@@ -21,6 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Theme editor preview plays the background video.** The Live Preview in the theme editor
   showed a static "video background active" placeholder; it now plays the chosen background
   video (muted, looping, any codec via FFME), matching the projector and the Stage View fix.
+- **Media import no longer freezes the window.** Hashing/copying files during import now runs
+  off the UI thread, so large or multiple imports stay responsive.
+
+### Security
+- Plugin install now validates the plugin id before using it in a file path, closing a path-
+  traversal risk from a malicious `.oaplugin`.
+- The bundled SQLite native library was updated past a known vulnerability
+  (GHSA-2m69-gcr7-jv3q).
+- Auto-update now requires and verifies a SHA-256 digest on the downloaded release asset before
+  installing it.
+- Background image/video imports are now validated for size and content signature, matching the
+  general media-import policy.
+- Plugin packages larger than 100 MB (uncompressed) are rejected before extraction.
+- Plugin settings, including bring-your-own-key API keys, are now encrypted at rest (DPAPI,
+  current-user scope) instead of stored as plaintext JSON.
 
 ### Notes
 - Upgrade-safe: the schema change is additive and a startup reconcile only *adds* library rows
@@ -161,6 +189,7 @@ First public release. Free, fully offline, SQLite-only worship presentation for 
 - **Packaging:** self-contained single-file `OpenAdoration.exe` (no .NET prerequisite)
   and a per-machine WiX v5 MSI with Start Menu + Desktop shortcuts.
 
+[2.1.0]: https://github.com/g0elles/openadoration/releases/tag/v2.1.0
 [2.0.1]: https://github.com/g0elles/openadoration/releases/tag/v2.0.1
 [2.0.0]: https://github.com/g0elles/openadoration/releases/tag/v2.0.0
 [1.1.0]: https://github.com/g0elles/openadoration/releases/tag/v1.1.0
