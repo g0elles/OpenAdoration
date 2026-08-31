@@ -264,11 +264,13 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         if (next is null)
         {
             _projectionService.SetNextScheduleItemPreview(null);
+            _projectionService.SetStandaloneNextItem(null, null);
             return;
         }
 
         var nextSlides = _songService.GenerateSlides(next, ThemeCascade.ForSong(null, next.ThemeId, _appSettings.Current));
         _projectionService.SetNextScheduleItemPreview(nextSlides.Count > 0 ? nextSlides[0] : null);
+        _projectionService.SetStandaloneNextItem(nextSlides, next.Title, ProjectionContextKeys.Song(next.Id));
     }
 
     /// <summary>Pure list-index lookup: the song after <paramref name="current"/> in <paramref name="songs"/>,

@@ -132,6 +132,15 @@ public interface IProjectionService
     /// <summary>Called by ServiceScheduleViewModel after loading each schedule item.</summary>
     void SetNextScheduleItemPreview(Slide? slide);
 
+    /// <summary>
+    /// Full slide deck + label for the next standalone (non-service) item, set by SongsViewModel/
+    /// MediaViewModel alongside SetNextScheduleItemPreview. Stored here (not in the transient page VM)
+    /// because F1 auto-navigates away from the content page immediately after projecting, disposing
+    /// the VM before the operator could act on a Next click — Next()/RequestNextScheduleItem() must be
+    /// able to self-advance without depending on a still-alive subscriber.
+    /// </summary>
+    void SetStandaloneNextItem(IReadOnlyList<Slide>? slides, string? contextLabel, string? contextKey = null);
+
     // ── Media transport (video media slides, M10.5) ──────────────────────────────
 
     /// <summary>True when the current slide is a playable video file.</summary>

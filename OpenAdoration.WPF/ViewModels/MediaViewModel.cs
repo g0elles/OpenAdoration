@@ -273,11 +273,13 @@ public partial class MediaViewModel : BaseViewModel
         if (next is null)
         {
             _projectionService.SetNextScheduleItemPreview(null);
+            _projectionService.SetStandaloneNextItem(null, null);
             return;
         }
 
         var nextSlide = _mediaService.GenerateSlide(next, ThemeCascade.ForMedia(null, _appSettings.Current));
         _projectionService.SetNextScheduleItemPreview(nextSlide);
+        _projectionService.SetStandaloneNextItem(new[] { nextSlide }, next.FileName);
     }
 
     /// <summary>Pure list-index lookup: the file after <paramref name="current"/> in <paramref name="files"/>,

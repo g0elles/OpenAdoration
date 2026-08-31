@@ -35,6 +35,9 @@ public sealed class ProjectionService : IProjectionService
     private Slide? _nextScheduleItemPreviewSlide;
     private string? _currentAnnouncement;
     private string? _currentLowerThird;
+    private IReadOnlyList<Slide>? _standaloneNextSlides;
+    private string? _standaloneNextLabel;
+    private string? _standaloneNextContextKey;
 
     public bool   IsServiceScheduleActive      => _isServiceScheduleActive;
     public Slide? NextScheduleItemPreviewSlide => _nextScheduleItemPreviewSlide;
@@ -124,6 +127,7 @@ public sealed class ProjectionService : IProjectionService
 
         if (_currentIndex >= _slides.Count - 1)
         {
+            if (TryAdvanceToStandaloneNextItem()) return;
             _logger.LogDebug("Already on the last slide ({Index}/{Total}) — Next() ignored", _currentIndex + 1, _slides.Count);
             return;
         }
@@ -297,7 +301,32 @@ public sealed class ProjectionService : IProjectionService
     public void RequestNextScheduleItem()
     {
         if (!_isProjecting) return;
+        if (TryAdvanceToStandaloneNextItem()) return;
         RaiseSafe(NextScheduleItemRequested);
+    }
+
+    /// <summary>
+    /// Advances into the pending standalone (non-service) next item, if one is set. Single-hop
+    /// advance is deliberate — chaining further would need the disposed VM's list context, out of
+    /// scope for this fix. Returns false (no-op) when a service schedule owns projection or no
+    /// standalone next item is pending, so service-mode behavior is provably unchanged.
+    /// </summary>
+    private bool TryAdvanceToStandaloneNextItem()
+    {
+        if (_isServiceScheduleActive
+            || _standaloneNextSlides is not { Count: > 0 }
+            || string.IsNullOrWhiteSpace(_standaloneNextLabel))
+            return false;
+
+        var slides = _standaloneNextSlides;
+        var label  = _standaloneNextLabel ?? string.Empty;
+        var key    = _standaloneNextContextKey;
+        _standaloneNextSlides     = null;
+        _standaloneNextLabel      = null;
+        _standaloneNextContextKey = null;
+
+        LoadSlides(slides, label, key);
+        return true;
     }
 
     public void RequestPreviousScheduleItem()
@@ -317,6 +346,13 @@ public sealed class ProjectionService : IProjectionService
     {
         _nextScheduleItemPreviewSlide = slide;
         RaiseSafe(NextScheduleItemPreviewChanged);
+    }
+
+    public void SetStandaloneNextItem(IReadOnlyList<Slide>? slides, string? contextLabel, string? contextKey = null)
+    {
+        _standaloneNextSlides     = slides is { Count: > 0 } ? slides : null;
+        _standaloneNextLabel      = _standaloneNextSlides is null ? null : contextLabel;
+        _standaloneNextContextKey = _standaloneNextSlides is null ? null : contextKey;
     }
 
     public void RequestMediaCommand(MediaCommand command)
