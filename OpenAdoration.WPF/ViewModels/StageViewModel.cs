@@ -219,12 +219,18 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     /// the small panel), so mirroring those values 1:1 only looks right when the real projector
     /// happens to be 1920×1080. Pre-scaling by (design ÷ real) here makes the final on-screen
     /// proportion — after the panel's own Viewbox scales the canvas down — match the real
-    /// projector at any resolution. No secondary screen (single-monitor setup): scale 1:1.
+    /// projector at any resolution. No secondary screen: <see cref="ProjectionWindow"/> falls
+    /// back to its small floating preview window instead of a 1920×1080 mirror, so that window's
+    /// fixed size is the "real" resolution to scale against, not 1920×1080 (which would wrongly
+    /// assume a full-size mirror and leave the stage preview's lower third much smaller than
+    /// what the floating preview window actually shows).
     /// </summary>
     private static (double ScaleX, double ScaleY) GetProjectorMirrorScale()
     {
         var bounds = ScreenHelper.GetSecondaryScreen()?.Bounds;
-        return bounds is { } b ? ComputeMirrorScale(b.Width, b.Height) : (1.0, 1.0);
+        return bounds is { } b
+            ? ComputeMirrorScale(b.Width, b.Height)
+            : ComputeMirrorScale(ProjectionWindow.FallbackPreviewWidth, ProjectionWindow.FallbackPreviewHeight);
     }
 
     /// <summary>Pure design÷real scale math, split out from the screen lookup so it's unit-testable.</summary>

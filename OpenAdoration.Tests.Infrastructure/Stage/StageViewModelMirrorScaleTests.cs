@@ -1,3 +1,4 @@
+using OpenAdoration.WPF;
 using OpenAdoration.WPF.ViewModels;
 using Xunit;
 
@@ -53,5 +54,18 @@ public sealed class StageViewModelMirrorScaleTests
 
         Assert.Equal(1.0, scaleX, 3);
         Assert.Equal(1.0, scaleY, 3);
+    }
+
+    // Regression for the single-monitor fallback: ProjectionWindow shows its small floating
+    // preview window (not a 1920x1080 mirror) when no secondary screen exists, so that window's
+    // fixed size — not 1920x1080 — is the "real" resolution the stage preview must scale against.
+    [Fact]
+    public void ComputeMirrorScale_FallbackPreviewWindowSize_ScalesUp()
+    {
+        var (scaleX, scaleY) = StageViewModel.ComputeMirrorScale(
+            ProjectionWindow.FallbackPreviewWidth, ProjectionWindow.FallbackPreviewHeight);
+
+        Assert.Equal(2.4, scaleX, 3);
+        Assert.Equal(2.4, scaleY, 3);
     }
 }

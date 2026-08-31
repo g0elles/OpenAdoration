@@ -46,6 +46,16 @@ public partial class ProjectionWindow : Window
     private Theme?                                   _defaultTheme;
     private readonly ConcurrentDictionary<int, Theme> _themeCache = new();
 
+    /// <summary>
+    /// Floating preview window size used by <see cref="EnsureShown"/> when no secondary
+    /// (non-primary) monitor is connected. Public so <see cref="ViewModels.StageViewModel"/>
+    /// can mirror the same real on-screen proportions in that fallback mode — this window
+    /// renders its lower-third/announcement/header/footer text at literal pixel size with no
+    /// Viewbox, so their apparent size depends on the actual window size, not a fixed canvas.
+    /// </summary>
+    public const int FallbackPreviewWidth  = 800;
+    public const int FallbackPreviewHeight = 450;
+
     public ProjectionWindow(
         IProjectionService   projectionService,
         IServiceScopeFactory scopeFactory,
@@ -106,8 +116,8 @@ public partial class ProjectionWindow : Window
             Title       = "Projection Preview";
 
             var primary = System.Windows.Forms.Screen.PrimaryScreen!;
-            Width  = 800;
-            Height = 450;
+            Width  = FallbackPreviewWidth;
+            Height = FallbackPreviewHeight;
             Left   = primary.WorkingArea.Right  - Width  - 20;
             Top    = primary.WorkingArea.Bottom - Height - 20;
             WindowState = WindowState.Normal;
