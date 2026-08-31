@@ -9,7 +9,8 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:StageViewModel}"
              Background="{DynamicResource PrimaryBrush}"
-             Loaded="OnLoaded">
+             Loaded="OnLoaded"
+             Unloaded="OnUnloaded">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -183,13 +184,15 @@
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Border>
 
-                        <!-- Persistent lower-third mirror (static indicator; the ticker runs on the projector) -->
-                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                        <!-- Persistent lower-third mirror — band styling + scroll ticker replay the projector. -->
+                        <Border x:Name="LowerThirdBar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                                 Padding="60,18"
-                                Background="#CC101018"
+                                ClipToBounds="True"
+                                Background="{Binding LowerThirdBandColor, Converter={StaticResource HexToBrush}}"
                                 Visibility="{Binding HasLowerThird, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding LowerThirdText}"
-                                       Foreground="White" FontSize="40" FontWeight="SemiBold"
+                            <TextBlock x:Name="LowerThirdTextBlock" Text="{Binding LowerThirdText}"
+                                       Foreground="{Binding LowerThirdTextColor, Converter={StaticResource HexToBrush}}"
+                                       FontSize="{Binding LowerThirdFontSize}" FontWeight="SemiBold"
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Border>
 

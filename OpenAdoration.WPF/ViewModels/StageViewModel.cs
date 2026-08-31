@@ -52,6 +52,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService     _projectionService;
     private readonly IServiceScopeFactory   _scopeFactory;
     private readonly ITokenResolver         _tokenResolver;
+    private readonly IAppSettingsService    _appSettings;
     private readonly ILogger<StageViewModel> _logger;
 
     // Per-navigation theme cache — cleared on ThemeChanged and recreated with next scope
@@ -79,10 +80,16 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     public bool HasAnnouncement => !string.IsNullOrEmpty(AnnouncementText);
 
-    // Persistent lower-third mirror (text indicator only — the ticker animation stays on the projector)
+    // Persistent lower-third mirror — replays the projector's band styling and scroll ticker.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasLowerThird))]
     private string _lowerThirdText = string.Empty;
+
+    [ObservableProperty] private bool   _lowerThirdScrollEnabled;
+    [ObservableProperty] private int    _lowerThirdScrollSpeed = 90;
+    [ObservableProperty] private string _lowerThirdBandColor = "#CC101018";
+    [ObservableProperty] private string _lowerThirdTextColor = "#FFFFFF";
+    [ObservableProperty] private int    _lowerThirdFontSize   = 40;
 
     public bool HasLowerThird => !string.IsNullOrEmpty(LowerThirdText);
 
@@ -90,11 +97,13 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         IProjectionService projectionService,
         IServiceScopeFactory scopeFactory,
         ITokenResolver tokenResolver,
+        IAppSettingsService appSettings,
         ILogger<StageViewModel> logger)
     {
         _projectionService = projectionService;
         _scopeFactory      = scopeFactory;
         _tokenResolver     = tokenResolver;
+        _appSettings       = appSettings;
         _logger            = logger;
     }
 
@@ -125,7 +134,8 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             _projectionService.MediaTransportChanged          += OnMediaTransportChanged;
 
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty;
-            LowerThirdText   = _projectionService.CurrentLowerThird ?? string.Empty;
+            RefreshLowerThirdSettings();
+            LowerThirdText = _projectionService.CurrentLowerThird ?? string.Empty;
             await RefreshAsync();
         }
         catch (Exception ex)
@@ -178,7 +188,22 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     private void OnLowerThirdChanged(object? sender, EventArgs e)
     {
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-            LowerThirdText = _projectionService.CurrentLowerThird ?? string.Empty);
+        {
+            // Settings first so the View sees fresh band/scroll state before it reacts to the text.
+            RefreshLowerThirdSettings();
+            LowerThirdText = _projectionService.CurrentLowerThird ?? string.Empty;
+        });
+    }
+
+    /// <summary>Snapshots the lower-third band/scroll settings — mirrors ProjectionWindow.ApplyLowerThirdStyle.</summary>
+    private void RefreshLowerThirdSettings()
+    {
+        var s = _appSettings.Current;
+        LowerThirdScrollEnabled = s.LowerThirdScroll;
+        LowerThirdScrollSpeed   = s.LowerThirdScrollSpeed;
+        LowerThirdBandColor     = s.LowerThirdBandColor;
+        LowerThirdTextColor     = s.LowerThirdTextColor;
+        LowerThirdFontSize      = Math.Max(12, s.LowerThirdFontSize);
     }
 
     private void OnMediaTransportChanged(object? sender, EventArgs e)

@@ -92,6 +92,17 @@ def _red_pixels(img):
     return sum(1 for r, g, b in img.convert("RGB").getdata() if r > 150 and g < 90 and b < 90)
 
 
+def _red_band_bbox(img):
+    """Bounding box of settings-band-red (#FFCC0000-ish) pixels in a screenshot, or None."""
+    import numpy as np
+    arr = np.asarray(img.convert("RGB"))
+    mask = (arr[:, :, 0] > 150) & (arr[:, :, 1] < 90) & (arr[:, :, 2] < 90)
+    ys, xs = np.nonzero(mask)
+    if len(xs) == 0:
+        return None
+    return (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+
+
 def test_crossfade_and_ticker(oa_m15):
     win = oa_m15
     # Keep the main window clear of the bottom-right projection preview so screen captures
@@ -133,3 +144,39 @@ def test_crossfade_and_ticker(oa_m15):
     band2 = img2.crop((0, int(h * 0.85), w, h))
     assert _red_pixels(band1) > 100, "settings band colour (#CC0000) not applied to the lower third"
     assert band1.tobytes() != band2.tobytes(), "lower-third text did not move -- ticker not scrolling"
+
+
+def test_stage_view_ticker_mirrors_projector(oa_m15):
+    """Stage View's persistent lower-third mirror must replay the projector's scroll ticker
+    (band colour + moving text), not just show static text -- this is the working-tree fix
+    under verification (StageViewModel + StageView.xaml/.xaml.cs)."""
+    win = oa_m15
+    import ctypes
+    ctypes.windll.user32.MoveWindow(win.wrapper_object().handle, 0, 0, 1400, 900, True)
+
+    # Project the seeded song (only one row -> only one visible "▶" button).
+    win.child_window(auto_id="NavSongsButton", control_type="Button").wrapper_object().click_input()
+    win.child_window(title="▶", control_type="Button").wait("visible", timeout=10).click_input()
+    time.sleep(1.5)  # let the first slide's transition and theme resolve fully
+
+    # Navigate to Stage View.
+    win.child_window(auto_id="NavStageButton", control_type="Button").wrapper_object().click_input()
+    time.sleep(0.5)
+
+    # Start a lower-third with enough text to actually need scrolling.
+    win.child_window(auto_id="LowerThirdInputBox", control_type="Edit").wrapper_object() \
+       .set_text("STAGE VIEW SHOULD MIRROR THE PROJECTOR TICKER WITH A MOVING MARQUEE BAND")
+    win.child_window(auto_id="ShowLowerThirdButton", control_type="Button").wrapper_object().invoke()
+    time.sleep(0.8)  # let the DoubleAnimation start and the text lay out
+
+    ww = win.wrapper_object()  # resolve once; per-call UIA lookups cost ~1 s each
+    img1 = ww.capture_as_image()
+    time.sleep(0.7)
+    img2 = ww.capture_as_image()
+
+    bbox = _red_band_bbox(img1)
+    assert bbox is not None, "Stage View lower-third band colour not found -- band styling not applied"
+    crop1 = img1.crop(bbox)
+    crop2 = img2.crop(bbox)
+    assert crop1.tobytes() != crop2.tobytes(), \
+        "Stage View lower-third text did not move -- ticker not mirrored (static text only)"
