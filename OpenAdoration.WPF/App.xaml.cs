@@ -264,6 +264,7 @@ public partial class App : WpfApp
             Path.Combine(Path.GetDirectoryName(sp.GetRequiredService<OpenAdoration.Application.Common.AppPaths>().DbPath)!, "plugins")));
         services.AddTransient<PluginBibleImporter>();
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<IStageNavigationService>(sp => sp.GetRequiredService<MainViewModel>());
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();
         services.AddTransient<BibleViewModel>();

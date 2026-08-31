@@ -17,6 +17,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService      _projectionService;
     private readonly IBibleImportService     _importService;
     private readonly IAppSettingsService     _appSettings;
+    private readonly IStageNavigationService _stageNavigation;
     private readonly BibleNavigationState    _navState;
     private readonly ILogger<BibleViewModel> _logger;
 
@@ -103,6 +104,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         IProjectionService      projectionService,
         IBibleImportService     importService,
         IAppSettingsService     appSettings,
+        IStageNavigationService stageNavigation,
         BibleNavigationState    navState,
         ILogger<BibleViewModel> logger)
     {
@@ -110,6 +112,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         _projectionService = projectionService;
         _importService     = importService;
         _appSettings       = appSettings;
+        _stageNavigation   = stageNavigation;
         _navState          = navState;
         _logger            = logger;
 
@@ -420,8 +423,14 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     // ── Projection commands ───────────────────────────────────────────────
 
+    // Explicit "Proyectar" click only — ProjectCurrentSelection() is also invoked automatically
+    // (unfreeze, verse-restore) where auto-navigating to the Stage View would be unwanted.
     [RelayCommand]
-    private void ProjectSelected() => ProjectCurrentSelection();
+    private void ProjectSelected()
+    {
+        ProjectCurrentSelection();
+        _stageNavigation.NavigateToStage();
+    }
 
     [RelayCommand]
     private void ExpandSelectionDown()

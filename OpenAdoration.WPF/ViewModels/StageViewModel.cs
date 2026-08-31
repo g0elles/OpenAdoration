@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -48,6 +49,9 @@ public sealed record SlidePreview
     public bool   HasFooter  { get; init; }
 }
 
+/// <summary>One compact row in the stage view's clickable "all slides" list.</summary>
+public sealed record SlideListItem(int Index, string Label, string PreviewText, bool IsCurrent);
+
 public partial class StageViewModel : BaseViewModel, IDisposable
 {
     private readonly IProjectionService     _projectionService;
@@ -70,6 +74,9 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     [ObservableProperty] private SlidePreview _currentPreview = SlidePreview.Empty;
     [ObservableProperty] private bool         _hasNextSlide;
     [ObservableProperty] private SlidePreview _nextPreview = SlidePreview.Empty;
+
+    // Compact clickable list of every slide in the current item, alongside the up-next preview.
+    [ObservableProperty] private ObservableCollection<SlideListItem> _allSlides = [];
 
     // Mirrors the projector's transport so the preview pauses when the operator pauses.
     [ObservableProperty] private bool _isPreviewVideoPlaying = true;
@@ -115,6 +122,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     [RelayCommand]
     private void PrevItem() => _projectionService.RequestPreviousScheduleItem();
+
+    // ── Slide list navigation ─────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void JumpToSlide(int index) => _projectionService.GoTo(index);
 
     // ── Load ─────────────────────────────────────────────────────────────────
 
@@ -286,6 +298,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         }
 
         var isScheduleActive = _projectionService.IsServiceScheduleActive;
+        var allSlideItems    = BuildSlideListItems(slides, idx);
 
         // A newer refresh started while we awaited theme resolution — let it win.
         if (seq != _refreshSequence) return;
@@ -303,7 +316,30 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             CurrentPreview = currentPreview;
             HasNextSlide   = hasNext;
             NextPreview    = nextPreview;
+            AllSlides      = allSlideItems;
         });
+    }
+
+    // ── Slide list builder ───────────────────────────────────────────────────
+
+    private const int PreviewTextMaxLength = 40;
+
+    /// <summary>Pure mapping from the projected slides to compact list rows — split out (like
+    /// <see cref="ComputeMirrorScale"/>) so it's unit-testable without a live Dispatcher.</summary>
+    public static ObservableCollection<SlideListItem> BuildSlideListItems(IReadOnlyList<Slide> slides, int currentIndex)
+    {
+        var items = new ObservableCollection<SlideListItem>();
+        for (var i = 0; i < slides.Count; i++)
+            items.Add(new SlideListItem(i, slides[i].Label, TruncatePreview(slides[i].Content), i == currentIndex));
+        return items;
+    }
+
+    private static string TruncatePreview(string content)
+    {
+        var firstLine = content.Split('\n')[0].Trim();
+        return firstLine.Length > PreviewTextMaxLength
+            ? firstLine[..PreviewTextMaxLength] + "…"
+            : firstLine;
     }
 
     // ── Preview builder ───────────────────────────────────────────────────────

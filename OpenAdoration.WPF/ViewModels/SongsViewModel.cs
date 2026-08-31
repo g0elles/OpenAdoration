@@ -18,6 +18,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private readonly IDialogService          _dialogService;
     private readonly ISongLibraryNotifier    _songNotifier;
     private readonly IAppSettingsService     _appSettings;
+    private readonly IStageNavigationService _stageNavigation;
     private readonly ILogger<SongsViewModel> _logger;
 
     // Child VM -- shares the same DI scope, created once per navigation to Songs
@@ -42,6 +43,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         ISongLibraryNotifier    songNotifier,
         AddEditSongViewModel    editViewModel,
         IAppSettingsService     appSettings,
+        IStageNavigationService stageNavigation,
         ILogger<SongsViewModel> logger)
     {
         _songService       = songService;
@@ -49,6 +51,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _songNotifier      = songNotifier;
         _appSettings       = appSettings;
+        _stageNavigation   = stageNavigation;
         _logger            = logger;
         EditViewModel      = editViewModel;
 
@@ -246,6 +249,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         }
         _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));
         _logger.LogInformation("Projecting song: {Title}", song.Title);
+        _stageNavigation.NavigateToStage();
     }
 
     // -- Event handlers from EditViewModel -------------------------------------
