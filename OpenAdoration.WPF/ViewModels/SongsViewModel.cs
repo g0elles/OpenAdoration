@@ -248,8 +248,39 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
             return;
         }
         _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));
+        UpdateNextSongPreview(song);
         _logger.LogInformation("Projecting song: {Title}", song.Title);
         _stageNavigation.NavigateToStage();
+    }
+
+    // Standalone (non-service) projection has no natural "next item" — mirror it via the same
+    // cross-item preview hint ServiceScheduleViewModel feeds Stage View, so its "up next" pane
+    // works for standalone songs too. Never touch the hint while a real service owns it.
+    private void UpdateNextSongPreview(Song current)
+    {
+        if (_projectionService.IsServiceScheduleActive) return;
+
+        var next = FindNextSong(Songs, current);
+        if (next is null)
+        {
+            _projectionService.SetNextScheduleItemPreview(null);
+            return;
+        }
+
+        var nextSlides = _songService.GenerateSlides(next, ThemeCascade.ForSong(null, next.ThemeId, _appSettings.Current));
+        _projectionService.SetNextScheduleItemPreview(nextSlides.Count > 0 ? nextSlides[0] : null);
+    }
+
+    /// <summary>Pure list-index lookup: the song after <paramref name="current"/> in <paramref name="songs"/>,
+    /// matched by Id. Null when <paramref name="current"/> is last or not present. Unit-testable without DI
+    /// (mirrors StageViewModel.ComputeMirrorScale/BuildSlideListItems).</summary>
+    public static Song? FindNextSong(IReadOnlyList<Song> songs, Song current)
+    {
+        for (var i = 0; i < songs.Count; i++)
+        {
+            if (songs[i].Id == current.Id) return i + 1 < songs.Count ? songs[i + 1] : null;
+        }
+        return null;
     }
 
     // -- Event handlers from EditViewModel -------------------------------------

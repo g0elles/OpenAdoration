@@ -251,6 +251,7 @@ public partial class MediaViewModel : BaseViewModel
         {
             var slide = _mediaService.GenerateSlide(file, ThemeCascade.ForMedia(null, _appSettings.Current));
             _projectionService.LoadSlides(new[] { slide }, file.FileName);
+            UpdateNextMediaPreview(file);
             SelectedFile = file;
             _stageNavigation.NavigateToStage();
         }
@@ -259,6 +260,36 @@ public partial class MediaViewModel : BaseViewModel
             _logger.LogError(ex, "Failed to project media file {Id}", file.Id);
             SetError(L("Media_ProjectFailed"));
         }
+    }
+
+    // Standalone (non-service) projection has no natural "next item" — mirror it via the same
+    // cross-item preview hint ServiceScheduleViewModel feeds Stage View, so its "up next" pane
+    // works for standalone media too. Never touch the hint while a real service owns it.
+    private void UpdateNextMediaPreview(MediaFile current)
+    {
+        if (_projectionService.IsServiceScheduleActive) return;
+
+        var next = FindNextMediaFile(DisplayedFiles, current);
+        if (next is null)
+        {
+            _projectionService.SetNextScheduleItemPreview(null);
+            return;
+        }
+
+        var nextSlide = _mediaService.GenerateSlide(next, ThemeCascade.ForMedia(null, _appSettings.Current));
+        _projectionService.SetNextScheduleItemPreview(nextSlide);
+    }
+
+    /// <summary>Pure list-index lookup: the file after <paramref name="current"/> in <paramref name="files"/>,
+    /// matched by Id. Null when <paramref name="current"/> is last or not present. Unit-testable without DI
+    /// (mirrors StageViewModel.ComputeMirrorScale/BuildSlideListItems).</summary>
+    public static MediaFile? FindNextMediaFile(IReadOnlyList<MediaFile> files, MediaFile current)
+    {
+        for (var i = 0; i < files.Count; i++)
+        {
+            if (files[i].Id == current.Id) return i + 1 < files.Count ? files[i + 1] : null;
+        }
+        return null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

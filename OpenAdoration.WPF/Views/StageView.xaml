@@ -286,7 +286,8 @@
                                            FontSize="56" Padding="80,30,80,10"
                                            TextAlignment="Right" TextWrapping="NoWrap" />
                                 <Viewbox Grid.Row="1" Margin="120,30,120,30">
-                                    <TextBlock Text="{Binding NextPreview.Content}"
+                                    <TextBlock x:Name="NextPreviewContentText"
+                                               Text="{Binding NextPreview.Content}"
                                                Width="1680"
                                                FontFamily="{Binding NextPreview.FontFamily}"
                                                FontSize="{Binding NextPreview.FontSize}"
