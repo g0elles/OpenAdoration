@@ -48,7 +48,7 @@ segunda pantalla o proyector es recomendable, pero también funciona con una sol
 
 ## 2. Instalación
 
-1. Abre el archivo **`OpenAdoration-2.0.1-win-x64.msi`**.
+1. Abre el archivo **`OpenAdoration-2.1.0-win-x64.msi`**.
 2. Si Windows muestra una advertencia ("Windows protegió tu PC"), haz clic en
    **"Más información" → "Ejecutar de todas formas"** (la app no está firmada todavía).
 3. Sigue el asistente. Al terminar tendrás accesos directos en el **menú Inicio** y en
@@ -182,9 +182,18 @@ fondo y transición.
 
 1. Entra a `🎨 Temas` y haz clic en **"+ Nuevo"**.
 2. Ajusta **fuente, tamaño, color del texto y alineación** (Izquierda / Centro / Derecha).
-3. **Fondo:** color sólido, **imagen** o **video** (en bucle).
-4. **Transición de diapositiva:** elige cómo cambia de una diapositiva a la siguiente, o deja
-   **"Usar predeterminado global"** para tomar la velocidad configurada en `⚙ Configuración`.
+3. **Fondo:** color sólido, **imagen** o **video** (en bucle). Al elegir una imagen o video se
+   guarda en una **biblioteca de fondos** reutilizable (visible luego en `🖼 Multimedia` →
+   pestaña **"Fondos"**); si ya usaste ese fondo en otro tema, usa **"O elige un fondo
+   existente"** en vez de volver a importar el archivo.
+
+   ![Sección Fondo del editor de tema, con la ruta de la imagen actual y "O elige un fondo existente"](img/temas-fondo-existente.png)
+4. **Transición de diapositiva:** elige cómo cambia de una diapositiva a la siguiente (Fundido,
+   Deslizar, Zoom o Corte), o deja **"Usar predeterminado global"** para tomar la velocidad
+   configurada en `⚙ Configuración`. Fundido, Deslizar y Zoom son **transiciones reales**: la
+   diapositiva anterior permanece visible mientras la nueva entra, así que la pantalla nunca
+   queda en blanco entre diapositivas. Al elegir una transición, la **vista previa** del editor
+   la reproduce de inmediato para que veas el efecto antes del domingo.
 5. **Encabezado y pie:** texto opcional que aparece arriba y abajo de cada diapositiva. Aquí
    puedes insertar **fichas (tokens)** haciendo clic en los botones de ficha — **no las
    escribas a mano**. Las fichas se reemplazan automáticamente con la información de cada
@@ -235,6 +244,14 @@ fondo y transición.
 > Cuando proyectas un video, la barra inferior muestra controles: **reiniciar video**,
 > **retroceder 10 segundos**, **reproducir / pausar**, **avanzar 10 segundos**, una barra de
 > progreso y el tiempo.
+
+### Pestaña "Fondos"
+Los fondos de imagen/video que elijas al editar un **Tema** (sección 7) aparecen aquí, en su
+propia pestaña **"Fondos"**, separados de la multimedia general — un mismo archivo nunca cuenta
+como las dos cosas a la vez. Si un fondo todavía lo usa algún tema, no se puede eliminar hasta
+quitarlo de ese tema primero (para no dejar una proyección sin fondo a mitad de servicio).
+
+![Pestaña Fondos de la biblioteca multimedia](img/multimedia-fondos.png)
 
 ---
 
@@ -306,6 +323,11 @@ Ambos se manejan desde la barra inferior y **no cambian** la diapositiva actual.
 1. Escribe el texto en la caja **"Orador / sermón / ref…"**.
 2. Haz clic en **"🏷 Banda inferior"**. Se mantiene visible hasta que la quites con **"Borrar"**.
 
+> Si activas **"Desplazar el texto continuamente (marquesina)"** en `⚙ Configuración` → BANDA
+> INFERIOR (sección 12), el texto se mueve de derecha a izquierda sin parar hasta que lo borras
+> — útil para un mensaje de bienvenida o un anuncio más largo que la pantalla. Ahí también
+> defines el color de la banda, el color del texto y el tamaño.
+
 ---
 
 ## 12. Configuración
@@ -321,11 +343,15 @@ En `⚙ Configuración` puedes definir:
   licencia" → ficha `[SiteLicense]`.
 - **VALORES PREDETERMINADOS DEL SERVICIO** — avance automático predeterminado (segundos),
   versículos por diapositiva, duración del anuncio y velocidad de transición (0 = sin animación).
+- **BANDA INFERIOR** — activa el desplazamiento continuo (marquesina), su velocidad, el color de
+  la banda (con opacidad, en hex), el color del texto y el tamaño del texto (ver sección 11).
 - **TEMAS DE CONTENIDO** — tema predeterminado para Canciones, Escrituras y Multimedia.
 - **COPIA DE SEGURIDAD** — "Crear copia…" / "Restaurar copia…" (ver sección 15).
 - **ACTUALIZACIONES** — "Buscar actualizaciones…" y la opción "Buscar actualizaciones al iniciar".
 
 ![Configuración: valores del servicio, temas de contenido y copia de seguridad](img/configuracion-2.png)
+
+![Configuración: grupo BANDA INFERIOR con desplazamiento, color de banda, color de texto y tamaño](img/configuracion-banda-inferior.png)
 
 Recuerda **"Guardar"** los cambios.
 
