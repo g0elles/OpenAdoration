@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
+using OpenAdoration.WPF.Helpers;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -195,15 +196,42 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         });
     }
 
+    // Matches the fixed design canvas in StageView.xaml (Grid Width="1920" Height="1080")
+    // that the preview's outer Viewbox scales uniformly to fit the small panel.
+    private const double DesignCanvasWidth  = 1920;
+    private const double DesignCanvasHeight = 1080;
+
     /// <summary>Snapshots the lower-third band/scroll settings — mirrors ProjectionWindow.ApplyLowerThirdStyle.</summary>
     private void RefreshLowerThirdSettings()
     {
         var s = _appSettings.Current;
+        var (scaleX, scaleY) = GetProjectorMirrorScale();
         LowerThirdScrollEnabled = s.LowerThirdScroll;
-        LowerThirdScrollSpeed   = s.LowerThirdScrollSpeed;
+        LowerThirdScrollSpeed   = Math.Max(10, (int)Math.Round(s.LowerThirdScrollSpeed * scaleX));
         LowerThirdBandColor     = s.LowerThirdBandColor;
         LowerThirdTextColor     = s.LowerThirdTextColor;
-        LowerThirdFontSize      = Math.Max(12, s.LowerThirdFontSize);
+        LowerThirdFontSize      = Math.Max(12, (int)Math.Round(s.LowerThirdFontSize * scaleY));
+    }
+
+    /// <summary>
+    /// Font size and scroll speed are absolute values tuned for the projector's real screen.
+    /// The stage preview renders everything inside a fixed 1920×1080 canvas (Viewbox-scaled to
+    /// the small panel), so mirroring those values 1:1 only looks right when the real projector
+    /// happens to be 1920×1080. Pre-scaling by (design ÷ real) here makes the final on-screen
+    /// proportion — after the panel's own Viewbox scales the canvas down — match the real
+    /// projector at any resolution. No secondary screen (single-monitor setup): scale 1:1.
+    /// </summary>
+    private static (double ScaleX, double ScaleY) GetProjectorMirrorScale()
+    {
+        var bounds = ScreenHelper.GetSecondaryScreen()?.Bounds;
+        return bounds is { } b ? ComputeMirrorScale(b.Width, b.Height) : (1.0, 1.0);
+    }
+
+    /// <summary>Pure design÷real scale math, split out from the screen lookup so it's unit-testable.</summary>
+    public static (double ScaleX, double ScaleY) ComputeMirrorScale(int realWidth, int realHeight)
+    {
+        if (realWidth <= 0 || realHeight <= 0) return (1.0, 1.0);
+        return (DesignCanvasWidth / realWidth, DesignCanvasHeight / realHeight);
     }
 
     private void OnMediaTransportChanged(object? sender, EventArgs e)
