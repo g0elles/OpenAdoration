@@ -245,7 +245,8 @@
 
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
-                        <Button Content="◀"
+                        <Button x:Name="ProjectionPreviousButton"
+                                Content="◀"
                                 Style="{StaticResource ProjectionButton}"
                                 Command="{Binding ProjectionPreviousCommand}"
                                 Margin="0,0,4,0" />

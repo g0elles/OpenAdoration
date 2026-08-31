@@ -428,10 +428,10 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void ProjectSelected()
     {
-        // Clear any stale cross-item "next" hint left by an earlier standalone Song/Media
+        // Clear any stale cross-item "next" hint/queue left by an earlier standalone Song/Media
         // projection — Bible verses source their own "up next" from the within-chapter deck.
         _projectionService.SetNextScheduleItemPreview(null);
-        _projectionService.SetStandaloneNextItem(null, null);
+        _projectionService.SetStandaloneQueue(Array.Empty<StandaloneQueueItem>(), 0);
         ProjectCurrentSelection();
         _stageNavigation.NavigateToStage();
     }

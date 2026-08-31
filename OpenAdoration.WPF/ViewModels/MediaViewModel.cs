@@ -251,7 +251,7 @@ public partial class MediaViewModel : BaseViewModel
         {
             var slide = _mediaService.GenerateSlide(file, ThemeCascade.ForMedia(null, _appSettings.Current));
             _projectionService.LoadSlides(new[] { slide }, file.FileName);
-            UpdateNextMediaPreview(file);
+            UpdateStandaloneQueue(file);
             SelectedFile = file;
             _stageNavigation.NavigateToStage();
         }
@@ -262,36 +262,24 @@ public partial class MediaViewModel : BaseViewModel
         }
     }
 
-    // Standalone (non-service) projection has no natural "next item" — mirror it via the same
-    // cross-item preview hint ServiceScheduleViewModel feeds Stage View, so its "up next" pane
-    // works for standalone media too. Never touch the hint while a real service owns it.
-    private void UpdateNextMediaPreview(MediaFile current)
+    // Standalone (non-service) projection has no built-in "next/previous item" — feed the projector
+    // the full displayed list (Media or Fondos, whichever tab is active) as a browsable queue so
+    // Next()/Previous() can hop freely across it. Never touch it while a real service owns projection.
+    private void UpdateStandaloneQueue(MediaFile current)
     {
         if (_projectionService.IsServiceScheduleActive) return;
 
-        var next = FindNextMediaFile(DisplayedFiles, current);
-        if (next is null)
-        {
-            _projectionService.SetNextScheduleItemPreview(null);
-            _projectionService.SetStandaloneNextItem(null, null);
-            return;
-        }
+        var files = DisplayedFiles.ToList();
+        var items = files.Select(f => new StandaloneQueueItem(
+            new[] { _mediaService.GenerateSlide(f, ThemeCascade.ForMedia(null, _appSettings.Current)) },
+            f.FileName, null)).ToList();
 
-        var nextSlide = _mediaService.GenerateSlide(next, ThemeCascade.ForMedia(null, _appSettings.Current));
-        _projectionService.SetNextScheduleItemPreview(nextSlide);
-        _projectionService.SetStandaloneNextItem(new[] { nextSlide }, next.FileName);
-    }
+        var currentIndex = Math.Max(files.FindIndex(f => f.Id == current.Id), 0);
+        _projectionService.SetStandaloneQueue(items, currentIndex);
 
-    /// <summary>Pure list-index lookup: the file after <paramref name="current"/> in <paramref name="files"/>,
-    /// matched by Id. Null when <paramref name="current"/> is last or not present. Unit-testable without DI
-    /// (mirrors StageViewModel.ComputeMirrorScale/BuildSlideListItems).</summary>
-    public static MediaFile? FindNextMediaFile(IReadOnlyList<MediaFile> files, MediaFile current)
-    {
-        for (var i = 0; i < files.Count; i++)
-        {
-            if (files[i].Id == current.Id) return i + 1 < files.Count ? files[i + 1] : null;
-        }
-        return null;
+        var nextIndex = currentIndex + 1;
+        _projectionService.SetNextScheduleItemPreview(
+            nextIndex < items.Count ? items[nextIndex].Slides[0] : null);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

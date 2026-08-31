@@ -133,13 +133,17 @@ public interface IProjectionService
     void SetNextScheduleItemPreview(Slide? slide);
 
     /// <summary>
-    /// Full slide deck + label for the next standalone (non-service) item, set by SongsViewModel/
-    /// MediaViewModel alongside SetNextScheduleItemPreview. Stored here (not in the transient page VM)
-    /// because F1 auto-navigates away from the content page immediately after projecting, disposing
-    /// the VM before the operator could act on a Next click — Next()/RequestNextScheduleItem() must be
-    /// able to self-advance without depending on a still-alive subscriber.
+    /// The full ordered list the operator is standalone-browsing (e.g. the currently displayed
+    /// Songs list, or MediaViewModel.DisplayedFiles) — each item's slides pre-generated eagerly at
+    /// Proyectar-time (cheap: GenerateSlides is a synchronous in-memory transform, no I/O; realistic
+    /// list sizes are dozens, not hundreds, since operators browse filtered/searched subsets — ponytail:
+    /// revisit with lazy/windowed generation if that assumption breaks). currentIndex is which item is
+    /// live right now. Stored here (not in the transient page VM) because F1 auto-navigates away from
+    /// the content page immediately after projecting, disposing the VM's scope before the operator
+    /// could ever click Next/Previous — eager pre-generation means no later call-back into a
+    /// possibly-disposed scoped service is ever needed.
     /// </summary>
-    void SetStandaloneNextItem(IReadOnlyList<Slide>? slides, string? contextLabel, string? contextKey = null);
+    void SetStandaloneQueue(IReadOnlyList<StandaloneQueueItem> items, int currentIndex);
 
     // ── Media transport (video media slides, M10.5) ──────────────────────────────
 
@@ -170,3 +174,9 @@ public interface IProjectionService
     /// <summary>Called by the projection window to publish the live transport snapshot.</summary>
     void ReportMediaTransport(MediaTransportState state);
 }
+
+/// <summary>
+/// One entry in a standalone-browsing queue (see <see cref="IProjectionService.SetStandaloneQueue"/>):
+/// a fully pre-generated slide deck for one list item, plus the label/context-key <see cref="IProjectionService.LoadSlides"/> needs to project it.
+/// </summary>
+public sealed record StandaloneQueueItem(IReadOnlyList<Slide> Slides, string ContextLabel, string? ContextKey);

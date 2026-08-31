@@ -35,9 +35,8 @@ public sealed class ProjectionService : IProjectionService
     private Slide? _nextScheduleItemPreviewSlide;
     private string? _currentAnnouncement;
     private string? _currentLowerThird;
-    private IReadOnlyList<Slide>? _standaloneNextSlides;
-    private string? _standaloneNextLabel;
-    private string? _standaloneNextContextKey;
+    private IReadOnlyList<StandaloneQueueItem>? _standaloneQueue;
+    private int _standaloneQueueIndex;
 
     public bool   IsServiceScheduleActive      => _isServiceScheduleActive;
     public Slide? NextScheduleItemPreviewSlide => _nextScheduleItemPreviewSlide;
@@ -127,7 +126,7 @@ public sealed class ProjectionService : IProjectionService
 
         if (_currentIndex >= _slides.Count - 1)
         {
-            if (TryAdvanceToStandaloneNextItem()) return;
+            if (TryMoveStandaloneQueue(+1)) return;
             _logger.LogDebug("Already on the last slide ({Index}/{Total}) — Next() ignored", _currentIndex + 1, _slides.Count);
             return;
         }
@@ -147,6 +146,7 @@ public sealed class ProjectionService : IProjectionService
 
         if (_currentIndex <= 0)
         {
+            if (TryMoveStandaloneQueue(-1)) return;
             _logger.LogDebug("Already on the first slide — Previous() ignored");
             return;
         }
@@ -263,6 +263,8 @@ public sealed class ProjectionService : IProjectionService
         _nextScheduleItemPreviewSlide   = null;
         _currentAnnouncement            = null;
         _currentLowerThird              = null;
+        _standaloneQueue                = null;
+        _standaloneQueueIndex           = 0;
 
         RaiseSlideChanged(null);
         RaiseProjectionStateChanged(false);
@@ -301,44 +303,57 @@ public sealed class ProjectionService : IProjectionService
     public void RequestNextScheduleItem()
     {
         if (!_isProjecting) return;
-        if (TryAdvanceToStandaloneNextItem()) return;
+        if (TryMoveStandaloneQueue(+1)) return;
         RaiseSafe(NextScheduleItemRequested);
-    }
-
-    /// <summary>
-    /// Advances into the pending standalone (non-service) next item, if one is set. Single-hop
-    /// advance is deliberate — chaining further would need the disposed VM's list context, out of
-    /// scope for this fix. Returns false (no-op) when a service schedule owns projection or no
-    /// standalone next item is pending, so service-mode behavior is provably unchanged.
-    /// </summary>
-    private bool TryAdvanceToStandaloneNextItem()
-    {
-        if (_isServiceScheduleActive
-            || _standaloneNextSlides is not { Count: > 0 }
-            || string.IsNullOrWhiteSpace(_standaloneNextLabel))
-            return false;
-
-        var slides = _standaloneNextSlides;
-        var label  = _standaloneNextLabel ?? string.Empty;
-        var key    = _standaloneNextContextKey;
-        _standaloneNextSlides     = null;
-        _standaloneNextLabel      = null;
-        _standaloneNextContextKey = null;
-
-        LoadSlides(slides, label, key);
-        return true;
     }
 
     public void RequestPreviousScheduleItem()
     {
         if (!_isProjecting) return;
+        if (TryMoveStandaloneQueue(-1)) return;
         RaiseSafe(PreviousScheduleItemRequested);
+    }
+
+    /// <summary>
+    /// Moves the standalone-browsing queue by <paramref name="delta"/> (±1) and projects the
+    /// target item, if one is in range. Returns false (no-op) when a service schedule owns
+    /// projection, no queue is set, or the target index is out of bounds — so callers can fall
+    /// back to their existing behavior. Landing on a previous item (delta &lt; 0) jumps to its
+    /// last slide, matching the intuitive "back" direction; landing on a next item starts at its
+    /// first slide via the normal <see cref="LoadSlides"/> behavior.
+    /// </summary>
+    private bool TryMoveStandaloneQueue(int delta)
+    {
+        if (_isServiceScheduleActive || _standaloneQueue is not { Count: > 0 } queue)
+            return false;
+
+        var newIndex = _standaloneQueueIndex + delta;
+        if (newIndex < 0 || newIndex >= queue.Count)
+            return false;
+
+        _standaloneQueueIndex = newIndex;
+        var item = queue[newIndex];
+        LoadSlides(item.Slides, item.ContextLabel, item.ContextKey);
+        if (delta < 0 && item.Slides.Count > 1)
+            GoTo(item.Slides.Count - 1);
+
+        var previewSlide = newIndex + 1 < queue.Count && queue[newIndex + 1].Slides.Count > 0
+            ? queue[newIndex + 1].Slides[0]
+            : null;
+        SetNextScheduleItemPreview(previewSlide);
+
+        return true;
     }
 
     public void SetServiceScheduleActive(bool active)
     {
         if (_isServiceScheduleActive == active) return;
         _isServiceScheduleActive = active;
+        if (active)
+        {
+            _standaloneQueue = null;
+            _standaloneQueueIndex = 0;
+        }
         RaiseSafe(ServiceScheduleActiveChanged);
     }
 
@@ -348,11 +363,19 @@ public sealed class ProjectionService : IProjectionService
         RaiseSafe(NextScheduleItemPreviewChanged);
     }
 
-    public void SetStandaloneNextItem(IReadOnlyList<Slide>? slides, string? contextLabel, string? contextKey = null)
+    public void SetStandaloneQueue(IReadOnlyList<StandaloneQueueItem> items, int currentIndex)
     {
-        _standaloneNextSlides     = slides is { Count: > 0 } ? slides : null;
-        _standaloneNextLabel      = _standaloneNextSlides is null ? null : contextLabel;
-        _standaloneNextContextKey = _standaloneNextSlides is null ? null : contextKey;
+        ArgumentNullException.ThrowIfNull(items);
+
+        if (items.Count == 0)
+        {
+            _standaloneQueue = null;
+            _standaloneQueueIndex = 0;
+            return;
+        }
+
+        _standaloneQueue = items;
+        _standaloneQueueIndex = Math.Clamp(currentIndex, 0, items.Count - 1);
     }
 
     public void RequestMediaCommand(MediaCommand command)

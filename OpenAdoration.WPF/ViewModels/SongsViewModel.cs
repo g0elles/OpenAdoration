@@ -248,42 +248,38 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
             return;
         }
         _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));
-        UpdateNextSongPreview(song);
+        UpdateStandaloneQueue(song);
         _logger.LogInformation("Projecting song: {Title}", song.Title);
         _stageNavigation.NavigateToStage();
     }
 
-    // Standalone (non-service) projection has no natural "next item" — mirror it via the same
-    // cross-item preview hint ServiceScheduleViewModel feeds Stage View, so its "up next" pane
-    // works for standalone songs too. Never touch the hint while a real service owns it.
-    private void UpdateNextSongPreview(Song current)
+    // Standalone (non-service) projection has no built-in "next/previous item" — feed the projector
+    // the full displayed list as a browsable queue (eagerly pre-generated: cheap, in-memory, list
+    // sizes are dozens not hundreds) so Next()/Previous() can hop freely across the whole list, not
+    // just one step. Never touch it while a real service owns projection.
+    private void UpdateStandaloneQueue(Song current)
     {
         if (_projectionService.IsServiceScheduleActive) return;
 
-        var next = FindNextSong(Songs, current);
-        if (next is null)
-        {
-            _projectionService.SetNextScheduleItemPreview(null);
-            _projectionService.SetStandaloneNextItem(null, null);
-            return;
-        }
+        var items = BuildStandaloneQueueItems();
+        var currentIndex = Math.Max(items.FindIndex(i => i.ContextKey == ProjectionContextKeys.Song(current.Id)), 0);
+        _projectionService.SetStandaloneQueue(items, currentIndex);
 
-        var nextSlides = _songService.GenerateSlides(next, ThemeCascade.ForSong(null, next.ThemeId, _appSettings.Current));
-        _projectionService.SetNextScheduleItemPreview(nextSlides.Count > 0 ? nextSlides[0] : null);
-        _projectionService.SetStandaloneNextItem(nextSlides, next.Title, ProjectionContextKeys.Song(next.Id));
+        // Keep the existing Stage View "up next" preview in sync at project-time too (SetStandaloneQueue
+        // itself only updates it when Next/Previous crosses an item boundary).
+        var nextIndex = currentIndex + 1;
+        _projectionService.SetNextScheduleItemPreview(
+            nextIndex < items.Count ? items[nextIndex].Slides[0] : null);
     }
 
-    /// <summary>Pure list-index lookup: the song after <paramref name="current"/> in <paramref name="songs"/>,
-    /// matched by Id. Null when <paramref name="current"/> is last or not present. Unit-testable without DI
-    /// (mirrors StageViewModel.ComputeMirrorScale/BuildSlideListItems).</summary>
-    public static Song? FindNextSong(IReadOnlyList<Song> songs, Song current)
-    {
-        for (var i = 0; i < songs.Count; i++)
-        {
-            if (songs[i].Id == current.Id) return i + 1 < songs.Count ? songs[i + 1] : null;
-        }
-        return null;
-    }
+    // Skips songs whose lyrics generate zero slides so one bad song can't break the whole queue.
+    private List<StandaloneQueueItem> BuildStandaloneQueueItems() =>
+        Songs.Select(s => new StandaloneQueueItem(
+                _songService.GenerateSlides(s, ThemeCascade.ForSong(null, s.ThemeId, _appSettings.Current)),
+                s.Title,
+                ProjectionContextKeys.Song(s.Id)))
+             .Where(i => i.Slides.Count > 0)
+             .ToList();
 
     // -- Event handlers from EditViewModel -------------------------------------
 

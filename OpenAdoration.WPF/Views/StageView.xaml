@@ -47,7 +47,8 @@
                 </StackPanel>
 
                 <!-- Context label -->
-                <TextBlock Grid.Column="1"
+                <TextBlock x:Name="ContextLabelText"
+                           Grid.Column="1"
                            Text="{Binding ContextLabel}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="14" FontWeight="SemiBold"
