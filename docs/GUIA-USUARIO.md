@@ -122,15 +122,26 @@ Escribe en **"Buscar canciones…"**: primero busca por **título/autor**; si no
 busca dentro de la **letra**.
 
 ### Importar canciones
-Haz clic en **"Importar"** y elige un archivo. Formatos aceptados:
+Haz clic en **"Importar"** y elige uno o varios archivos a la vez. Formatos aceptados:
 - **OpenLyrics** (`.xml`)
 - **OpenSong** (`.xml` o sin extensión)
 - **ChordPro** (`.cho`, `.crd`, `.chopro`, `.chordpro`) — se quitan los acordes y se queda la letra
-- **VideoPsalm** (`.vpagd`) — una o varias canciones de una agenda
+- **VideoPsalm agenda** (`.vpagd`) — una o varias canciones de una agenda
+- **VideoPsalm cancionero** (`.vpc`) — todas las canciones de una copia de seguridad completa de
+  VideoPsalm (cientos de canciones en un solo archivo `SongBooks/Songs.vpc`); si el archivo
+  `.vpc` que eliges es en realidad una Biblia protegida de VideoPsalm, OpenAdoration te lo dice y
+  te sugiere importarla desde Biblia en su lugar.
+- **Word** (`.docx`) — el nombre del archivo (sin la extensión) se usa como título, y cada verso
+  se detecta por los párrafos separados con una línea en blanco (igual que en texto plano). Puedes
+  seleccionar cientos de archivos `.docx` a la vez.
 - **Texto plano** (`.txt`)
 
 > En texto plano, puedes marcar secciones con líneas como `Verse 1`, `Chorus`, `V1`, `Bridge`;
 > si no las pones, cada bloque separado por una línea en blanco se vuelve un verso.
+
+> Al importar varios archivos o una agenda/cancionero de VideoPsalm con muchas canciones, verás un
+> resumen: cuántas se importaron, cuántas ya existían (y se omitieron, para no duplicar) y cuántas
+> fallaron.
 
 ### Proyectar
 Haz clic en **▶** en la canción. Avanza con `Espacio`/`→` y retrocede con `←`.
@@ -282,6 +293,13 @@ Arma todo el servicio por adelantado y luego solo avanza el día del culto.
   multimedia, orden y temas; las Escrituras entran como **referencias**).
 - **"Importar carpeta…"** importa de una vez todas las agendas `.vpagd` de una carpeta,
   evitando duplicados.
+
+> **¿Tienes una copia de seguridad completa de VideoPsalm** (una carpeta con `Bibles/`, `Images/`,
+> `Videos/`, `SongBooks/`, no una agenda `.vpagd`)? El cancionero (`SongBooks/Songs.vpc`) se
+> importa desde `🎵 Canciones` → "Importar" (ver sección 5). Las imágenes y videos de esa misma
+> copia de seguridad ya se pueden importar hoy: en `🖼 Multimedia` usa **"+ Importar carpeta"**
+> apuntando a la carpeta `Images/` o `Videos/` de la copia de seguridad — no hace falta nada
+> especial para VideoPsalm, es la misma importación de carpeta de siempre.
 
 ### En vivo
 1. Haz clic en **"▶ Iniciar servicio"** (modo en vivo).

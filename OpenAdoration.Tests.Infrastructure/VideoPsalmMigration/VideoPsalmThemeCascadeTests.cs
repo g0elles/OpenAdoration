@@ -168,6 +168,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<Song>> SearchByTitleAsync(string term, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         Task ISongService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null) => throw new NotImplementedException();

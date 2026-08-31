@@ -17,28 +17,32 @@ namespace OpenAdoration.WPF.Helpers.SongImport;
 public static class SongFormatDispatcher
 {
     public const string FileDialogFilter =
-        "Song files|*.xml;*.txt;*.openlyrics;*.opensong;*.vpagd;*.cho;*.crd;*.chopro;*.chordpro" +
+        "Song files|*.xml;*.txt;*.openlyrics;*.opensong;*.vpagd;*.vpc;*.cho;*.crd;*.chopro;*.chordpro;*.docx" +
         "|OpenLyrics / OpenSong XML (*.xml)|*.xml;*.openlyrics;*.opensong" +
         "|ChordPro (*.cho;*.crd;*.chopro)|*.cho;*.crd;*.chopro;*.chordpro" +
         "|VideoPsalm agenda (*.vpagd)|*.vpagd" +
+        "|VideoPsalm songbook (*.vpc)|*.vpc" +
+        "|Word (*.docx)|*.docx" +
         "|Plain text (*.txt)|*.txt" +
         "|All files|*.*";
 
     private const string VideoPsalmExtension = ".vpagd";
+    private const string VideoPsalmSongbookExtension = ".vpc";
     private const long MaxFileSizeBytes = 20L * 1024 * 1024; // 20 MB
 
     /// <summary>
     /// Imports every song in <paramref name="filePath"/>. Single-song formats return a
-    /// one-element list; a VideoPsalm agenda returns one song per <c>Song_{n}.json</c> entry.
+    /// one-element list; a VideoPsalm agenda returns one song per <c>Song_{n}.json</c> entry;
+    /// a VideoPsalm songbook (<c>.vpc</c>) returns every song in its <c>Songs.json</c>.
     /// </summary>
     public static IReadOnlyList<Song> ImportMany(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException("File not found.", filePath);
 
-        return IsVideoPsalm(filePath)
-            ? VideoPsalmParser.Parse(filePath)
-            : new[] { Import(filePath) };
+        if (IsVideoPsalm(filePath)) return VideoPsalmParser.Parse(filePath);
+        if (IsVideoPsalmSongbook(filePath)) return VideoPsalmParser.ParseSongbook(filePath);
+        return new[] { Import(filePath) };
     }
 
     public static Song Import(string filePath)
@@ -53,6 +57,7 @@ public static class SongFormatDispatcher
         return ext switch
         {
             ".txt"                                       => PlainTextParser.Parse(filePath),
+            ".docx"                                       => DocxParser.Parse(filePath),
             ".cho" or ".crd" or ".chopro" or ".chordpro" => ChordProParser.Parse(filePath),
             ".xml" or ".openlyrics" or ".opensong"       => ImportXml(filePath),
             _                                            => IsXml(filePath)
@@ -63,6 +68,9 @@ public static class SongFormatDispatcher
 
     private static bool IsVideoPsalm(string filePath) =>
         Path.GetExtension(filePath).Equals(VideoPsalmExtension, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsVideoPsalmSongbook(string filePath) =>
+        Path.GetExtension(filePath).Equals(VideoPsalmSongbookExtension, StringComparison.OrdinalIgnoreCase);
 
     private static Song ImportXml(string filePath) =>
         IsOpenLyrics(filePath) ? OpenLyricsParser.Parse(filePath) : OpenSongParser.Parse(filePath);

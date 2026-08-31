@@ -3,8 +3,15 @@ using System.IO.Compression;
 using System.Text.RegularExpressions;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
+using OpenAdoration.WPF.Helpers.VideoPsalmMigration;
 
 namespace OpenAdoration.WPF.Helpers.SongImport.VideoPsalm;
+
+/// <summary>
+/// Thrown when a <c>.vpc</c> file picked for a songbook import is actually a
+/// DRM-protected VideoPsalm Bible export — the operator should use Bible import instead.
+/// </summary>
+public sealed class VideoPsalmSongbookIsBibleException : Exception;
 
 /// <summary>
 /// Extracts songs from a VideoPsalm agenda (<c>.vpagd</c>) — a ZIP archive whose
@@ -29,6 +36,39 @@ public static partial class VideoPsalmParser
 
         if (songs.Count == 0)
             throw new InvalidDataException("The VideoPsalm file contains no songs to import.");
+
+        return songs;
+    }
+
+    /// <summary>
+    /// Extracts songs from a VideoPsalm songbook backup (<c>SongBooks/Songs.vpc</c>) — a ZIP
+    /// containing one <c>Songs.json</c> whose <c>Songs</c> array holds many songs in the same
+    /// per-song shape as a <c>.vpagd</c>'s <c>Song_n.json</c>, reusing <see cref="MapSong"/>.
+    /// <c>.vpc</c> is also VideoPsalm's (DRM-protected) Bible export format, so this checks
+    /// for that first and redirects the operator to Bible import instead of guessing.
+    /// </summary>
+    public static IReadOnlyList<Song> ParseSongbook(string filePath)
+    {
+        if (VideoPsalmBibleDetector.IsDrmProtected(filePath))
+            throw new VideoPsalmSongbookIsBibleException();
+
+        using var archive = ZipFile.OpenRead(filePath);
+        var entry = archive.Entries.FirstOrDefault(e => e.Name.Equals("Songs.json", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidDataException("The VideoPsalm file has no Songs.json songbook entry.");
+
+        using var reader = new StreamReader(entry.Open());
+        if (VpJsonReader.Parse(reader.ReadToEnd()) is not Dictionary<string, object?> root)
+            throw new InvalidDataException("The VideoPsalm songbook file is not valid.");
+
+        var songs = GetArray(root, "Songs")
+            .OfType<Dictionary<string, object?>>()
+            .Select(MapSong)
+            .Where(s => s is not null)
+            .Select(s => s!)
+            .ToList();
+
+        if (songs.Count == 0)
+            throw new InvalidDataException("The VideoPsalm songbook contains no songs to import.");
 
         return songs;
     }

@@ -221,7 +221,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Songs</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Search songs…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Import</value></data>
-  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd, plain text)</value></data>
+  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd/.vpc, Word .docx, plain text)</value></data>
   <data name="Songs_Empty" xml:space="preserve"><value>No songs yet. Click + New to add one.</value></data>
   <data name="Songs_NoResults" xml:space="preserve"><value>No songs found for "{0}".</value></data>
   <data name="Songs_SelectPrompt" xml:space="preserve"><value>Select a song from the list</value></data>
@@ -420,10 +420,12 @@ This action cannot be undone.</value></data>
   <data name="Songs_DeleteTitle" xml:space="preserve"><value>Delete Song</value></data>
   <data name="Songs_ErrDelete" xml:space="preserve"><value>Failed to delete song.</value></data>
   <data name="Songs_ImportTitle" xml:space="preserve"><value>Import Song</value></data>
-  <data name="Songs_ImportFailed" xml:space="preserve"><value>Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), plain text.</value></data>
+  <data name="Songs_ImportFailed" xml:space="preserve"><value>Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd/.vpc), Word (.docx), plain text.</value></data>
   <data name="Songs_ImportResultTitle" xml:space="preserve"><value>Import Songs</value></data>
   <data name="Songs_ImportedOne" xml:space="preserve"><value>Imported 1 song.</value></data>
   <data name="Songs_ImportedMany" xml:space="preserve"><value>Imported {0} songs.</value></data>
+  <data name="Songs_ImportedDetailed" xml:space="preserve"><value>Imported {0} songs ({1} already existed and were skipped, {2} failed).</value></data>
+  <data name="Songs_ErrVpcIsBible" xml:space="preserve"><value>This file is a protected VideoPsalm Bible, not a songbook. Import it from Bible instead.</value></data>
   <data name="Media_ImportTitle" xml:space="preserve"><value>Import Media</value></data>
   <data name="Media_ImportFolderTitle" xml:space="preserve"><value>Import Media Folder</value></data>
   <data name="Media_FilterImages" xml:space="preserve"><value>Images</value></data>

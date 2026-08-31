@@ -79,6 +79,20 @@ public sealed class SongService : ISongService
         }
     }
 
+    public async Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+
+        if (!string.IsNullOrWhiteSpace(song.SourceGuid))
+        {
+            var existing = await GetBySourceGuidAsync(song.SourceGuid, ct);
+            if (existing is not null) return (existing, true);
+        }
+
+        var created = await CreateAsync(song, ct);
+        return (created, false);
+    }
+
     public async Task UpdateAsync(Song song, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(song);

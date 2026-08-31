@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Word (`.docx`) song import.** Pick one or many `.docx` files at once — each file's name
+  becomes the song title and its blank-paragraph-separated paragraphs become verses (manual line
+  breaks inside a paragraph stay as lyric lines), the same rule plain-text import already uses.
+- **VideoPsalm songbook import (`.vpc`).** Import every song from a full VideoPsalm backup's
+  `SongBooks/Songs.vpc` in one go, alongside the existing single-service `.vpagd` agenda import.
+  Re-importing skips songs already in the library instead of duplicating them. Picking a `.vpc`
+  that's actually a protected VideoPsalm Bible export is detected and redirected to Bible import.
+
+### Fixed
+- **Stage View now mirrors a scrolling lower-third.** The operator's Stage View showed the
+  lower-third as static text even when "Desplazar el texto continuamente (marquesina)" was
+  enabled in Settings; it now runs the same right-to-left ticker animation as the projector.
+
 ## [2.1.0] — 2026-08-30
 
 ### Added

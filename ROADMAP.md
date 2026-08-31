@@ -484,6 +484,8 @@ Accessible from a `?` button in the toolbar.
 ### 9.1 — More song importers
 Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain text):
 - **ChordPro / SongPro** (`.cho`, `.crd`, `.chopro`, `.chordpro`) — text-based, directive `{title}`/`{c:}`; strip chords to lyrics. *(Easy — done.)* ✅
+- **Word (`.docx`)** — filename → title, blank-paragraph-separated paragraphs → verses (same heuristic as plain text, at paragraph granularity). ✅ **DONE (2026-08-31)** — driven by a real 359-file church library (`DocxParser`, `DocumentFormat.OpenXml`); `+ Importar` now multi-selects, so a whole folder imports in one operation. Legacy `.doc` (binary OLE) and `.pptx` song decks found in the same library are **not** covered — see Backlog.
+- **VideoPsalm songbook (`.vpc`)** — a full VideoPsalm backup's `SongBooks/Songs.vpc` (hundreds of songs in one file, same relaxed-JSON dialect as `.vpagd`). ✅ **DONE (2026-08-31)** — `VideoPsalmParser.ParseSongbook` reuses the existing `MapSong`; `.vpc` also being VideoPsalm's DRM Bible export format, a Bible `.vpc` picked here is detected and redirected to Bible import instead of guessing. Dedup by `SourceGuid` (`ISongService.CreateOrReuseAsync`) applies to every VideoPsalm-sourced song import, not just full-service imports. The backup's `Images/`/`Videos/` folders needed **no new code** — Multimedia's existing "+ Importar carpeta" already bulk-imports any media type from a folder.
 - **EasyWorship** — EW7 stores songs in a bundled SQLite DB; read songs + slides. *(Medium.)*
 - **ProPresenter** — best-effort text extraction from `.pro` bundles (RTF inside). *(Hard — best-effort, clearly labelled.)*
 - Each new format → a fixture + a `SongParserTests` case; the dispatcher's file filter grows.
@@ -742,6 +744,7 @@ Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a c
 |---|---|
 | M9.1 EasyWorship import | Needs a **real EW7 export** to validate the SQLite schema — can't build blind. |
 | M9.1 ProPresenter import | Needs a real `.pro`/bundle sample. |
+| M9.1 `.pptx`/legacy `.doc` song files | Found in the real 359-file church library used to build Word import (2026-08-31): 6 `.pptx` (slide-deck lyrics, different structure entirely) + 2 legacy `.doc` (binary OLE, no managed reader available). Same "needs a real sample to validate, and a different parser than the one just built" shape as EasyWorship/ProPresenter above. |
 | M9.2 PDF / pptx deck import | Native dependency decision (Docnet/PDFium for PDF; pptx unzip) — heavyweight, defer. |
 | M10.4 Clean output / NDI *(stretch)* | Clean borderless output is doable later; NDI needs a native SDK. |
 | ChordPro in import tooltip/format string | 2-line cosmetic copy fix (both langs) — fold into the next i18n touch. |
