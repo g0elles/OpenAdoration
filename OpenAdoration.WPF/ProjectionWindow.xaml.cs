@@ -740,7 +740,7 @@ public partial class ProjectionWindow : Window
     private void ShowText(string content, SlideContext context)
     {
         HideAllLayers();
-        SlideTextBlock.Text = content;
+        BoldMarkupText.Apply(SlideTextBlock, content);
 
         // Resolve and show header zone when the theme defines a template.
         // Collapse when the resolved text contains no letters or digits — this handles

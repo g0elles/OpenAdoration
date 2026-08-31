@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Bold text in lyrics (F8).** Wrap any part of a lyric line in `**...**` (select text in the
+  song editor and press Ctrl+B to toggle it) and that span renders bold on the projector and in
+  Stage View's live preview. No new storage — `SongSections.Lyrics` stays plain text; the markers
+  live inline and are parsed at render time.
 - **Stage View quick style fix for the live song.** Real operator feedback: a song's font size
   or background/text colour sometimes needs a last-minute fix without hunting for the right
   theme in Settings → Temas. Stage View now shows a font-size stepper and colour swatches

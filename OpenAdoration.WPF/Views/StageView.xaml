@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             xmlns:helpers="clr-namespace:OpenAdoration.WPF.Helpers"
              xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -213,7 +214,7 @@
 
                             <!-- Body zone -->
                             <Viewbox Grid.Row="1" Margin="120,30,120,30">
-                                <TextBlock Text="{Binding CurrentPreview.Content}"
+                                <TextBlock helpers:BoldMarkupText.Text="{Binding CurrentPreview.Content}"
                                            Width="1680"
                                            FontFamily="{Binding CurrentPreview.FontFamily}"
                                            FontSize="{Binding CurrentPreview.FontSize}"
@@ -364,7 +365,7 @@
                                            TextAlignment="Right" TextWrapping="NoWrap" />
                                 <Viewbox Grid.Row="1" Margin="120,30,120,30">
                                     <TextBlock x:Name="NextPreviewContentText"
-                                               Text="{Binding NextPreview.Content}"
+                                               helpers:BoldMarkupText.Text="{Binding NextPreview.Content}"
                                                Width="1680"
                                                FontFamily="{Binding NextPreview.FontFamily}"
                                                FontSize="{Binding NextPreview.FontSize}"

@@ -267,6 +267,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>ORDEN DE EJECUCIÓN</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Opcional — p. ej. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Déjalo en blanco para reproducir las secciones de arriba abajo. Usa las fichas de sección de abajo (p. ej. V1 = Verso 1, C = Coro, B = Puente); repite una ficha para repetir esa sección.</value></data>
+  <data name="SongEdit_LyricsBoldHint" xml:space="preserve"><value>Selecciona texto y pulsa Ctrl+B para ponerlo en negrita.</value></data>
   <data name="SongEdit_Theme" xml:space="preserve"><value>TEMA</value></data>
   <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Usar tema predeterminado</value></data>
   <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Tema para esta canción al proyectarse. Déjalo en predeterminado para usar el tema del servicio o de la aplicación.</value></data>

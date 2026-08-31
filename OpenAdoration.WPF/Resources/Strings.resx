@@ -267,6 +267,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>PLAY ORDER</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Optional — e.g. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Leave blank to play sections top-to-bottom. Use the section tokens below (e.g. V1 = Verse 1, C = Chorus, B = Bridge); repeat a token to repeat that section.</value></data>
+  <data name="SongEdit_LyricsBoldHint" xml:space="preserve"><value>Select text and press Ctrl+B to bold it.</value></data>
   <data name="SongEdit_Theme" xml:space="preserve"><value>THEME</value></data>
   <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Use default theme</value></data>
   <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Theme for this song when projected. Leave as default to use the service or app theme.</value></data>
