@@ -65,7 +65,7 @@ A church operator opens this app 15 minutes before a service and uses it under p
 | Service Schedule | ✅ Done | Builder + live mode + per-item auto-advance + per-item verse-order override |
 | Media | ✅ Done | Import, project, delete (images **and** video); **Backgrounds** subsection — exclusive reusable theme-background library (store-backed, content-deduped, delete-guarded) |
 | Keyboard shortcuts | ✅ Done | Space/arrows/B/Esc/1–9/Ctrl+1–5 |
-| Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal) |
+| Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal); live quick style fix (font size + text/background colour swatches, song-only, non-persisted) |
 | Projection | ✅ Done | 3-zone tokens, announcement banner, configurable fade transition |
 | Settings | ✅ Done | settings.json; church tokens; default auto-advance / verses-per-slide |
 | Packaging | ✅ Done | Self-contained single-file exe + WiX v5 MSI (M7.5) |

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stage View quick style fix for the live song.** Real operator feedback: a song's font size
+  or background/text colour sometimes needs a last-minute fix without hunting for the right
+  theme in Settings → Temas. Stage View now shows a font-size stepper and colour swatches
+  (visible only while a song is live) that patch the on-screen slides immediately — an ad-hoc,
+  per-session override, not a saved Theme edit, so nothing is written back to the song or theme.
 - **Word (`.docx`) song import.** Pick one or many `.docx` files at once — each file's name
   becomes the song title and its blank-paragraph-separated paragraphs become verses (manual line
   breaks inside a paragraph stay as lyric lines), the same rule plain-text import already uses.

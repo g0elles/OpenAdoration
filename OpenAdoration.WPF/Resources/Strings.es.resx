@@ -219,6 +219,11 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Stage_UpNext" xml:space="preserve"><value>A CONTINUACIÓN</value></data>
   <data name="Stage_EndOfItem" xml:space="preserve"><value>Fin del elemento</value></data>
   <data name="Stage_AllSlides" xml:space="preserve"><value>Todas las diapositivas</value></data>
+  <data name="Stage_QuickStyle" xml:space="preserve"><value>Ajuste rápido:</value></data>
+  <data name="Stage_FontSizeDecrease" xml:space="preserve"><value>Disminuir tamaño de letra</value></data>
+  <data name="Stage_FontSizeIncrease" xml:space="preserve"><value>Aumentar tamaño de letra</value></data>
+  <data name="Stage_TextColor" xml:space="preserve"><value>Color de texto</value></data>
+  <data name="Stage_BackgroundColor" xml:space="preserve"><value>Color de fondo</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Canciones</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Buscar canciones…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Importar</value></data>

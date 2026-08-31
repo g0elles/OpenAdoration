@@ -9,6 +9,7 @@ using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Helpers;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -101,6 +102,22 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     public bool HasLowerThird => !string.IsNullOrEmpty(LowerThirdText);
 
+    // ── F7: live quick style fix (font size / colours) — song-only, non-persisted ──
+    [ObservableProperty] private bool _isSongLive;
+
+    // ponytail: fixed presets, not a full colour picker — a picker dialog is itself "extra steps",
+    // which is exactly what this feature exists to avoid. Revisit if operators ask for more choice.
+    public IReadOnlyList<string> TextColorSwatches { get; } = ["#FFFFFF", "#000000", "#FFEB3B", "#EF4444", "#3B82F6"];
+    public IReadOnlyList<string> BackgroundColorSwatches { get; } = ["#000000", "#FFFFFF", "#0F172A", "#14532D", "#7F1D1D"];
+
+    private const double FontSizeStep = 8;
+    private const double FontSizeMin  = 16;
+    private const double FontSizeMax  = 220;
+
+    // Per-session override applied to the live slide deck; reset whenever the live item changes.
+    private SlideStyleOverride? _activeOverride;
+    private string?             _lastContextKey;
+
     public StageViewModel(
         IProjectionService projectionService,
         IServiceScopeFactory scopeFactory,
@@ -127,6 +144,53 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     [RelayCommand]
     private void JumpToSlide(int index) => _projectionService.GoTo(index);
+
+    // ── F7: live quick style fix ────────────────────────────────────────────
+
+    [RelayCommand]
+    private void IncreaseFontSize() => AdjustFontSize(FontSizeStep);
+
+    [RelayCommand]
+    private void DecreaseFontSize() => AdjustFontSize(-FontSizeStep);
+
+    [RelayCommand]
+    private void SetTextColor(string hex) =>
+        ApplyOverride(_activeOverride is { } o ? o with { FontColor = hex } : new SlideStyleOverride(FontColor: hex));
+
+    [RelayCommand]
+    private void SetBackgroundColor(string hex) =>
+        ApplyOverride(_activeOverride is { } o ? o with { BackgroundColor = hex } : new SlideStyleOverride(BackgroundColor: hex));
+
+    private void AdjustFontSize(double delta)
+    {
+        var baseSize = _activeOverride?.FontSize ?? CurrentPreview.FontSize;
+        var next = Math.Clamp(baseSize + delta, FontSizeMin, FontSizeMax);
+        ApplyOverride(_activeOverride is { } o ? o with { FontSize = next } : new SlideStyleOverride(FontSize: next));
+    }
+
+    /// <summary>
+    /// Patches every slide of the live item with <paramref name="overrideValue"/> and pushes it via
+    /// <see cref="IProjectionService.TryUpdateSlides"/> — the same live-update mechanism live song
+    /// edits use (G22), just skipping SongService/Theme entirely: nothing here is persisted.
+    /// </summary>
+    private void ApplyOverride(SlideStyleOverride overrideValue)
+    {
+        var contextKey = _projectionService.ContextKey;
+        if (contextKey is null) return;
+
+        _activeOverride = overrideValue;
+        var patched = _projectionService.CurrentSlides.Select(s => s.WithStyleOverride(overrideValue)).ToList();
+        if (patched.Count == 0) return;
+
+        _projectionService.TryUpdateSlides(contextKey, patched, _projectionService.ContextLabel);
+    }
+
+    /// <summary>
+    /// True when <paramref name="contextKey"/> identifies a live song (standalone or service-driven)
+    /// — gates the F7 quick style controls. Split out as pure logic, mirroring
+    /// <see cref="ComputeMirrorScale"/>, so it's unit-testable without a live IProjectionService.
+    /// </summary>
+    public static bool IsSongContextKey(string? contextKey) => ProjectionContextKeys.TryGetSongId(contextKey) is not null;
 
     // ── Load ─────────────────────────────────────────────────────────────────
 
@@ -269,6 +333,14 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         var seq = Interlocked.Increment(ref _refreshSequence);
 
+        var contextKey = _projectionService.ContextKey;
+        if (contextKey != _lastContextKey)
+        {
+            // Live item changed (or projection stopped) — the F7 override is per-item, not sticky.
+            _activeOverride  = null;
+            _lastContextKey  = contextKey;
+        }
+
         var isProjecting = _projectionService.IsProjecting;
         var slides       = _projectionService.CurrentSlides;
         var idx          = _projectionService.CurrentSlideIndex;
@@ -308,6 +380,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             if (seq != _refreshSequence) return; // re-check on the UI thread before writing
             IsProjecting             = isProjecting;
             IsServiceScheduleActive  = isScheduleActive;
+            IsSongLive    = isProjecting && IsSongContextKey(contextKey);
             ContextLabel  = _projectionService.ContextLabel;
             SlidePosition = isProjecting && slides.Count > 0
                 ? $"{idx + 1} / {slides.Count}"
@@ -348,11 +421,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         if (slide is null) return SlidePreview.Empty;
 
+        // F7 quick style override wins over the resolved theme when set (per-field, ad-hoc, not persisted).
         var fontFamily  = theme?.FontFamily ?? "Arial";
-        var fontSize    = (double)(theme?.FontSize ?? 72);
-        var fontColor   = ParseColor(theme?.FontColor,       System.Windows.Media.Colors.White);
+        var fontSize    = slide.StyleOverride?.FontSize ?? (double)(theme?.FontSize ?? 72);
+        var fontColor   = ParseColor(slide.StyleOverride?.FontColor       ?? theme?.FontColor,       System.Windows.Media.Colors.White);
         var textAlign   = ParseAlignment(theme?.TextAlignment);
-        var bgColor     = ParseColor(theme?.BackgroundColor, System.Windows.Media.Colors.Black);
+        var bgColor     = ParseColor(slide.StyleOverride?.BackgroundColor ?? theme?.BackgroundColor, System.Windows.Media.Colors.Black);
         var bgImagePath = ValidPath(theme?.BackgroundImagePath);
         var bgVideoPath = ValidPath(theme?.BackgroundVideoPath);
 

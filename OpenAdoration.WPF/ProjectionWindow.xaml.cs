@@ -28,6 +28,10 @@ public partial class ProjectionWindow : Window
     // Active theme for the current slide (applied by ApplyTheme / RenderSlide).
     private Theme? _activeTheme;
 
+    // F7: ad-hoc, non-persisted per-slide override (font size / colours) set by Stage View's
+    // quick style fix. Mirrors the current slide's StyleOverride — see ApplyTheme.
+    private SlideStyleOverride? _activeStyleOverride;
+
     // Monotonic counter incremented on every SlideChanged event.
     // After each async suspension point the handler checks whether a newer event
     // has already taken over, and abandons the render if so (P1-2: stale slide guard).
@@ -165,7 +169,8 @@ public partial class ProjectionWindow : Window
             await Dispatcher.InvokeAsync(() =>
             {
                 if (seq != _renderSequence) return;
-                _activeTheme = resolvedTheme; // shared write only after freshness is confirmed
+                _activeTheme         = resolvedTheme; // shared write only after freshness is confirmed
+                _activeStyleOverride = slide?.StyleOverride;
                 RenderSlide(slide);
             });
         }
@@ -350,13 +355,15 @@ public partial class ProjectionWindow : Window
     {
         if (_activeTheme is null) return;
 
+        // F7 quick style override wins over the resolved theme when set (per-field, ad-hoc, not persisted).
         var fontFamily = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
-        var fontColor  = HexToBrush(_activeTheme.FontColor);
+        var fontSize   = _activeStyleOverride?.FontSize ?? _activeTheme.FontSize;
+        var fontColor  = HexToBrush(_activeStyleOverride?.FontColor ?? _activeTheme.FontColor);
 
         // Body text style
         SlideTextBlock.FontFamily    = fontFamily;
-        SlideTextBlock.FontSize      = _activeTheme.FontSize;
-        SlideTextBlock.LineHeight    = _activeTheme.FontSize * 1.33;
+        SlideTextBlock.FontSize      = fontSize;
+        SlideTextBlock.LineHeight    = fontSize * 1.33;
         SlideTextBlock.Foreground    = fontColor;
         SlideTextBlock.TextAlignment = ParseTextAlignment(_activeTheme.TextAlignment);
 
@@ -367,7 +374,7 @@ public partial class ProjectionWindow : Window
         FooterText.Foreground = fontColor;
 
         // Background color
-        ThemeBackground.Fill = HexToBrush(_activeTheme.BackgroundColor);
+        ThemeBackground.Fill = HexToBrush(_activeStyleOverride?.BackgroundColor ?? _activeTheme.BackgroundColor);
 
         // Background video (highest priority -- overrides image and color)
         if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundVideoPath)
@@ -841,7 +848,8 @@ public partial class ProjectionWindow : Window
         StopContentVideo();
         // Clear per-session caches so the next session picks up any theme edits
         // the operator made between services.
-        _activeTheme  = null;
+        _activeTheme         = null;
+        _activeStyleOverride = null;
         _defaultTheme = null;
         _themeCache.Clear();
         ClearDisplay();

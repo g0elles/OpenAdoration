@@ -16,6 +16,14 @@ public interface IProjectionService
     /// <summary>Human-readable label for the item being projected (e.g. the song title). Empty when not projecting.</summary>
     string ContextLabel { get; }
 
+    /// <summary>
+    /// The opaque contextKey identifying the currently projected content (e.g. <c>"song:42"</c>), as
+    /// passed to <see cref="LoadSlides"/>. Null when not projecting or the content isn't live-updatable.
+    /// Lets a caller like Stage View's quick style fix (F7) re-target <see cref="TryUpdateSlides"/>
+    /// without needing to already know what is on screen.
+    /// </summary>
+    string? ContextKey { get; }
+
     /// <summary>Fires whenever the displayed slide changes (including when projection stops).</summary>
     event EventHandler<Slide?> SlideChanged;
 

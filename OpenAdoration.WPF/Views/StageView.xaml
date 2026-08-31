@@ -15,6 +15,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />  <!-- Status bar -->
+            <RowDefinition Height="Auto" />  <!-- F7: quick style bar (song-only) -->
             <RowDefinition Height="*" />     <!-- Slide panels -->
         </Grid.RowDefinitions>
 
@@ -77,8 +78,83 @@
             </Grid>
         </Border>
 
+        <!-- ── F7: quick style bar — ad-hoc, non-persisted font size / colour fix for the live song ── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8"
+                Visibility="{Binding IsSongLive, Converter={StaticResource BoolToVis}}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{loc:Loc Stage_QuickStyle}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="12" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,10,0" />
+
+                <!-- Font size stepper -->
+                <Button x:Name="DecreaseFontSizeButton" Content="A−" Width="44" Height="44" Margin="0,0,2,0"
+                        Style="{StaticResource SecondaryButton}"
+                        ToolTip="{loc:Loc Stage_FontSizeDecrease}"
+                        Command="{Binding DecreaseFontSizeCommand}" />
+                <TextBlock x:Name="FontSizeValueText"
+                           Text="{Binding CurrentPreview.FontSize, StringFormat={}{0:0}pt}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           FontSize="12" MinWidth="34" TextAlignment="Center"
+                           VerticalAlignment="Center" />
+                <Button x:Name="IncreaseFontSizeButton" Content="A+" Width="44" Height="44" Margin="2,0,14,0"
+                        Style="{StaticResource SecondaryButton}"
+                        ToolTip="{loc:Loc Stage_FontSizeIncrease}"
+                        Command="{Binding IncreaseFontSizeCommand}" />
+
+                <!-- Text colour swatches -->
+                <ItemsControl x:Name="TextColorSwatchList" ItemsSource="{Binding TextColorSwatches}"
+                              ToolTip="{loc:Loc Stage_TextColor}"
+                              Margin="0,0,14,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="44" Height="44" Padding="0" Margin="2,0"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    AutomationProperties.AutomationId="{Binding StringFormat='TextColor_{0}'}"
+                                    Command="{Binding DataContext.SetTextColorCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Ellipse Width="20" Height="20"
+                                         Fill="{Binding Converter={StaticResource HexToBrush}}"
+                                         Stroke="{DynamicResource BorderBrush}" StrokeThickness="1" />
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Background colour swatches -->
+                <ItemsControl x:Name="BackgroundColorSwatchList" ItemsSource="{Binding BackgroundColorSwatches}"
+                              ToolTip="{loc:Loc Stage_BackgroundColor}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="44" Height="44" Padding="0" Margin="2,0"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    AutomationProperties.AutomationId="{Binding StringFormat='BgColor_{0}'}"
+                                    Command="{Binding DataContext.SetBackgroundColorCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Rectangle Width="20" Height="20" RadiusX="3" RadiusY="3"
+                                           Fill="{Binding Converter={StaticResource HexToBrush}}"
+                                           Stroke="{DynamicResource BorderBrush}" StrokeThickness="1" />
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
         <!-- ── Two-panel content area ── -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="1" />

@@ -412,7 +412,8 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | Method / Event | Description |
 |---|---|
 | `LoadSlides(slides, contextLabel, contextKey?)` | Start projection with a slide list; `contextKey` tags the source for in-place updates |
-| `TryUpdateSlides(contextKey, slides, contextLabel)` | Replace slides in place (clamps index) if projecting and the key matches — live song/service edits |
+| `TryUpdateSlides(contextKey, slides, contextLabel)` | Replace slides in place (clamps index) if projecting and the key matches — live song/service edits, and Stage View's F7 quick style fix |
+| `ContextKey` | The `contextKey` of the currently projected content, or null — lets a caller (e.g. `StageViewModel`) re-target `TryUpdateSlides` without already knowing what's on screen |
 | `Next()` / `Previous()` / `GoTo(index)` | Advance / go back / jump to a slide |
 | `ShowBlank()` | Show black screen without stopping |
 | `ShowAnnouncement(text)` / `ClearAnnouncement()` | Blue banner overlay over the current slide (auto-dismiss); not a slide type |
@@ -1056,6 +1057,16 @@ v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in
   themed 1920×1080 previews of the current slide + UP NEXT (including the first slide of the next
   schedule item), Prev/Next item, real video preview. Subscribes to the extended
   `IProjectionService` event bus.
+- **F7: Stage View quick style fix** — song-only, non-persisted font size / text-colour /
+  background-colour override for the live slide deck (real operator feedback: a last-minute fix
+  without navigating to Settings → Temas). `Slide.StyleOverride` (`SlideStyleOverride`, in
+  `OpenAdoration.Application.Common`) carries the ad-hoc patch; `StageViewModel` builds a patched
+  copy of `IProjectionService.CurrentSlides` via `Slide.WithStyleOverride` and pushes it through
+  `TryUpdateSlides` — never through `SongService.GenerateSlides` or `IThemeService`, so nothing is
+  written to the `Themes` table. Both render surfaces resolve the override on top of the slide's
+  normal theme: `ProjectionWindow.ApplyTheme` (the real projector) and
+  `StageViewModel.BuildPreview` (Stage View's own preview panel). Reset whenever the live item
+  (`IProjectionService.ContextKey`) changes — it's per-item, not sticky.
 - **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
   overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
 - **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**

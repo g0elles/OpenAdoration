@@ -30,6 +30,7 @@ public sealed class ProjectionService : IProjectionService
     public int CurrentSlideIndex => _currentIndex;
     public bool IsProjecting => _isProjecting;
     public string ContextLabel => _contextLabel;
+    public string? ContextKey => _contextKey;
 
     private bool  _isServiceScheduleActive;
     private Slide? _nextScheduleItemPreviewSlide;
