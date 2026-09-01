@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenAdoration.Application.Common;
+using OpenAdoration.Application.Repositories;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
@@ -197,6 +198,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default) => throw new NotImplementedException();
 
         public Task<IReadOnlyList<BibleBook>> GetBooksAsync(int versionId, CancellationToken ct = default) => throw new NotImplementedException();

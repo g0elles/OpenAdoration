@@ -11,12 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   song editor and press Ctrl+B to toggle it) and that span renders bold on the projector and in
   Stage View's live preview. No new storage — `SongSections.Lyrics` stays plain text; the markers
   live inline and are parsed at render time.
-- **Stage View live style editor for the live song (F7 rebuild).** Superseded the swatch-based
-  quick fix, which never persisted and couldn't touch the background at all. The operator can now
-  pick a scope (the song itself, or just this occurrence in the current service), adjust font
-  size, pick any text colour, and set a background colour/image/video — changes write into a real
-  theme (cloning one first if needed, so a shared/default theme is never mutated for other songs)
-  and show up immediately on the projector, surviving a live-item change or app restart.
+- **Stage View live style editor for the live song or Bible passage (F7 rebuild).** Superseded
+  the swatch-based quick fix, which never persisted and couldn't touch the background at all. The
+  operator can now pick a scope (the song itself, or just this occurrence in the current service),
+  adjust font size, pick any text colour, and set a background colour/image/video — changes write
+  into a real theme (cloning one first if needed, so a shared/default theme is never mutated for
+  other songs) and show up immediately on the projector, surviving a live-item change or app
+  restart. A live Bible passage gets the same editor too — scoped to just that occurrence when
+  it's part of a service, or to the app's default Bible style when browsed and projected directly
+  (scripture has no song-like library entry of its own to point a narrower scope at).
 - **Word (`.docx`) song import.** Pick one or many `.docx` files at once — each file's name
   becomes the song title and its blank-paragraph-separated paragraphs become verses (manual line
   breaks inside a paragraph stay as lyric lines), the same rule plain-text import already uses.

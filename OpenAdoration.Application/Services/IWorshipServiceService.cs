@@ -1,3 +1,4 @@
+using OpenAdoration.Application.Repositories;
 using OpenAdoration.Domain.Entities;
 
 namespace OpenAdoration.Application.Services;
@@ -27,6 +28,10 @@ public interface IWorshipServiceService
     /// <summary>Reads a song schedule item's verse-order override without loading the full service
     /// graph — used to preserve it when Stage View's live style editor regenerates live slides.</summary>
     Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default);
+
+    /// <summary>Reads a Bible schedule item's passage address without loading the full service
+    /// graph — used by Stage View's live style editor to regenerate live slides.</summary>
+    Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default);
 
     /// <summary>Re-point an existing Bible schedule item at a new passage/version in place, keeping its position.</summary>
     Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default);

@@ -48,4 +48,10 @@ public sealed class Slide
     }
 
     public static Slide Blank() => new(string.Empty, SlideType.Blank, "Blank");
+
+    /// <summary>Same slide, pointed at a different theme. Used by Stage View's live style editor
+    /// to re-theme whatever is already loaded (any content type, any shape) without re-deriving
+    /// it from source — needed for content with no narrow "regenerate this" path available,
+    /// e.g. a standalone multi-verse Bible chapter deck.</summary>
+    public Slide WithThemeId(int? themeId) => new(Content, Type, Label, MediaPath, themeId, Context);
 }

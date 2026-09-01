@@ -94,6 +94,32 @@ public sealed class WorshipServiceRepositoryThemeIdTests : IDisposable
         Assert.Null(await repo.GetItemVerseOrderOverrideAsync(itemId));
     }
 
+    [Fact]
+    public async Task GetBibleItemAddressAsync_ReturnsThePassage()
+    {
+        var repo = new WorshipServiceRepository(_factory);
+        var service = await repo.AddAsync(new WorshipService { Name = "Sunday Service", Date = DateTime.UtcNow });
+        await repo.AddBibleItemAsync(service.Id, "John", chapter: 3, verseStart: 16, verseEnd: 17);
+
+        var itemId = Assert.Single((await repo.GetWithItemsAsync(service.Id))!.Items).Id;
+
+        var address = await repo.GetBibleItemAddressAsync(itemId);
+
+        Assert.NotNull(address);
+        Assert.Null(address!.BibleVersionId);
+        Assert.Equal("John", address.Book);
+        Assert.Equal(3, address.Chapter);
+        Assert.Equal(16, address.VerseStart);
+        Assert.Equal(17, address.VerseEnd);
+    }
+
+    [Fact]
+    public async Task GetBibleItemAddressAsync_SongItem_ReturnsNull()
+    {
+        var (repo, _, itemId) = await SeedAsync();
+        Assert.Null(await repo.GetBibleItemAddressAsync(itemId));
+    }
+
     public void Dispose() => _factory.Dispose();
 
     private sealed class SqliteFactory : IDbContextFactory<AppDbContext>, IDisposable

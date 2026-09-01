@@ -1077,8 +1077,19 @@ v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in
   distinguishes a genuine slide change from this kind of style-only re-render of the *same* slide
   (`IsSameContent`, comparing everything but ThemeId) and skips the slide transition for the
   latter; `ApplyTheme` likewise leaves an already-playing background video open rather than
-  reopening (and black-flashing) it when the video path hasn't actually changed. Song-only for now
-  — Bible/media schedule items don't yet expose this editor.
+  reopening (and black-flashing) it when the video path hasn't actually changed. Live, service-
+  driven Bible passages get the same editor too, but with only the "This Occurrence" scope —
+  scripture has no reusable library entity of its own to be the "Song" scope's equivalent
+  (`ThemeCascade.ForScripture` is just the schedule item's own ThemeId + one app-wide default, no
+  middle level), so the Song toggle is disabled whenever a Bible item is live. A standalone Bible
+  passage (browsed from the Biblia page, no schedule item) gets it too, with *both* scope toggles
+  disabled — the only persistent target there is the app-wide `AppSettings.DefaultScriptureThemeId`
+  itself (patched in place, never rebuilt from unrelated settings fields), since scripture has no
+  reusable "reading" entity at all outside a schedule item. Because a standalone browse selection
+  can be a single verse, a range, or a whole chapter chunked into many slides for verse-by-verse
+  ◀/▶ navigation, `PersistStandaloneBibleThemeAsync` re-themes whatever `IProjectionService.CurrentSlides`
+  already holds via `Slide.WithThemeId` instead of re-deriving that shape from `BibleViewModel`'s
+  selection state. Media schedule items don't yet expose this editor.
 - **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
   overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
 - **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**

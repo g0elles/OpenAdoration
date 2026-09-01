@@ -11,6 +11,7 @@ internal static class ProjectionContextKeys
 {
     private const string SongPrefix = "song:";
     private const string ServiceSongPrefix = "service-song:";
+    private const string ServiceBiblePrefix = "service-bible:";
 
     /// <summary>Key for a song projected standalone from the Songs page.</summary>
     public static string Song(int songId) => $"{SongPrefix}{songId}";
@@ -59,4 +60,34 @@ internal static class ProjectionContextKeys
         var sep = rest.IndexOf(':');
         return sep >= 0 && int.TryParse(rest[(sep + 1)..], out var itemId) ? itemId : null;
     }
+
+    /// <summary>
+    /// Key for a Bible passage projected as the current item of a live service schedule. Unlike
+    /// songs, a scripture reading has no reusable library entity of its own to scope a "this
+    /// content" style edit to (only the schedule item itself carries a ThemeId,
+    /// see <c>ThemeCascade.ForScripture</c>) -- the schedule item's id is the whole key.
+    /// </summary>
+    public static string ServiceBible(int scheduleItemId) => $"{ServiceBiblePrefix}{scheduleItemId}";
+
+    /// <summary>Extracts the schedule item id from a <see cref="ServiceBible"/> contextKey. Null for
+    /// any other content type -- gates Stage View's Bible live-style-editor support off a single check.</summary>
+    public static int? TryGetServiceBibleScheduleItemId(string? contextKey)
+    {
+        if (string.IsNullOrEmpty(contextKey) || !contextKey.StartsWith(ServiceBiblePrefix, StringComparison.Ordinal))
+            return null;
+
+        return int.TryParse(contextKey.AsSpan(ServiceBiblePrefix.Length), out var itemId) ? itemId : null;
+    }
+
+    /// <summary>
+    /// Fixed key for a Bible passage projected standalone from the Biblia page (browse-and-project,
+    /// not part of a service). There is exactly one standalone-Bible slot at a time and no
+    /// per-passage identity to key on, unlike <see cref="Song"/> -- picking a different passage
+    /// simply reloads under this same key. The only persistent target for a style edit here is the
+    /// app-wide <c>AppSettings.DefaultScriptureThemeId</c> (no schedule item, no reusable "reading"
+    /// entity), so Stage View re-themes it by patching that single setting.
+    /// </summary>
+    public const string StandaloneBible = "bible:standalone";
+
+    public static bool IsStandaloneBible(string? contextKey) => contextKey == StandaloneBible;
 }

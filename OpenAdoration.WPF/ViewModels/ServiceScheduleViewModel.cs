@@ -1000,7 +1000,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                     if (verses.Count == 0) { SetError($"No verses found for {bibleItem.Reference}."); return; }
                     var themeId = ThemeCascade.ForScripture(bibleItem.ThemeId, _appSettings.Current);
                     var slides = _bibleService.GenerateSlides(verses, BibleVersesPerSlide, themeId);
-                    _projectionService.LoadSlides(slides, bibleItem.Reference);
+                    _projectionService.LoadSlides(slides, bibleItem.Reference, ProjectionContextKeys.ServiceBible(bibleItem.Id));
                     break;
                 }
 

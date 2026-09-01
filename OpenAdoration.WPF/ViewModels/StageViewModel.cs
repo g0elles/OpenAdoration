@@ -107,14 +107,18 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     public bool HasLowerThird => !string.IsNullOrEmpty(LowerThirdText);
 
     // ── F7: live style editor — writes into a real, per-scope Theme row (song or, when the live
-    // item is service-driven, this occurrence only). Replaces the old non-persisted quick-fix. ──
-    [ObservableProperty] private bool _isSongLive;
+    // item is service-driven, this occurrence only). Replaces the old non-persisted quick-fix.
+    // Bible schedule items support ONLY "This Occurrence": a scripture reading has no reusable
+    // library entity of its own to be the "Song" scope's equivalent (ThemeCascade.ForScripture
+    // has just the schedule item's own ThemeId + one app-wide default, no middle level). ──
+    [ObservableProperty] private bool _isStyleEditorLive;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsScopeSong))]
     [NotifyPropertyChangedFor(nameof(IsScopeOccurrence))]
     private StageStyleScope _selectedScope = StageStyleScope.Song;
 
+    [ObservableProperty] private bool _isSongScopeAvailable = true;
     [ObservableProperty] private bool _isOccurrenceScopeAvailable;
 
     public bool IsScopeSong       => SelectedScope == StageStyleScope.Song;
@@ -284,14 +288,39 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     /// then syncs the editable fields from it. Called on live-item change and scope change.</summary>
     private async Task SyncEditableThemeAsync()
     {
-        var contextKey     = _projectionService.ContextKey;
-        var songId         = ProjectionContextKeys.TryGetSongId(contextKey);
-        var scheduleItemId = ProjectionContextKeys.TryGetServiceScheduleItemId(contextKey);
+        var contextKey          = _projectionService.ContextKey;
+        var songId              = ProjectionContextKeys.TryGetSongId(contextKey);
+        var songScheduleItemId  = ProjectionContextKeys.TryGetServiceScheduleItemId(contextKey);
+        var bibleScheduleItemId = ProjectionContextKeys.TryGetServiceBibleScheduleItemId(contextKey);
 
-        IsOccurrenceScopeAvailable = scheduleItemId is not null;
-        if (!IsOccurrenceScopeAvailable && SelectedScope == StageStyleScope.ThisOccurrence)
+        IsSongScopeAvailable       = songId is not null;
+        IsOccurrenceScopeAvailable = songScheduleItemId is not null || bibleScheduleItemId is not null;
+
+        // Only auto-correct onto the OTHER scope when it's actually available -- standalone Bible
+        // has neither (no song, no schedule item), and unconditionally bouncing between them here
+        // would ping-pong forever (each correction re-triggers this method via OnSelectedScopeChanged).
+        // Leaving SelectedScope untouched when both are unavailable is fine: both toggle buttons are
+        // disabled, and the standalone-Bible sync/persist paths below don't consult it at all.
+        if (!IsSongScopeAvailable && SelectedScope == StageStyleScope.Song && IsOccurrenceScopeAvailable)
+        {
+            SelectedScope = StageStyleScope.ThisOccurrence; // triggers a re-entrant sync; bail out of this one
+            return;
+        }
+        if (!IsOccurrenceScopeAvailable && SelectedScope == StageStyleScope.ThisOccurrence && IsSongScopeAvailable)
         {
             SelectedScope = StageStyleScope.Song; // triggers a re-entrant sync; bail out of this one
+            return;
+        }
+
+        if (bibleScheduleItemId is not null)
+        {
+            await SyncBibleThemeAsync(bibleScheduleItemId.Value);
+            return;
+        }
+
+        if (ProjectionContextKeys.IsStandaloneBible(contextKey))
+        {
+            await SyncStandaloneBibleThemeAsync();
             return;
         }
 
@@ -302,6 +331,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             return;
         }
 
+        await SyncSongThemeAsync(songId.Value, songScheduleItemId);
+    }
+
+    private async Task SyncSongThemeAsync(int songId, int? scheduleItemId)
+    {
         try
         {
             await using var scope     = _scopeFactory.CreateAsyncScope();
@@ -309,7 +343,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             var worshipService        = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
             var themeService          = scope.ServiceProvider.GetRequiredService<IThemeService>();
 
-            var song = await songService.GetByIdAsync(songId.Value);
+            var song = await songService.GetByIdAsync(songId);
             if (song is null) { _workingTheme = null; _liveEditThemeId = null; return; }
 
             int? ownThemeId = SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null
@@ -327,25 +361,90 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
             _workingTheme    = theme;
             _liveEditThemeId = ShouldCloneBeforeEdit(ownThemeId, theme.IsDefault) ? null : theme.Id;
-
-            _isSyncingEditableTheme = true;
-            try
-            {
-                EditableFontSize            = theme.FontSize;
-                EditableFontColor           = ParseColor(theme.FontColor, System.Windows.Media.Colors.White);
-                EditableBackgroundColor     = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
-                EditableBackgroundImagePath = theme.BackgroundImagePath;
-                EditableBackgroundVideoPath = theme.BackgroundVideoPath;
-                EditableBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
-                    : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                    ? BackgroundType.Image
-                    :                                                                            BackgroundType.Color;
-            }
-            finally { _isSyncingEditableTheme = false; }
+            ApplyThemeToEditableFields(theme);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Stage view failed to sync editable theme");
+            _logger.LogWarning(ex, "Stage view failed to sync editable theme (song)");
         }
+    }
+
+    private async Task SyncBibleThemeAsync(int scheduleItemId)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var worshipService    = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+
+            var ownThemeId       = await worshipService.GetItemThemeIdAsync(scheduleItemId);
+            var effectiveThemeId = ThemeCascade.ForScripture(ownThemeId, _appSettings.Current);
+
+            var theme = effectiveThemeId.HasValue
+                ? await themeService.GetByIdAsync(effectiveThemeId.Value) ?? await themeService.GetDefaultAsync()
+                : await themeService.GetDefaultAsync();
+
+            _workingTheme    = theme;
+            _liveEditThemeId = ShouldCloneBeforeEdit(ownThemeId, theme.IsDefault) ? null : theme.Id;
+            ApplyThemeToEditableFields(theme);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Stage view failed to sync editable theme (Bible)");
+        }
+    }
+
+    /// <summary>
+    /// Standalone Bible (browsed from the Biblia page, no schedule item) has no "This Occurrence"
+    /// or "Song" scope to choose between -- the only persistent target for a style edit is the
+    /// app-wide <c>AppSettings.DefaultScriptureThemeId</c>, since scripture has no reusable
+    /// "reading" entity of its own. <see cref="IsSongScopeAvailable"/>/<see cref="IsOccurrenceScopeAvailable"/>
+    /// are both false here, so both scope toggle buttons are disabled and <see cref="SelectedScope"/>
+    /// is simply ignored by this path.
+    /// </summary>
+    private async Task SyncStandaloneBibleThemeAsync()
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+
+            // The scripture default IS the effective theme here -- there's no more-specific level
+            // to cascade through (ThemeCascade.ForScripture only adds an item-level override, which
+            // doesn't exist for a standalone passage).
+            var ownThemeId = _appSettings.Current.DefaultScriptureThemeId;
+
+            var theme = ownThemeId.HasValue
+                ? await themeService.GetByIdAsync(ownThemeId.Value) ?? await themeService.GetDefaultAsync()
+                : await themeService.GetDefaultAsync();
+
+            _workingTheme    = theme;
+            _liveEditThemeId = ShouldCloneBeforeEdit(ownThemeId, theme.IsDefault) ? null : theme.Id;
+            ApplyThemeToEditableFields(theme);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Stage view failed to sync editable theme (standalone Bible)");
+        }
+    }
+
+    /// <summary>Writes a resolved theme's fields into the F7 editable properties, guarded so this
+    /// programmatic sync doesn't itself trigger a persist (see <see cref="OnEditablePropertyChanged"/>).</summary>
+    private void ApplyThemeToEditableFields(Theme theme)
+    {
+        _isSyncingEditableTheme = true;
+        try
+        {
+            EditableFontSize            = theme.FontSize;
+            EditableFontColor           = ParseColor(theme.FontColor, System.Windows.Media.Colors.White);
+            EditableBackgroundColor     = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
+            EditableBackgroundImagePath = theme.BackgroundImagePath;
+            EditableBackgroundVideoPath = theme.BackgroundVideoPath;
+            EditableBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
+                : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                    ? BackgroundType.Image
+                :                                                                            BackgroundType.Color;
+        }
+        finally { _isSyncingEditableTheme = false; }
     }
 
     /// <summary>
@@ -361,10 +460,29 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     /// </summary>
     private async Task PersistEditableThemeAsync()
     {
+        if (_workingTheme is null) return;
         var contextKey = _projectionService.ContextKey;
-        var songId     = ProjectionContextKeys.TryGetSongId(contextKey);
-        if (songId is null || _workingTheme is null) return;
 
+        var bibleScheduleItemId = ProjectionContextKeys.TryGetServiceBibleScheduleItemId(contextKey);
+        if (bibleScheduleItemId is not null)
+        {
+            await PersistBibleThemeAsync(contextKey!, bibleScheduleItemId.Value);
+            return;
+        }
+
+        if (ProjectionContextKeys.IsStandaloneBible(contextKey))
+        {
+            await PersistStandaloneBibleThemeAsync(contextKey!);
+            return;
+        }
+
+        var songId = ProjectionContextKeys.TryGetSongId(contextKey);
+        if (songId is not null)
+            await PersistSongThemeAsync(contextKey!, songId.Value);
+    }
+
+    private async Task PersistSongThemeAsync(string contextKey, int songId)
+    {
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
@@ -377,7 +495,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
             if (_liveEditThemeId is null)
             {
-                var song      = await songService.GetByIdAsync(songId.Value);
+                var song      = await songService.GetByIdAsync(songId);
                 var cloneName = $"{song?.Title ?? "Song"} — live style";
                 var created   = await themeService.CreateAsync(BuildThemeFromEditableFields(0, cloneName));
                 _liveEditThemeId = created.Id;
@@ -387,17 +505,17 @@ public partial class StageViewModel : BaseViewModel, IDisposable
                 if (SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null)
                     await worshipService.SetItemThemeIdAsync(scheduleItemId.Value, created.Id);
                 else
-                    await songService.SetThemeIdAsync(songId.Value, created.Id);
+                    await songService.SetThemeIdAsync(songId, created.Id);
             }
             else
             {
-                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme.Name);
+                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme!.Name);
                 await themeService.UpdateAsync(updated);
                 _workingTheme = updated;
                 themeId       = _liveEditThemeId.Value;
             }
 
-            var freshSong = await songService.GetByIdAsync(songId.Value);
+            var freshSong = await songService.GetByIdAsync(songId);
             if (freshSong is not null)
             {
                 var verseOrderOverride = scheduleItemId is not null
@@ -405,7 +523,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
                     : null;
                 var slides = songService.GenerateSlides(freshSong, themeId, verseOrderOverride);
                 if (slides.Count > 0)
-                    _projectionService.TryUpdateSlides(contextKey!, slides, freshSong.Title);
+                    _projectionService.TryUpdateSlides(contextKey, slides, freshSong.Title);
             }
 
             // Clears ProjectionWindow's/this VM's theme-content caches — needed on a 2nd+ edit, where
@@ -414,7 +532,110 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Stage view failed to persist live style edit");
+            _logger.LogError(ex, "Stage view failed to persist live style edit (song)");
+            SetError(L("Stage_ErrStyleSave"));
+        }
+    }
+
+    /// <summary>Bible mirror of <see cref="PersistSongThemeAsync"/>. Always writes the schedule
+    /// item's own ThemeId -- there is no "Song"-equivalent scope for scripture to choose between
+    /// (see the F7 field-group comment on <see cref="IsStyleEditorLive"/>).</summary>
+    private async Task PersistBibleThemeAsync(string contextKey, int scheduleItemId)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+            var worshipService    = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
+            var bibleService      = scope.ServiceProvider.GetRequiredService<IBibleService>();
+
+            int themeId;
+            if (_liveEditThemeId is null)
+            {
+                var cloneName = $"{_projectionService.ContextLabel} — live style";
+                var created   = await themeService.CreateAsync(BuildThemeFromEditableFields(0, cloneName));
+                _liveEditThemeId = created.Id;
+                _workingTheme    = created;
+                themeId          = created.Id;
+                await worshipService.SetItemThemeIdAsync(scheduleItemId, created.Id);
+            }
+            else
+            {
+                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme!.Name);
+                await themeService.UpdateAsync(updated);
+                _workingTheme = updated;
+                themeId       = _liveEditThemeId.Value;
+            }
+
+            var address = await worshipService.GetBibleItemAddressAsync(scheduleItemId);
+            if (address is not null)
+            {
+                var allVerses = await bibleService.GetVersesAsync(address.BibleVersionId ?? 0, address.Book, address.Chapter);
+                var verses = allVerses.Where(v => v.Verse >= address.VerseStart && v.Verse <= address.VerseEnd).ToList();
+                if (verses.Count > 0)
+                {
+                    var versesPerSlide = Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
+                    var slides = bibleService.GenerateSlides(verses, versesPerSlide, themeId);
+                    _projectionService.TryUpdateSlides(contextKey, slides, _projectionService.ContextLabel);
+                }
+            }
+
+            _projectionService.NotifyThemeChanged();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to persist live style edit (Bible)");
+            SetError(L("Stage_ErrStyleSave"));
+        }
+    }
+
+    /// <summary>
+    /// Standalone Bible has no schedule item and no reusable "reading" entity to patch a ThemeId
+    /// onto -- the only persistent target is the app-wide <c>AppSettings.DefaultScriptureThemeId</c>,
+    /// mutated in place on the live settings object and re-saved (never rebuilt from UI fields the
+    /// way <c>SettingsViewModel.SaveAsync</c> does, which would clobber every other unrelated
+    /// setting). Re-themes whatever is already on screen via <see cref="Slide.WithThemeId"/> rather
+    /// than regenerating from source -- the browsed selection can be a single verse, a range, or a
+    /// whole chapter chunked into many slides for verse-by-verse ◀/▶ navigation
+    /// (<see cref="BibleViewModel"/>'s chapter-projection mode), and re-deriving that shape here
+    /// would duplicate BibleViewModel's selection logic for no benefit: only the theme changed.
+    /// </summary>
+    private async Task PersistStandaloneBibleThemeAsync(string contextKey)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+
+            int themeId;
+            if (_liveEditThemeId is null)
+            {
+                var cloneName = $"{_projectionService.ContextLabel} — live style";
+                var created   = await themeService.CreateAsync(BuildThemeFromEditableFields(0, cloneName));
+                _liveEditThemeId = created.Id;
+                _workingTheme    = created;
+                themeId          = created.Id;
+
+                _appSettings.Current.DefaultScriptureThemeId = created.Id;
+                await _appSettings.SaveAsync(_appSettings.Current);
+            }
+            else
+            {
+                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme!.Name);
+                await themeService.UpdateAsync(updated);
+                _workingTheme = updated;
+                themeId       = _liveEditThemeId.Value;
+            }
+
+            var slides = _projectionService.CurrentSlides.Select(s => s.WithThemeId(themeId)).ToList();
+            if (slides.Count > 0)
+                _projectionService.TryUpdateSlides(contextKey, slides, _projectionService.ContextLabel);
+
+            _projectionService.NotifyThemeChanged();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to persist live style edit (standalone Bible)");
             SetError(L("Stage_ErrStyleSave"));
         }
     }
@@ -487,6 +708,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     /// <see cref="ComputeMirrorScale"/>, so it's unit-testable without a live IProjectionService.
     /// </summary>
     public static bool IsSongContextKey(string? contextKey) => ProjectionContextKeys.TryGetSongId(contextKey) is not null;
+
+    /// <summary>True when <paramref name="contextKey"/> identifies a live Bible passage — service-
+    /// driven or standalone (browsed from the Biblia page) — gating the F7 style editor for scripture.</summary>
+    public static bool IsBibleContextKey(string? contextKey) =>
+        ProjectionContextKeys.TryGetServiceBibleScheduleItemId(contextKey) is not null
+        || ProjectionContextKeys.IsStandaloneBible(contextKey);
 
     // ── Load ─────────────────────────────────────────────────────────────────
 
@@ -677,7 +904,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             if (seq != _refreshSequence) return; // re-check on the UI thread before writing
             IsProjecting             = isProjecting;
             IsServiceScheduleActive  = isScheduleActive;
-            IsSongLive    = isProjecting && IsSongContextKey(contextKey);
+            IsStyleEditorLive = isProjecting && (IsSongContextKey(contextKey) || IsBibleContextKey(contextKey));
             ContextLabel  = _projectionService.ContextLabel;
             SlidePosition = isProjecting && slides.Count > 0
                 ? $"{idx + 1} / {slides.Count}"

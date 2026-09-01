@@ -87,7 +87,7 @@
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,8"
-                Visibility="{Binding IsSongLive, Converter={StaticResource BoolToVis}}">
+                Visibility="{Binding IsStyleEditorLive, Converter={StaticResource BoolToVis}}">
             <WrapPanel Orientation="Horizontal">
                 <TextBlock Text="{loc:Loc Stage_QuickStyle}"
                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -103,6 +103,7 @@
                         <ToggleButton x:Name="ScopeSongToggle"
                                       Content="{loc:Loc Stage_ScopeSong}"
                                       Style="{StaticResource AlignToggleButton}"
+                                      IsEnabled="{Binding IsSongScopeAvailable}"
                                       IsChecked="{Binding IsScopeSong, Mode=OneWay}"
                                       Command="{Binding SetScopeCommand}"
                                       CommandParameter="Song" />

@@ -215,6 +215,9 @@ public sealed class WorshipServiceService : IWorshipServiceService
     public async Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default)
         => await _repository.GetItemVerseOrderOverrideAsync(itemId, ct);
 
+    public async Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetBibleItemAddressAsync(itemId, ct);
+
     public async Task UpdateBibleItemAsync(
         int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default)
     {

@@ -340,4 +340,16 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
             .Select(i => i.VerseOrderOverride)
             .FirstOrDefaultAsync(ct);
     }
+
+    public async Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .OfType<BibleScheduleItem>()
+            .Where(i => i.Id == itemId)
+            .Select(i => new BibleItemAddress(i.BibleVersionId, i.Book, i.Chapter, i.VerseStart, i.VerseEnd))
+            .FirstOrDefaultAsync(ct);
+    }
 }

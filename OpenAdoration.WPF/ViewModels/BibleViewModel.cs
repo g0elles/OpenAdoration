@@ -590,7 +590,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
                 _isChapterProjection = true;
                 try
                 {
-                    _projectionService.LoadSlides(slides, label);
+                    _projectionService.LoadSlides(slides, label, ProjectionContextKeys.StandaloneBible);
                     if (startIdx > 0) _projectionService.GoTo(startIdx);
                     SlidePreviewText  = slides[startIdx].Content;
                     SlidePreviewLabel = slides[startIdx].Label;
@@ -604,7 +604,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
                 var versesPerSlide = Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
                 var slides = _bibleService.GenerateSlides(selected, versesPerSlide,
                                  ThemeCascade.ForScripture(null, _appSettings.Current), SelectedVersion);
-                _projectionService.LoadSlides(slides, slides[0].Label);
+                _projectionService.LoadSlides(slides, slides[0].Label, ProjectionContextKeys.StandaloneBible);
                 SlidePreviewText  = slides[0].Content;
                 SlidePreviewLabel = slides[0].Label;
             }
