@@ -15,8 +15,12 @@ internal static class ProjectionContextKeys
     /// <summary>Key for a song projected standalone from the Songs page.</summary>
     public static string Song(int songId) => $"{SongPrefix}{songId}";
 
-    /// <summary>Key for a song projected as the current item of a live service schedule.</summary>
-    public static string ServiceSong(int songId) => $"{ServiceSongPrefix}{songId}";
+    /// <summary>
+    /// Key for a song projected as the current item of a live service schedule. Carries the
+    /// schedule item's own id (after the song id) so Stage View can offer a "this occurrence"
+    /// style scope in addition to "this song" — see <see cref="TryGetServiceScheduleItemId"/>.
+    /// </summary>
+    public static string ServiceSong(int songId, int scheduleItemId) => $"{ServiceSongPrefix}{songId}:{scheduleItemId}";
 
     /// <summary>
     /// Extracts the song id from a contextKey produced by <see cref="Song"/> or <see cref="ServiceSong"/>.
@@ -27,10 +31,32 @@ internal static class ProjectionContextKeys
     {
         if (string.IsNullOrEmpty(contextKey)) return null;
 
-        var prefix = contextKey.StartsWith(ServiceSongPrefix, StringComparison.Ordinal) ? ServiceSongPrefix
-            : contextKey.StartsWith(SongPrefix, StringComparison.Ordinal) ? SongPrefix
-            : null;
+        if (contextKey.StartsWith(ServiceSongPrefix, StringComparison.Ordinal))
+        {
+            var rest = contextKey.AsSpan(ServiceSongPrefix.Length);
+            var sep = rest.IndexOf(':');
+            var idSpan = sep >= 0 ? rest[..sep] : rest;
+            return int.TryParse(idSpan, out var serviceSongId) ? serviceSongId : null;
+        }
 
-        return prefix is not null && int.TryParse(contextKey.AsSpan(prefix.Length), out var id) ? id : null;
+        if (contextKey.StartsWith(SongPrefix, StringComparison.Ordinal))
+            return int.TryParse(contextKey.AsSpan(SongPrefix.Length), out var songId) ? songId : null;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts the schedule item id from a <see cref="ServiceSong"/> contextKey. Null for a
+    /// standalone <see cref="Song"/> key (no schedule item exists) or any other content type —
+    /// gates Stage View's "this occurrence" scope off a single check.
+    /// </summary>
+    public static int? TryGetServiceScheduleItemId(string? contextKey)
+    {
+        if (string.IsNullOrEmpty(contextKey) || !contextKey.StartsWith(ServiceSongPrefix, StringComparison.Ordinal))
+            return null;
+
+        var rest = contextKey.AsSpan(ServiceSongPrefix.Length);
+        var sep = rest.IndexOf(':');
+        return sep >= 0 && int.TryParse(rest[(sep + 1)..], out var itemId) ? itemId : null;
     }
 }

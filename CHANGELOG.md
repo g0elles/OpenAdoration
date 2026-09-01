@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   song editor and press Ctrl+B to toggle it) and that span renders bold on the projector and in
   Stage View's live preview. No new storage — `SongSections.Lyrics` stays plain text; the markers
   live inline and are parsed at render time.
-- **Stage View quick style fix for the live song.** Real operator feedback: a song's font size
-  or background/text colour sometimes needs a last-minute fix without hunting for the right
-  theme in Settings → Temas. Stage View now shows a font-size stepper and colour swatches
-  (visible only while a song is live) that patch the on-screen slides immediately — an ad-hoc,
-  per-session override, not a saved Theme edit, so nothing is written back to the song or theme.
+- **Stage View live style editor for the live song (F7 rebuild).** Superseded the swatch-based
+  quick fix, which never persisted and couldn't touch the background at all. The operator can now
+  pick a scope (the song itself, or just this occurrence in the current service), adjust font
+  size, pick any text colour, and set a background colour/image/video — changes write into a real
+  theme (cloning one first if needed, so a shared/default theme is never mutated for other songs)
+  and show up immediately on the projector, surviving a live-item change or app restart.
 - **Word (`.docx`) song import.** Pick one or many `.docx` files at once — each file's name
   becomes the song title and its blank-paragraph-separated paragraphs become verses (manual line
   breaks inside a paragraph stay as lyric lines), the same rule plain-text import already uses.

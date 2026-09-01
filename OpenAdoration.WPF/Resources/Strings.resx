@@ -224,6 +224,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Stage_FontSizeIncrease" xml:space="preserve"><value>Increase font size</value></data>
   <data name="Stage_TextColor" xml:space="preserve"><value>Text color</value></data>
   <data name="Stage_BackgroundColor" xml:space="preserve"><value>Background color</value></data>
+  <data name="Stage_ScopeSong" xml:space="preserve"><value>Song</value></data>
+  <data name="Stage_ScopeOccurrence" xml:space="preserve"><value>This Occurrence</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Songs</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Search songs…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Import</value></data>
@@ -450,6 +452,8 @@ This action cannot be undone.</value></data>
   <data name="Themes_DeleteDialogTitle" xml:space="preserve"><value>Delete Theme</value></data>
   <data name="Themes_ErrDelete" xml:space="preserve"><value>Failed to delete theme.</value></data>
   <data name="Stage_ErrLoad" xml:space="preserve"><value>Stage view failed to load.</value></data>
+  <data name="Stage_ErrStyleSave" xml:space="preserve"><value>Failed to save style changes.</value></data>
+  <data name="Stage_ErrBackgroundImport" xml:space="preserve"><value>Could not import the background file.</value></data>
   <data name="Settings_ErrSave" xml:space="preserve"><value>Could not save settings.</value></data>
   <data name="Settings_LeaveUnsaved" xml:space="preserve"><value>You have unsaved changes. Save them before leaving?</value></data>
   <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Create Backup</value></data>

@@ -306,4 +306,38 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         songItem.VerseOrderOverride = string.IsNullOrWhiteSpace(verseOrderOverride) ? null : verseOrderOverride.Trim();
         await context.SaveChangesAsync(ct);
     }
+
+    public async Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var item = await context.ScheduleItems.FindAsync([itemId], ct)
+            ?? throw new InvalidOperationException($"ScheduleItem with ID {itemId} was not found.");
+
+        item.ThemeId = themeId;
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .Where(i => i.Id == itemId)
+            .Select(i => i.ThemeId)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .OfType<SongScheduleItem>()
+            .Where(i => i.Id == itemId)
+            .Select(i => i.VerseOrderOverride)
+            .FirstOrDefaultAsync(ct);
+    }
 }

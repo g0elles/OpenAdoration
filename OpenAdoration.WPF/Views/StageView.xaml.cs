@@ -164,4 +164,40 @@ public partial class StageView : System.Windows.Controls.UserControl
         if (DataContext is StageViewModel vm && vm.LoadCommand.CanExecute(null))
             vm.LoadCommand.Execute(null);
     }
+
+    // ── F7: background picker (mirrors AddEditThemeView's Browse/Clear handlers) ──
+
+    private async void OnBrowseBackgroundImageClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Select Background Image",
+            Filter = "Image files|*.jpg;*.jpeg;*.png;*.bmp;*.gif|All files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true && DataContext is StageViewModel vm)
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: false);
+    }
+
+    private void OnClearBackgroundImageClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is StageViewModel vm) vm.EditableBackgroundImagePath = null;
+    }
+
+    private async void OnBrowseBackgroundVideoClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Select Background Video",
+            Filter = "Video files|*.mp4;*.wmv;*.avi;*.mov;*.mkv|All files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true && DataContext is StageViewModel vm)
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: true);
+    }
+
+    private void OnClearBackgroundVideoClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is StageViewModel vm) vm.EditableBackgroundVideoPath = null;
+    }
 }

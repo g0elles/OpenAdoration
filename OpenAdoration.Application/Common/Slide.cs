@@ -31,13 +31,7 @@ public sealed class Slide
     /// </summary>
     public SlideContext Context { get; }
 
-    /// <summary>
-    /// Ad-hoc per-session rendering override (F7: Stage View quick style fix). Null means the
-    /// resolved theme applies unmodified. See <see cref="SlideStyleOverride"/>.
-    /// </summary>
-    public SlideStyleOverride? StyleOverride { get; }
-
-    public Slide(string content, SlideType type, string label, string? mediaPath = null, int? themeId = null, SlideContext? context = null, SlideStyleOverride? styleOverride = null)
+    public Slide(string content, SlideType type, string label, string? mediaPath = null, int? themeId = null, SlideContext? context = null)
     {
         if (type is not SlideType.Media and not SlideType.Blank && string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content is required for non-media slides.", nameof(content));
@@ -51,15 +45,7 @@ public sealed class Slide
         MediaPath = mediaPath;
         ThemeId = themeId;
         Context = context ?? SlideContext.Empty;
-        StyleOverride = styleOverride;
     }
-
-    /// <summary>
-    /// Returns a copy with <see cref="StyleOverride"/> replaced. Used by Stage View's live quick-fix
-    /// (F7) to patch already-generated slides in place, without regenerating them from the source song.
-    /// </summary>
-    public Slide WithStyleOverride(SlideStyleOverride? styleOverride) =>
-        new(Content, Type, Label, MediaPath, ThemeId, Context, styleOverride);
 
     public static Slide Blank() => new(string.Empty, SlideType.Blank, "Blank");
 }

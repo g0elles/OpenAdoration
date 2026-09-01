@@ -171,6 +171,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         Task ISongService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
+        public Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default) => throw new NotImplementedException();
         public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null) => throw new NotImplementedException();
 
         Task<IReadOnlyList<MediaFile>> IMediaService.GetAllAsync(CancellationToken ct) => throw new NotImplementedException();
@@ -193,6 +194,9 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default) => throw new NotImplementedException();
         public Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default) => throw new NotImplementedException();
         public Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default) => throw new NotImplementedException();
 
         public Task<IReadOnlyList<BibleBook>> GetBooksAsync(int versionId, CancellationToken ct = default) => throw new NotImplementedException();

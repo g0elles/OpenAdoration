@@ -986,7 +986,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                     var themeId = ThemeCascade.ForSong(songItem.ThemeId, songItem.Song.ThemeId, _appSettings.Current);
                     var slides = _songService.GenerateSlides(songItem.Song, themeId, songItem.VerseOrderOverride);
                     if (slides.Count == 0) { SetError(L("Sched_ErrNoLyrics")); return; }
-                    _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId));
+                    _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId, songItem.Id));
                     break;
                 }
 
@@ -1114,7 +1114,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             var themeId = ThemeCascade.ForSong(current.ThemeId, fresh.ThemeId, _appSettings.Current);
             var slides = _songService.GenerateSlides(fresh, themeId, current.VerseOrderOverride);
             if (slides.Count > 0)
-                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId), slides, fresh.Title);
+                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId, current.Id), slides, fresh.Title);
         }
 
         // Queued as the next item → refresh the stage view's UP NEXT preview.

@@ -18,5 +18,14 @@ public interface IWorshipServiceRepository
     Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default);
     Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
     Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default);
+
+    /// <summary>Patches only <see cref="ScheduleItem.ThemeId"/> — the write path <c>ThemeCascade.ForSong</c>
+    /// expects but that nothing previously supplied after item creation.</summary>
+    Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default);
+    Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default);
+
+    /// <summary>Reads a song schedule item's verse-order override without loading the full service
+    /// graph — used to preserve it when Stage View's live style editor regenerates live slides.</summary>
+    Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default);
     Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default);
 }

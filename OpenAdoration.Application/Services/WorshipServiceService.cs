@@ -195,6 +195,26 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
+    public async Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Setting theme for schedule item {ItemId}", itemId);
+        try
+        {
+            await _repository.SetItemThemeIdAsync(itemId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set theme for schedule item {ItemId}", itemId);
+            throw;
+        }
+    }
+
+    public async Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetItemThemeIdAsync(itemId, ct);
+
+    public async Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetItemVerseOrderOverrideAsync(itemId, ct);
+
     public async Task UpdateBibleItemAsync(
         int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default)
     {

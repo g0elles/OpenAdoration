@@ -123,6 +123,19 @@ public sealed class SongService : ISongService
         }
     }
 
+    public async Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _repository.SetThemeIdAsync(songId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set theme for song {SongId}", songId);
+            throw;
+        }
+    }
+
     public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null)
     {
         ArgumentNullException.ThrowIfNull(song);

@@ -53,6 +53,10 @@ public sealed record SlidePreview
 /// <summary>One compact row in the stage view's clickable "all slides" list.</summary>
 public sealed record SlideListItem(int Index, string Label, string PreviewText, bool IsCurrent);
 
+/// <summary>Which cascade level F7's live style editor writes to. No "global/Base" level — editing
+/// the app-wide default theme live from Stage View is out of scope (too risky/rare to justify).</summary>
+public enum StageStyleScope { Song, ThisOccurrence }
+
 public partial class StageViewModel : BaseViewModel, IDisposable
 {
     private readonly IProjectionService     _projectionService;
@@ -102,21 +106,77 @@ public partial class StageViewModel : BaseViewModel, IDisposable
 
     public bool HasLowerThird => !string.IsNullOrEmpty(LowerThirdText);
 
-    // ── F7: live quick style fix (font size / colours) — song-only, non-persisted ──
+    // ── F7: live style editor — writes into a real, per-scope Theme row (song or, when the live
+    // item is service-driven, this occurrence only). Replaces the old non-persisted quick-fix. ──
     [ObservableProperty] private bool _isSongLive;
 
-    // ponytail: fixed presets, not a full colour picker — a picker dialog is itself "extra steps",
-    // which is exactly what this feature exists to avoid. Revisit if operators ask for more choice.
-    public IReadOnlyList<string> TextColorSwatches { get; } = ["#FFFFFF", "#000000", "#FFEB3B", "#EF4444", "#3B82F6"];
-    public IReadOnlyList<string> BackgroundColorSwatches { get; } = ["#000000", "#FFFFFF", "#0F172A", "#14532D", "#7F1D1D"];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsScopeSong))]
+    [NotifyPropertyChangedFor(nameof(IsScopeOccurrence))]
+    private StageStyleScope _selectedScope = StageStyleScope.Song;
+
+    [ObservableProperty] private bool _isOccurrenceScopeAvailable;
+
+    public bool IsScopeSong       => SelectedScope == StageStyleScope.Song;
+    public bool IsScopeOccurrence => SelectedScope == StageStyleScope.ThisOccurrence;
+
+    [ObservableProperty] private int _editableFontSize = 72;
+    [ObservableProperty] private System.Windows.Media.Color _editableFontColor = System.Windows.Media.Colors.White;
+    [ObservableProperty] private System.Windows.Media.Color _editableBackgroundColor = System.Windows.Media.Colors.Black;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEditableBackgroundImage))]
+    private string? _editableBackgroundImagePath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEditableBackgroundVideo))]
+    private string? _editableBackgroundVideoPath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditableBackgroundColor))]
+    [NotifyPropertyChangedFor(nameof(IsEditableBackgroundImage))]
+    [NotifyPropertyChangedFor(nameof(IsEditableBackgroundVideo))]
+    private BackgroundType _editableBackgroundType = BackgroundType.Color;
+
+    public bool IsEditableBackgroundColor => EditableBackgroundType == BackgroundType.Color;
+    public bool IsEditableBackgroundImage => EditableBackgroundType == BackgroundType.Image;
+    public bool IsEditableBackgroundVideo => EditableBackgroundType == BackgroundType.Video;
+
+    public bool HasEditableBackgroundImage =>
+        !string.IsNullOrWhiteSpace(EditableBackgroundImagePath) && File.Exists(EditableBackgroundImagePath);
+    public bool HasEditableBackgroundVideo =>
+        !string.IsNullOrWhiteSpace(EditableBackgroundVideoPath) && File.Exists(EditableBackgroundVideoPath);
+
+    // Existing backgrounds in the managed library, for re-picking without hunting in foreign folders.
+    public ObservableCollection<MediaFile> BackgroundImages { get; } = [];
+    public ObservableCollection<MediaFile> BackgroundVideos { get; } = [];
+
+    [ObservableProperty] private MediaFile? _selectedLibraryImage;
+    [ObservableProperty] private MediaFile? _selectedLibraryVideo;
+
+    partial void OnSelectedLibraryImageChanged(MediaFile? value)
+    {
+        if (value is not null) EditableBackgroundImagePath = value.FilePath;
+    }
+
+    partial void OnSelectedLibraryVideoChanged(MediaFile? value)
+    {
+        if (value is not null) EditableBackgroundVideoPath = value.FilePath;
+    }
 
     private const double FontSizeStep = 8;
     private const double FontSizeMin  = 16;
     private const double FontSizeMax  = 220;
 
-    // Per-session override applied to the live slide deck; reset whenever the live item changes.
-    private SlideStyleOverride? _activeOverride;
-    private string?             _lastContextKey;
+    // Guards SyncEditableThemeAsync's own writes from re-triggering a persist (only user edits should).
+    private bool _isSyncingEditableTheme;
+
+    // The full Theme row currently being edited (preserves fields F7 doesn't expose, e.g. HeaderTemplate)
+    // and the id F7 is actively writing to this session — null until the first edit clones a dedicated
+    // theme for the current (item, scope) pair. Both reset whenever either changes.
+    private Theme? _workingTheme;
+    private int?   _liveEditThemeId;
+    private string? _lastContextKey;
 
     public StageViewModel(
         IProjectionService projectionService,
@@ -145,49 +205,285 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     [RelayCommand]
     private void JumpToSlide(int index) => _projectionService.GoTo(index);
 
-    // ── F7: live quick style fix ────────────────────────────────────────────
+    // ── F7: live style editor ────────────────────────────────────────────────
 
     [RelayCommand]
-    private void IncreaseFontSize() => AdjustFontSize(FontSizeStep);
+    private void IncreaseFontSize() =>
+        EditableFontSize = (int)Math.Clamp(EditableFontSize + FontSizeStep, FontSizeMin, FontSizeMax);
 
     [RelayCommand]
-    private void DecreaseFontSize() => AdjustFontSize(-FontSizeStep);
+    private void DecreaseFontSize() =>
+        EditableFontSize = (int)Math.Clamp(EditableFontSize - FontSizeStep, FontSizeMin, FontSizeMax);
 
     [RelayCommand]
-    private void SetTextColor(string hex) =>
-        ApplyOverride(_activeOverride is { } o ? o with { FontColor = hex } : new SlideStyleOverride(FontColor: hex));
-
-    [RelayCommand]
-    private void SetBackgroundColor(string hex) =>
-        ApplyOverride(_activeOverride is { } o ? o with { BackgroundColor = hex } : new SlideStyleOverride(BackgroundColor: hex));
-
-    private void AdjustFontSize(double delta)
+    private void SetScope(string scope)
     {
-        var baseSize = _activeOverride?.FontSize ?? CurrentPreview.FontSize;
-        var next = Math.Clamp(baseSize + delta, FontSizeMin, FontSizeMax);
-        ApplyOverride(_activeOverride is { } o ? o with { FontSize = next } : new SlideStyleOverride(FontSize: next));
+        if (Enum.TryParse<StageStyleScope>(scope, out var parsed))
+            SelectedScope = parsed;
+    }
+
+    partial void OnSelectedScopeChanged(StageStyleScope value) => _ = SyncEditableThemeAsync();
+
+    [RelayCommand]
+    private void SetBackgroundType(string type)
+    {
+        var parsed = type switch
+        {
+            "Image" => BackgroundType.Image,
+            "Video" => BackgroundType.Video,
+            _       => BackgroundType.Color
+        };
+        if (parsed == EditableBackgroundType) return;
+
+        // Switching type "forgets" whichever type(s) are no longer active. Without this, the path
+        // and library selection for the type being switched away from (e.g. a video the operator
+        // picked earlier) silently survive and reappear pre-selected the next time that type is
+        // chosen again -- confusing, since nothing the operator just did asked for that video back.
+        // Suppress the per-field persist each clear would otherwise trigger (OnEditablePropertyChanged)
+        // so this is one clean persist, not a blank/leftover frame followed by the real one.
+        _isSyncingEditableTheme = true;
+        try
+        {
+            EditableBackgroundType = parsed;
+            if (parsed != BackgroundType.Video) { EditableBackgroundVideoPath = null; SelectedLibraryVideo = null; }
+            if (parsed != BackgroundType.Image) { EditableBackgroundImagePath = null; SelectedLibraryImage = null; }
+        }
+        finally { _isSyncingEditableTheme = false; }
+
+        // Switching type alone (no path change, if the newly active type has nothing picked yet)
+        // must still re-persist -- BuildThemeFromEditableFields reads EditableBackgroundType to
+        // decide which field applies, so without this explicit call the theme could keep whatever
+        // was last actually persisted even though the UI now shows a different type selected.
+        OnEditablePropertyChanged();
+    }
+
+    // Any user edit to a stylable field persists it — see OnEditablePropertyChanged.
+    partial void OnEditableFontSizeChanged(int value) => OnEditablePropertyChanged();
+    partial void OnEditableFontColorChanged(System.Windows.Media.Color value) => OnEditablePropertyChanged();
+    partial void OnEditableBackgroundColorChanged(System.Windows.Media.Color value) => OnEditablePropertyChanged();
+    partial void OnEditableBackgroundImagePathChanged(string? value) => OnEditablePropertyChanged();
+    partial void OnEditableBackgroundVideoPathChanged(string? value) => OnEditablePropertyChanged();
+
+    private void OnEditablePropertyChanged()
+    {
+        if (_isSyncingEditableTheme) return; // programmatic sync from the resolved theme, not a user edit
+        _ = PersistEditableThemeAsync();
     }
 
     /// <summary>
-    /// Patches every slide of the live item with <paramref name="overrideValue"/> and pushes it via
-    /// <see cref="IProjectionService.TryUpdateSlides"/> — the same live-update mechanism live song
-    /// edits use (G22), just skipping SongService/Theme entirely: nothing here is persisted.
+    /// True when an edit at this scope level would need to clone the effective theme before mutating
+    /// it — i.e. this level has no explicit theme of its own yet, or its resolved effective theme is
+    /// the shared app-wide default. Editing either in place would silently repaint every other
+    /// song/occurrence that also has no explicit theme. Pulled out as a pure predicate, mirroring this
+    /// file's IsSongContextKey/ComputeMirrorScale convention, so it's unit-testable without a live DB.
     /// </summary>
-    private void ApplyOverride(SlideStyleOverride overrideValue)
+    public static bool ShouldCloneBeforeEdit(int? scopeOwnThemeId, bool effectiveThemeIsDefault) =>
+        scopeOwnThemeId is null || effectiveThemeIsDefault;
+
+    /// <summary>Re-resolves the effective theme for <see cref="SelectedScope"/> and the live item,
+    /// then syncs the editable fields from it. Called on live-item change and scope change.</summary>
+    private async Task SyncEditableThemeAsync()
+    {
+        var contextKey     = _projectionService.ContextKey;
+        var songId         = ProjectionContextKeys.TryGetSongId(contextKey);
+        var scheduleItemId = ProjectionContextKeys.TryGetServiceScheduleItemId(contextKey);
+
+        IsOccurrenceScopeAvailable = scheduleItemId is not null;
+        if (!IsOccurrenceScopeAvailable && SelectedScope == StageStyleScope.ThisOccurrence)
+        {
+            SelectedScope = StageStyleScope.Song; // triggers a re-entrant sync; bail out of this one
+            return;
+        }
+
+        if (songId is null)
+        {
+            _workingTheme    = null;
+            _liveEditThemeId = null;
+            return;
+        }
+
+        try
+        {
+            await using var scope     = _scopeFactory.CreateAsyncScope();
+            var songService           = scope.ServiceProvider.GetRequiredService<ISongService>();
+            var worshipService        = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
+            var themeService          = scope.ServiceProvider.GetRequiredService<IThemeService>();
+
+            var song = await songService.GetByIdAsync(songId.Value);
+            if (song is null) { _workingTheme = null; _liveEditThemeId = null; return; }
+
+            int? ownThemeId = SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null
+                ? await worshipService.GetItemThemeIdAsync(scheduleItemId.Value)
+                : song.ThemeId;
+
+            var effectiveThemeId = ThemeCascade.ForSong(
+                SelectedScope == StageStyleScope.ThisOccurrence ? ownThemeId : null,
+                song.ThemeId,
+                _appSettings.Current);
+
+            var theme = effectiveThemeId.HasValue
+                ? await themeService.GetByIdAsync(effectiveThemeId.Value) ?? await themeService.GetDefaultAsync()
+                : await themeService.GetDefaultAsync();
+
+            _workingTheme    = theme;
+            _liveEditThemeId = ShouldCloneBeforeEdit(ownThemeId, theme.IsDefault) ? null : theme.Id;
+
+            _isSyncingEditableTheme = true;
+            try
+            {
+                EditableFontSize            = theme.FontSize;
+                EditableFontColor           = ParseColor(theme.FontColor, System.Windows.Media.Colors.White);
+                EditableBackgroundColor     = ParseColor(theme.BackgroundColor, System.Windows.Media.Colors.Black);
+                EditableBackgroundImagePath = theme.BackgroundImagePath;
+                EditableBackgroundVideoPath = theme.BackgroundVideoPath;
+                EditableBackgroundType = !string.IsNullOrWhiteSpace(theme.BackgroundVideoPath) ? BackgroundType.Video
+                    : !string.IsNullOrWhiteSpace(theme.BackgroundImagePath)                    ? BackgroundType.Image
+                    :                                                                            BackgroundType.Color;
+            }
+            finally { _isSyncingEditableTheme = false; }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Stage view failed to sync editable theme");
+        }
+    }
+
+    /// <summary>
+    /// Persists the current editable fields to the theme F7 owns for (live item, <see cref="SelectedScope"/>),
+    /// cloning one first if this is the first edit this session (see <see cref="ShouldCloneBeforeEdit"/>).
+    /// The live <see cref="Slide"/> objects on screen were built with the PREVIOUS ThemeId baked in
+    /// (Slide.ThemeId is set once at generation time — see <see cref="ISongService.GenerateSlides"/>),
+    /// so merely editing the Theme row and calling <see cref="IProjectionService.NotifyThemeChanged"/>
+    /// (which just re-renders the SAME cached slide) would silently do nothing on the very edit that
+    /// clones a new theme id. Slides must be regenerated with the new id and pushed via
+    /// <see cref="IProjectionService.TryUpdateSlides"/> — the same mechanism live song-content edits
+    /// use (see ServiceScheduleViewModel.ApplyEditedSongToLiveProjection).
+    /// </summary>
+    private async Task PersistEditableThemeAsync()
     {
         var contextKey = _projectionService.ContextKey;
-        if (contextKey is null) return;
+        var songId     = ProjectionContextKeys.TryGetSongId(contextKey);
+        if (songId is null || _workingTheme is null) return;
 
-        _activeOverride = overrideValue;
-        var patched = _projectionService.CurrentSlides.Select(s => s.WithStyleOverride(overrideValue)).ToList();
-        if (patched.Count == 0) return;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+            var songService       = scope.ServiceProvider.GetRequiredService<ISongService>();
+            var worshipService    = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
 
-        _projectionService.TryUpdateSlides(contextKey, patched, _projectionService.ContextLabel);
+            var scheduleItemId = ProjectionContextKeys.TryGetServiceScheduleItemId(contextKey);
+            int themeId;
+
+            if (_liveEditThemeId is null)
+            {
+                var song      = await songService.GetByIdAsync(songId.Value);
+                var cloneName = $"{song?.Title ?? "Song"} — live style";
+                var created   = await themeService.CreateAsync(BuildThemeFromEditableFields(0, cloneName));
+                _liveEditThemeId = created.Id;
+                _workingTheme    = created;
+                themeId          = created.Id;
+
+                if (SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null)
+                    await worshipService.SetItemThemeIdAsync(scheduleItemId.Value, created.Id);
+                else
+                    await songService.SetThemeIdAsync(songId.Value, created.Id);
+            }
+            else
+            {
+                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme.Name);
+                await themeService.UpdateAsync(updated);
+                _workingTheme = updated;
+                themeId       = _liveEditThemeId.Value;
+            }
+
+            var freshSong = await songService.GetByIdAsync(songId.Value);
+            if (freshSong is not null)
+            {
+                var verseOrderOverride = scheduleItemId is not null
+                    ? await worshipService.GetItemVerseOrderOverrideAsync(scheduleItemId.Value)
+                    : null;
+                var slides = songService.GenerateSlides(freshSong, themeId, verseOrderOverride);
+                if (slides.Count > 0)
+                    _projectionService.TryUpdateSlides(contextKey!, slides, freshSong.Title);
+            }
+
+            // Clears ProjectionWindow's/this VM's theme-content caches — needed on a 2nd+ edit, where
+            // themeId is unchanged but the row's content (e.g. FontSize) just did.
+            _projectionService.NotifyThemeChanged();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to persist live style edit");
+            SetError(L("Stage_ErrStyleSave"));
+        }
+    }
+
+    /// <summary>Builds a full Theme row from the editable fields plus whatever <see cref="_workingTheme"/>
+    /// carries that F7 doesn't expose (font family, alignment, header/footer, transition) — matches
+    /// AddEditThemeViewModel.BuildTheme's mutually-exclusive background handling.</summary>
+    private Theme BuildThemeFromEditableFields(int id, string name) => new()
+    {
+        Id                  = id,
+        Name                = name,
+        FontFamily          = _workingTheme?.FontFamily ?? "Arial",
+        FontSize            = EditableFontSize,
+        TextAlignment       = _workingTheme?.TextAlignment ?? "Center",
+        FontColor           = ColorToHex(EditableFontColor),
+        BackgroundColor     = ColorToHex(EditableBackgroundColor),
+        BackgroundImagePath = EditableBackgroundType == BackgroundType.Image ? NullIfEmpty(EditableBackgroundImagePath) : null,
+        BackgroundVideoPath = EditableBackgroundType == BackgroundType.Video ? NullIfEmpty(EditableBackgroundVideoPath) : null,
+        IsDefault           = false, // an F7-managed theme is never the shared app default
+        HeaderTemplate      = _workingTheme?.HeaderTemplate,
+        FooterTemplate      = _workingTheme?.FooterTemplate,
+        SlideTransition     = _workingTheme?.SlideTransition
+    };
+
+    // ── F7: background library (mirrors AddEditThemeViewModel) ──────────────────
+
+    public async Task LoadBackgroundLibraryAsync()
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
+            var backgrounds  = await mediaService.GetBackgroundsAsync();
+            ReplaceAll(BackgroundImages, backgrounds.Where(b => b.Type == Domain.Enums.MediaType.Image));
+            ReplaceAll(BackgroundVideos, backgrounds.Where(b => b.Type == Domain.Enums.MediaType.Video));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to load background library");
+        }
+    }
+
+    public async Task ImportBackgroundFileAsync(string sourcePath, bool isVideo)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
+            var media = await mediaService.ImportBackgroundAsync(sourcePath);
+            if (isVideo) EditableBackgroundVideoPath = media.FilePath;
+            else         EditableBackgroundImagePath = media.FilePath;
+            await LoadBackgroundLibraryAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to import background from {Source}", sourcePath);
+            SetError(L("Stage_ErrBackgroundImport"));
+        }
+    }
+
+    private static void ReplaceAll(ObservableCollection<MediaFile> target, IEnumerable<MediaFile> items)
+    {
+        target.Clear();
+        foreach (var item in items) target.Add(item);
     }
 
     /// <summary>
     /// True when <paramref name="contextKey"/> identifies a live song (standalone or service-driven)
-    /// — gates the F7 quick style controls. Split out as pure logic, mirroring
+    /// — gates the F7 style editor. Split out as pure logic, mirroring
     /// <see cref="ComputeMirrorScale"/>, so it's unit-testable without a live IProjectionService.
     /// </summary>
     public static bool IsSongContextKey(string? contextKey) => ProjectionContextKeys.TryGetSongId(contextKey) is not null;
@@ -213,6 +509,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             AnnouncementText = _projectionService.CurrentAnnouncement ?? string.Empty;
             RefreshLowerThirdSettings();
             LowerThirdText = _projectionService.CurrentLowerThird ?? string.Empty;
+            _ = LoadBackgroundLibraryAsync();
             await RefreshAsync();
         }
         catch (Exception ex)
@@ -336,9 +633,9 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         var contextKey = _projectionService.ContextKey;
         if (contextKey != _lastContextKey)
         {
-            // Live item changed (or projection stopped) — the F7 override is per-item, not sticky.
-            _activeOverride  = null;
-            _lastContextKey  = contextKey;
+            // Live item changed (or projection stopped) — re-resolve which theme F7 is editing.
+            _lastContextKey = contextKey;
+            _ = SyncEditableThemeAsync();
         }
 
         var isProjecting = _projectionService.IsProjecting;
@@ -421,12 +718,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     {
         if (slide is null) return SlidePreview.Empty;
 
-        // F7 quick style override wins over the resolved theme when set (per-field, ad-hoc, not persisted).
         var fontFamily  = theme?.FontFamily ?? "Arial";
-        var fontSize    = slide.StyleOverride?.FontSize ?? (double)(theme?.FontSize ?? 72);
-        var fontColor   = ParseColor(slide.StyleOverride?.FontColor       ?? theme?.FontColor,       System.Windows.Media.Colors.White);
+        var fontSize    = (double)(theme?.FontSize ?? 72);
+        var fontColor   = ParseColor(theme?.FontColor, System.Windows.Media.Colors.White);
         var textAlign   = ParseAlignment(theme?.TextAlignment);
-        var bgColor     = ParseColor(slide.StyleOverride?.BackgroundColor ?? theme?.BackgroundColor, System.Windows.Media.Colors.Black);
+        var bgColor     = ParseColor(theme?.BackgroundColor, System.Windows.Media.Colors.Black);
         var bgImagePath = ValidPath(theme?.BackgroundImagePath);
         var bgVideoPath = ValidPath(theme?.BackgroundVideoPath);
 
@@ -515,6 +811,10 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         try   { return (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex); }
         catch { return fallback; }
     }
+
+    private static string ColorToHex(System.Windows.Media.Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+
+    private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
     private static System.Windows.TextAlignment ParseAlignment(string? s) => s switch
     {

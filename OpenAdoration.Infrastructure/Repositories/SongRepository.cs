@@ -179,4 +179,15 @@ public sealed class SongRepository : ISongRepository
         context.Songs.Remove(song);
         await context.SaveChangesAsync(ct);
     }
+
+    public async Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var song = await context.Songs.FindAsync([songId], ct)
+            ?? throw new InvalidOperationException($"Song with ID {songId} was not found.");
+
+        song.ThemeId = themeId;
+        await context.SaveChangesAsync(ct);
+    }
 }

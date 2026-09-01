@@ -1057,16 +1057,28 @@ v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in
   themed 1920×1080 previews of the current slide + UP NEXT (including the first slide of the next
   schedule item), Prev/Next item, real video preview. Subscribes to the extended
   `IProjectionService` event bus.
-- **F7: Stage View quick style fix** — song-only, non-persisted font size / text-colour /
-  background-colour override for the live slide deck (real operator feedback: a last-minute fix
-  without navigating to Settings → Temas). `Slide.StyleOverride` (`SlideStyleOverride`, in
-  `OpenAdoration.Application.Common`) carries the ad-hoc patch; `StageViewModel` builds a patched
-  copy of `IProjectionService.CurrentSlides` via `Slide.WithStyleOverride` and pushes it through
-  `TryUpdateSlides` — never through `SongService.GenerateSlides` or `IThemeService`, so nothing is
-  written to the `Themes` table. Both render surfaces resolve the override on top of the slide's
-  normal theme: `ProjectionWindow.ApplyTheme` (the real projector) and
-  `StageViewModel.BuildPreview` (Stage View's own preview panel). Reset whenever the live item
-  (`IProjectionService.ContextKey`) changes — it's per-item, not sticky.
+- **F7: Stage View live style editor** — writes into the real `ThemeCascade`, not a throwaway
+  struct (the original swatch-based version was rejected as "not a proper solution": no
+  background-image/video support, and nothing persisted across a live-item change or restart).
+  `StageViewModel` exposes a scope picker (Song / This Occurrence) plus font size, a real
+  `xctk:ColorPicker` for text colour, and a background type toggle (Color/Image/Video) with a
+  Browse + library picker for each. The first edit at a given (live item, scope) clones the
+  effective theme (`ShouldCloneBeforeEdit` — never mutates a theme other songs/occurrences share,
+  including the app-wide default); every further edit that session updates that clone directly via
+  `IThemeService`. Persists to `Song.ThemeId` or `ScheduleItem.ThemeId` (`ISongRepository`/
+  `IWorshipServiceRepository`'s narrow `SetThemeIdAsync`/`SetItemThemeIdAsync`, mirroring the
+  existing `SetItemAutoAdvanceAsync` single-column-patch pattern — never `SongRepository.UpdateAsync`'s
+  destructive section replace, G6). Because `Slide.ThemeId` is baked in once at slide-generation
+  time, a persisted edit alone doesn't move the live render — `PersistEditableThemeAsync`
+  regenerates the live song's slides with the new theme id (preserving any per-occurrence
+  verse-order override) and pushes them through `TryUpdateSlides`, the same live-refresh channel
+  song-content edits already use; `IProjectionService.NotifyThemeChanged` still fires afterward to
+  invalidate cached theme content on a second+ edit to the same clone. `ProjectionWindow.RenderSlide`
+  distinguishes a genuine slide change from this kind of style-only re-render of the *same* slide
+  (`IsSameContent`, comparing everything but ThemeId) and skips the slide transition for the
+  latter; `ApplyTheme` likewise leaves an already-playing background video open rather than
+  reopening (and black-flashing) it when the video path hasn't actually changed. Song-only for now
+  — Bible/media schedule items don't yet expose this editor.
 - **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
   overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
 - **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**

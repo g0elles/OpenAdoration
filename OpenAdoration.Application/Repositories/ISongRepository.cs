@@ -12,4 +12,8 @@ public interface ISongRepository
     Task<Song> AddAsync(Song song, CancellationToken ct = default);
     Task UpdateAsync(Song song, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
+
+    /// <summary>Patches only <see cref="Song.ThemeId"/> — avoids routing a single-field change
+    /// through <see cref="UpdateAsync"/>'s destructive whole-song section replace.</summary>
+    Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default);
 }

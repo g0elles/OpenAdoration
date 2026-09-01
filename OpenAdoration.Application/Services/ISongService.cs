@@ -24,6 +24,10 @@ public interface ISongService
     Task UpdateAsync(Song song, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 
+    /// <summary>Patches only <see cref="Song.ThemeId"/> — used by Stage View's live style editor
+    /// so a quick theme tweak doesn't route through <see cref="UpdateAsync"/>'s section replace.</summary>
+    Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default);
+
     /// <summary>
     /// Generates the ordered list of projection slides for a song.
     /// Pass <paramref name="themeId"/> to override the default theme on every generated slide.
