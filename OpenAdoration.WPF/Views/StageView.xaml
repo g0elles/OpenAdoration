@@ -134,11 +134,14 @@
                         Command="{Binding IncreaseFontSizeCommand}" />
 
                 <!-- Text colour -->
+                <!-- Foreground is a fixed dark color, not DynamicResource (contra G27): the popup's own
+                     background is always light, regardless of app theme, so a dark-theme white Foreground
+                     was rendering illegible white-on-white RGBA labels inside it. -->
                 <xctk:ColorPicker x:Name="FontColorPicker"
                                   SelectedColor="{Binding EditableFontColor}"
                                   ToolTip="{loc:Loc Stage_TextColor}"
                                   Background="{DynamicResource PrimaryBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Foreground="#1E1E2E"
                                   BorderBrush="{DynamicResource BorderBrush}"
                                   UsingAlphaChannel="False"
                                   ShowRecentColors="True"
@@ -182,7 +185,7 @@
                                   SelectedColor="{Binding EditableBackgroundColor}"
                                   ToolTip="{loc:Loc Stage_BackgroundColor}"
                                   Background="{DynamicResource PrimaryBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Foreground="#1E1E2E"
                                   BorderBrush="{DynamicResource BorderBrush}"
                                   UsingAlphaChannel="False"
                                   ShowRecentColors="True"

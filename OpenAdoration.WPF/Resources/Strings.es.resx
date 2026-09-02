@@ -159,8 +159,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Settings_LowerThirdSection" xml:space="preserve"><value>BANDA INFERIOR</value></data>
   <data name="Settings_LowerThirdScroll" xml:space="preserve"><value>Desplazar el texto continuamente (marquesina)</value></data>
   <data name="Settings_LowerThirdSpeed" xml:space="preserve"><value>Velocidad de desplazamiento (píxeles por segundo)</value></data>
-  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Color de la banda (hex, p. ej. #CC101018)</value></data>
-  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Color del texto (hex)</value></data>
+  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Color de la banda</value></data>
+  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Color del texto</value></data>
   <data name="Settings_LowerThirdFontSize" xml:space="preserve"><value>Tamaño del texto</value></data>
   <data name="Settings_LowerThirdHelp" xml:space="preserve"><value>Estilo de la banda inferior persistente que se muestra desde la barra de proyección. Con el desplazamiento activado, el texto se mueve de derecha a izquierda hasta que se borra.</value></data>
   <data name="Settings_ThemesSection" xml:space="preserve"><value>TEMAS DE CONTENIDO</value></data>

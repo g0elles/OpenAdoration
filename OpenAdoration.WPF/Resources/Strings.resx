@@ -159,8 +159,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Settings_LowerThirdSection" xml:space="preserve"><value>LOWER THIRD</value></data>
   <data name="Settings_LowerThirdScroll" xml:space="preserve"><value>Scroll text continuously (ticker)</value></data>
   <data name="Settings_LowerThirdSpeed" xml:space="preserve"><value>Scroll speed (pixels per second)</value></data>
-  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Band color (hex, e.g. #CC101018)</value></data>
-  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Text color (hex)</value></data>
+  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Band color</value></data>
+  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Text color</value></data>
   <data name="Settings_LowerThirdFontSize" xml:space="preserve"><value>Text size</value></data>
   <data name="Settings_LowerThirdHelp" xml:space="preserve"><value>Styles the persistent lower-third band shown from the projection bar. With scrolling on, the text moves right to left until cleared.</value></data>
   <data name="Settings_ThemesSection" xml:space="preserve"><value>CONTENT THEMES</value></data>

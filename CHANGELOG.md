@@ -38,11 +38,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared drive isn't readable without it. Leaving it blank keeps the previous plain-zip behaviour;
   existing unencrypted backups still restore unchanged. Restoring an encrypted backup prompts for
   the password and re-prompts on a wrong one rather than failing outright.
+- **Color-wheel picker for the lower-third band/text color (F11).** Settings → lower-third band
+  colour and text colour are now a real color picker (canvas + hue strip, RGBA sliders) instead
+  of a raw hex textbox — operators found hex codes hard to reason about. Existing settings still
+  load correctly; the band colour's opacity carries through unchanged (previously entered as the
+  hex string's alpha channel, now the picker's alpha slider).
 
 ### Fixed
 - **Stage View now mirrors a scrolling lower-third.** The operator's Stage View showed the
   lower-third as static text even when "Desplazar el texto continuamente (marquesina)" was
   enabled in Settings; it now runs the same right-to-left ticker animation as the projector.
+- **Color picker popup text was illegible in dark mode.** Every `ColorPicker` in the app (Stage
+  View's F7 live style editor, the theme editor, and the new Settings lower-third pickers) bound
+  its `Foreground` to the app's dark-theme text colour, but the picker's own popup is always
+  light-background regardless of app theme — rendering the R/G/B/A labels as white-on-white.
+  Foreground is now a fixed dark colour on all six instances, independent of the app theme.
 
 ### Security
 - The release GitHub Actions workflow no longer interpolates tag/ref values directly into script
