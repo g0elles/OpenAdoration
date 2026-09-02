@@ -88,6 +88,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Biblia</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Programa del servicio</value></data>
   <data name="Nav_Media" xml:space="preserve"><value>🖼  Multimedia</value></data>
+  <data name="Nav_Notes" xml:space="preserve"><value>📝  Notas</value></data>
   <data name="Nav_Themes" xml:space="preserve"><value>🎨  Temas</value></data>
   <data name="Nav_Stage" xml:space="preserve"><value>📺  Vista de escenario</value></data>
   <data name="Nav_Plugins" xml:space="preserve"><value>🧩  Complementos</value></data>
@@ -204,6 +205,28 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Selecciona un libro y luego toca el número de capítulo</value></data>
   <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18, o escribe palabra(s) clave para buscar</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
+  <data name="Notes_Title" xml:space="preserve"><value>Notas</value></data>
+  <data name="Notes_Content" xml:space="preserve"><value>Contenido</value></data>
+  <data name="Notes_ContentHint" xml:space="preserve"><value>Selecciona texto y pulsa Ctrl+B para ponerlo en negrita. Separa las diapositivas con una línea en blanco.</value></data>
+  <data name="Notes_ContentPlaceholder" xml:space="preserve"><value>Escribe tus notas aquí…</value></data>
+  <data name="Notes_SearchPlaceholder" xml:space="preserve"><value>Buscar notas…</value></data>
+  <data name="Notes_Empty" xml:space="preserve"><value>Aún no hay notas. Haz clic en + Nuevo para agregar una.</value></data>
+  <data name="Notes_NoResults" xml:space="preserve"><value>No se encontraron notas para "{0}".</value></data>
+  <data name="Notes_SelectPrompt" xml:space="preserve"><value>Selecciona una nota de la lista</value></data>
+  <data name="Notes_SelectPromptSub" xml:space="preserve"><value>o haz clic en + Nuevo para crear una</value></data>
+  <data name="Notes_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?
+
+Esta acción no se puede deshacer.</value></data>
+  <data name="Notes_DeleteTitle" xml:space="preserve"><value>Eliminar nota</value></data>
+  <data name="Notes_ErrLoad" xml:space="preserve"><value>No se pudieron cargar las notas.</value></data>
+  <data name="Notes_ErrDelete" xml:space="preserve"><value>No se pudo eliminar la nota.</value></data>
+  <data name="NoteEdit_FormNew" xml:space="preserve"><value>Nueva nota</value></data>
+  <data name="NoteEdit_FormEdit" xml:space="preserve"><value>Editar nota</value></data>
+  <data name="NoteEdit_TitleField" xml:space="preserve"><value>TÍTULO</value></data>
+  <data name="NoteEdit_TitlePlaceholder" xml:space="preserve"><value>p. ej. Sermón del domingo</value></data>
+  <data name="NoteEdit_Save" xml:space="preserve"><value>Guardar nota</value></data>
+  <data name="NoteEdit_ErrTitleRequired" xml:space="preserve"><value>El título de la nota es obligatorio.</value></data>
+  <data name="NoteEdit_ErrContentRequired" xml:space="preserve"><value>El contenido de la nota es obligatorio.</value></data>
   <data name="Media_TabMedia" xml:space="preserve"><value>Multimedia</value></data>
   <data name="Media_TabBackgrounds" xml:space="preserve"><value>Fondos</value></data>
   <data name="Media_BgInUse" xml:space="preserve"><value>No se puede eliminar: este fondo lo usan {0} tema(s). Quítalo de los temas primero.</value></data>
@@ -350,7 +373,9 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_AddSong" xml:space="preserve"><value>+ Agregar canción</value></data>
   <data name="Sched_AddBible" xml:space="preserve"><value>+ Agregar Biblia</value></data>
   <data name="Sched_AddMedia" xml:space="preserve"><value>+ Agregar multimedia</value></data>
+  <data name="Sched_AddNotes" xml:space="preserve"><value>+ Agregar notas</value></data>
   <data name="Sched_SearchSongs" xml:space="preserve"><value>Buscar canciones…</value></data>
+  <data name="Sched_SearchNotes" xml:space="preserve"><value>Buscar notas…</value></data>
   <data name="Sched_AddSelected" xml:space="preserve"><value>Agregar seleccionado</value></data>
   <data name="Sched_Version" xml:space="preserve"><value>VERSIÓN</value></data>
   <data name="Sched_Book" xml:space="preserve"><value>LIBRO</value></data>
@@ -366,6 +391,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_QueueSong" xml:space="preserve"><value>+ Canción</value></data>
   <data name="Sched_QueueBible" xml:space="preserve"><value>+ Biblia</value></data>
   <data name="Sched_QueueMedia" xml:space="preserve"><value>+ Multimedia</value></data>
+  <data name="Sched_QueueNotes" xml:space="preserve"><value>+ Notas</value></data>
   <data name="Sched_AddToQueue" xml:space="preserve"><value>Agregar a la cola</value></data>
   <data name="Sched_NowProjecting" xml:space="preserve"><value>Proyectando ahora:</value></data>
   <data name="Sched_LiveHelp" xml:space="preserve"><value>Usa ◀ / ▶ en la barra principal para moverte entre diapositivas. Haz clic en cualquier elemento de la izquierda para saltar a él. Usa la cola para agregar más elementos sobre la marcha.</value></data>
@@ -410,10 +436,12 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrServiceNotFound" xml:space="preserve"><value>Servicio no encontrado.</value></data>
   <data name="Sched_ErrLoadService" xml:space="preserve"><value>No se pudo cargar el servicio.</value></data>
   <data name="Sched_ErrLoadSongs" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
+  <data name="Sched_ErrLoadNotes" xml:space="preserve"><value>No se pudieron cargar las notas.</value></data>
   <data name="Sched_ErrAddSong" xml:space="preserve"><value>No se pudo agregar la canción.</value></data>
   <data name="Sched_ErrLoadVersions" xml:space="preserve"><value>No se pudieron cargar las versiones de la Biblia.</value></data>
   <data name="Sched_ErrLoadMedia" xml:space="preserve"><value>No se pudieron cargar los archivos multimedia.</value></data>
   <data name="Sched_ErrAddMedia" xml:space="preserve"><value>No se pudo agregar el archivo multimedia.</value></data>
+  <data name="Sched_ErrAddNotes" xml:space="preserve"><value>No se pudo agregar el elemento de notas.</value></data>
   <data name="Sched_ErrSelectVersionBook" xml:space="preserve"><value>Selecciona una versión de la Biblia y un libro.</value></data>
   <data name="Sched_ErrSelectChapter" xml:space="preserve"><value>Selecciona un capítulo.</value></data>
   <data name="Sched_ErrSelectVerse" xml:space="preserve"><value>Selecciona al menos un versículo.</value></data>
@@ -421,6 +449,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrRemoveItem" xml:space="preserve"><value>No se pudo quitar el elemento.</value></data>
   <data name="Sched_ErrNoItemsStart" xml:space="preserve"><value>Agrega al menos un elemento antes de comenzar.</value></data>
   <data name="Sched_ErrNoLyrics" xml:space="preserve"><value>Esta canción no tiene letra para proyectar.</value></data>
+  <data name="Sched_ErrNoNotesContent" xml:space="preserve"><value>Este elemento de notas no tiene contenido para proyectar.</value></data>
   <data name="Sched_ErrProject" xml:space="preserve"><value>No se pudo proyectar este elemento.</value></data>
   <data name="Songs_ErrLoad" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
   <data name="Songs_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?

@@ -292,9 +292,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         var songId              = ProjectionContextKeys.TryGetSongId(contextKey);
         var songScheduleItemId  = ProjectionContextKeys.TryGetServiceScheduleItemId(contextKey);
         var bibleScheduleItemId = ProjectionContextKeys.TryGetServiceBibleScheduleItemId(contextKey);
+        var noteId               = ProjectionContextKeys.TryGetNoteId(contextKey);
+        var notesScheduleItemId  = ProjectionContextKeys.TryGetServiceNotesScheduleItemId(contextKey);
 
-        IsSongScopeAvailable       = songId is not null;
-        IsOccurrenceScopeAvailable = songScheduleItemId is not null || bibleScheduleItemId is not null;
+        IsSongScopeAvailable       = songId is not null || noteId is not null;
+        IsOccurrenceScopeAvailable = songScheduleItemId is not null || bibleScheduleItemId is not null || notesScheduleItemId is not null;
 
         // Only auto-correct onto the OTHER scope when it's actually available -- standalone Bible
         // has neither (no song, no schedule item), and unconditionally bouncing between them here
@@ -321,6 +323,12 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         if (ProjectionContextKeys.IsStandaloneBible(contextKey))
         {
             await SyncStandaloneBibleThemeAsync();
+            return;
+        }
+
+        if (noteId is not null)
+        {
+            await SyncNotesThemeAsync(noteId.Value, notesScheduleItemId);
             return;
         }
 
@@ -428,6 +436,45 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         }
     }
 
+    /// <summary>Notes mirror of <see cref="SyncSongThemeAsync"/> -- Notes is a real library entity
+    /// (like Song, unlike Bible), so it supports both scopes: "Song" edits the note's own
+    /// <see cref="Note.ThemeId"/>, "This Occurrence" edits the schedule item's (only available when
+    /// <paramref name="scheduleItemId"/> is not null, i.e. this note is live via a service).</summary>
+    private async Task SyncNotesThemeAsync(int noteId, int? scheduleItemId)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var noteService       = scope.ServiceProvider.GetRequiredService<INoteService>();
+            var worshipService    = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+
+            var note = await noteService.GetByIdAsync(noteId);
+            if (note is null) { _workingTheme = null; _liveEditThemeId = null; return; }
+
+            int? ownThemeId = SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null
+                ? await worshipService.GetItemThemeIdAsync(scheduleItemId.Value)
+                : note.ThemeId;
+
+            var effectiveThemeId = ThemeCascade.ForNotes(
+                SelectedScope == StageStyleScope.ThisOccurrence ? ownThemeId : null,
+                note.ThemeId,
+                _appSettings.Current);
+
+            var theme = effectiveThemeId.HasValue
+                ? await themeService.GetByIdAsync(effectiveThemeId.Value) ?? await themeService.GetDefaultAsync()
+                : await themeService.GetDefaultAsync();
+
+            _workingTheme    = theme;
+            _liveEditThemeId = ShouldCloneBeforeEdit(ownThemeId, theme.IsDefault) ? null : theme.Id;
+            ApplyThemeToEditableFields(theme);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Stage view failed to sync editable theme (Notes)");
+        }
+    }
+
     /// <summary>Writes a resolved theme's fields into the F7 editable properties, guarded so this
     /// programmatic sync doesn't itself trigger a persist (see <see cref="OnEditablePropertyChanged"/>).</summary>
     private void ApplyThemeToEditableFields(Theme theme)
@@ -473,6 +520,14 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         if (ProjectionContextKeys.IsStandaloneBible(contextKey))
         {
             await PersistStandaloneBibleThemeAsync(contextKey!);
+            return;
+        }
+
+        var noteId = ProjectionContextKeys.TryGetNoteId(contextKey);
+        if (noteId is not null)
+        {
+            var notesScheduleItemId = ProjectionContextKeys.TryGetServiceNotesScheduleItemId(contextKey);
+            await PersistNotesThemeAsync(contextKey!, noteId.Value, notesScheduleItemId);
             return;
         }
 
@@ -640,6 +695,57 @@ public partial class StageViewModel : BaseViewModel, IDisposable
         }
     }
 
+    /// <summary>Notes mirror of <see cref="PersistSongThemeAsync"/> -- Notes is a real library
+    /// entity, so "Song" scope patches <see cref="Note.ThemeId"/> and "This Occurrence" (when a
+    /// schedule item is live) patches the schedule item's, exactly like Song. Unlike Song, this
+    /// still re-themes via <see cref="Slide.WithThemeId"/> rather than regenerating from source --
+    /// Notes content never changes during a style edit, so there's nothing to regenerate (the same
+    /// trick <see cref="PersistStandaloneBibleThemeAsync"/> uses).</summary>
+    private async Task PersistNotesThemeAsync(string contextKey, int noteId, int? scheduleItemId)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var themeService      = scope.ServiceProvider.GetRequiredService<IThemeService>();
+            var noteService       = scope.ServiceProvider.GetRequiredService<INoteService>();
+            var worshipService    = scope.ServiceProvider.GetRequiredService<IWorshipServiceService>();
+
+            int themeId;
+            if (_liveEditThemeId is null)
+            {
+                var note      = await noteService.GetByIdAsync(noteId);
+                var cloneName = $"{note?.Title ?? "Note"} — live style";
+                var created   = await themeService.CreateAsync(BuildThemeFromEditableFields(0, cloneName));
+                _liveEditThemeId = created.Id;
+                _workingTheme    = created;
+                themeId          = created.Id;
+
+                if (SelectedScope == StageStyleScope.ThisOccurrence && scheduleItemId is not null)
+                    await worshipService.SetItemThemeIdAsync(scheduleItemId.Value, created.Id);
+                else
+                    await noteService.SetThemeIdAsync(noteId, created.Id);
+            }
+            else
+            {
+                var updated = BuildThemeFromEditableFields(_liveEditThemeId.Value, _workingTheme!.Name);
+                await themeService.UpdateAsync(updated);
+                _workingTheme = updated;
+                themeId       = _liveEditThemeId.Value;
+            }
+
+            var slides = _projectionService.CurrentSlides.Select(s => s.WithThemeId(themeId)).ToList();
+            if (slides.Count > 0)
+                _projectionService.TryUpdateSlides(contextKey, slides, _projectionService.ContextLabel);
+
+            _projectionService.NotifyThemeChanged();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stage view failed to persist live style edit (Notes)");
+            SetError(L("Stage_ErrStyleSave"));
+        }
+    }
+
     /// <summary>Builds a full Theme row from the editable fields plus whatever <see cref="_workingTheme"/>
     /// carries that F7 doesn't expose (font family, alignment, header/footer, transition) — matches
     /// AddEditThemeViewModel.BuildTheme's mutually-exclusive background handling.</summary>
@@ -714,6 +820,11 @@ public partial class StageViewModel : BaseViewModel, IDisposable
     public static bool IsBibleContextKey(string? contextKey) =>
         ProjectionContextKeys.TryGetServiceBibleScheduleItemId(contextKey) is not null
         || ProjectionContextKeys.IsStandaloneBible(contextKey);
+
+    /// <summary>True when <paramref name="contextKey"/> identifies a live note (standalone or
+    /// service-driven) — gates the F7 style editor for Notes. Mirrors <see cref="IsSongContextKey"/>
+    /// exactly, since Notes is a real library entity like Song.</summary>
+    public static bool IsNotesContextKey(string? contextKey) => ProjectionContextKeys.TryGetNoteId(contextKey) is not null;
 
     // ── Load ─────────────────────────────────────────────────────────────────
 
@@ -904,7 +1015,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             if (seq != _refreshSequence) return; // re-check on the UI thread before writing
             IsProjecting             = isProjecting;
             IsServiceScheduleActive  = isScheduleActive;
-            IsStyleEditorLive = isProjecting && (IsSongContextKey(contextKey) || IsBibleContextKey(contextKey));
+            IsStyleEditorLive = isProjecting && (IsSongContextKey(contextKey) || IsBibleContextKey(contextKey) || IsNotesContextKey(contextKey));
             ContextLabel  = _projectionService.ContextLabel;
             SlidePosition = isProjecting && slides.Count > 0
                 ? $"{idx + 1} / {slides.Count}"
@@ -964,7 +1075,7 @@ public partial class StageViewModel : BaseViewModel, IDisposable
             Content       = slide.Content,
             SectionLabel  = slide.Label,
             IsBlank       = slide.Type == SlideType.Blank,
-            IsText        = slide.Type is SlideType.Song or SlideType.Bible,
+            IsText        = slide.Type is SlideType.Song or SlideType.Bible or SlideType.Notes,
             IsImageMedia  = isImageMedia,
             IsVideoMedia  = isVideoMedia,
             MediaPath     = slide.MediaPath,

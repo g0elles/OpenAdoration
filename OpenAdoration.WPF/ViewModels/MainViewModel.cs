@@ -107,6 +107,13 @@ public partial class MainViewModel : BaseViewModel, IDisposable, IStageNavigatio
     }
 
     [RelayCommand]
+    private void NavigateToNotes()
+    {
+        _logger.LogDebug("Navigating to Notes");
+        NavigateTo<NotesViewModel>();
+    }
+
+    [RelayCommand]
     private void NavigateToThemes()
     {
         _logger.LogDebug("Navigating to Themes");

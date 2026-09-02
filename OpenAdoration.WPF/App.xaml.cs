@@ -252,6 +252,7 @@ public partial class App : WpfApp
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
+        services.AddSingleton<INoteLibraryNotifier, NoteLibraryNotifier>();
         services.AddSingleton<BibleNavigationState>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -271,6 +272,8 @@ public partial class App : WpfApp
         services.AddTransient<ServiceScheduleViewModel>();
         services.AddTransient<OpenAdoration.WPF.Helpers.VideoPsalmMigration.VideoPsalmServiceImporter>();
         services.AddTransient<MediaViewModel>();
+        services.AddTransient<NotesViewModel>();
+        services.AddTransient<AddEditNoteViewModel>();
         services.AddTransient<ThemeViewModel>();
         services.AddTransient<AddEditThemeViewModel>();
         services.AddTransient<StageViewModel>();

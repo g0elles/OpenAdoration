@@ -191,6 +191,7 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task UpdateAsync(WorshipService service, CancellationToken ct = default) => throw new NotImplementedException();
         Task IWorshipServiceService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default) => throw new NotImplementedException();
         public Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default) => throw new NotImplementedException();
         public Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default) => throw new NotImplementedException();

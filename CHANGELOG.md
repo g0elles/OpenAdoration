@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Notes/Sermon content type (F9).** A new plain-text content type, alongside Songs/Bible/Media:
+  type or paste text (blank lines separate slides), add it to a service schedule or project it
+  standalone from the new Notes page. Supports the same `**bold**` markers as song lyrics (F8),
+  and Stage View's live style editor (F7) works for it from the start — both for a service-driven
+  Notes item ("This Occurrence" scope) and standalone Notes (the app-wide default style).
 - **Bold text in lyrics (F8).** Wrap any part of a lyric line in `**...**` (select text in the
   song editor and press Ctrl+B to toggle it) and that span renders bold on the projector and in
   Stage View's live preview. No new storage — `SongSections.Lyrics` stays plain text; the markers

@@ -139,6 +139,20 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
+    public async Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding note {NoteId} to service {ServiceId}", noteId, serviceId);
+        try
+        {
+            await _repository.AddNotesItemAsync(serviceId, noteId, themeId, autoAdvanceSeconds, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add notes item to service {ServiceId}", serviceId);
+            throw;
+        }
+    }
+
     public async Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default)
     {
         _logger.LogInformation("Removing schedule item {ItemId}", scheduleItemId);

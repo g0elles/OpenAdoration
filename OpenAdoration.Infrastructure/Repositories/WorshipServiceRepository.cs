@@ -163,6 +163,22 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
             }
         }
 
+        var noteIds = service.Items.OfType<NotesScheduleItem>().Select(i => i.NoteId).ToList();
+        if (noteIds.Count > 0)
+        {
+            var notes = await context.Notes
+                .Where(n => noteIds.Contains(n.Id))
+                .ToListAsync(ct);
+            var noteMap = notes.ToDictionary(n => n.Id);
+            foreach (var item in service.Items.OfType<NotesScheduleItem>())
+            {
+                if (!noteMap.TryGetValue(item.NoteId, out var note))
+                    throw new InvalidOperationException(
+                        $"NotesScheduleItem {item.Id} references missing Note {item.NoteId}.");
+                item.Note = note;
+            }
+        }
+
         return service;
     }
 
@@ -223,6 +239,26 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         {
             ServiceId          = serviceId,
             MediaFileId        = mediaFileId,
+            ThemeId            = themeId,
+            AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
+            Order              = nextOrder + 1
+        });
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var nextOrder = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .Select(i => (int?)i.Order)
+            .MaxAsync(ct) ?? -1;
+
+        context.ScheduleItems.Add(new NotesScheduleItem
+        {
+            ServiceId          = serviceId,
+            NoteId             = noteId,
             ThemeId            = themeId,
             AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
             Order              = nextOrder + 1

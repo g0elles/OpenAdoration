@@ -5,5 +5,6 @@ public enum SlideType
     Song,
     Bible,
     Media,
+    Notes,
     Blank
 }

@@ -600,6 +600,7 @@ public partial class ProjectionWindow : Window
         {
             case SlideType.Song:
             case SlideType.Bible:
+            case SlideType.Notes:
                 ShowText(slide.Content, slide.Context);
                 break;
 

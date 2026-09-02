@@ -1090,6 +1090,25 @@ v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in
   ◀/▶ navigation, `PersistStandaloneBibleThemeAsync` re-themes whatever `IProjectionService.CurrentSlides`
   already holds via `Slide.WithThemeId` instead of re-deriving that shape from `BibleViewModel`'s
   selection state. Media schedule items don't yet expose this editor.
+- **Notes/Sermon content type (F9)** — a third `ScheduleItem` TPH subtype, `NotesScheduleItem`
+  (`Title` + plain-text `Content`, no reusable library entity — same shape as `BibleScheduleItem`).
+  `NotesSlideGenerator` (a pure static helper, no DI) splits `Content` on blank lines into one slide
+  per paragraph — the same rule `PlainTextParser.BlankLineRegex` uses for plain-text song import.
+  Addable to a service via `IWorshipServiceService.AddNotesItemAsync`, or projected standalone from
+  a new `NotesViewModel`/`NotesView` nav page (no browse list — type text, Proyectar, same F1
+  auto-nav-to-Stage pattern as Bible/Songs). F7 support shipped alongside it from day one rather
+  than bolted on later: `ProjectionContextKeys.ServiceNotes`/`StandaloneNotes` mirror the Bible
+  keys exactly, and both `PersistNotesThemeAsync`/`PersistStandaloneNotesThemeAsync` skip the
+  regenerate-from-source step Bible's persist path uses (Notes content never changes during a style
+  edit) in favor of `Slide.WithThemeId` directly on `IProjectionService.CurrentSlides` — the leaner
+  approach the Bible paths noted they "arguably should have used too." One gate is shared across all
+  three content types and must be extended for each: `StageViewModel.IsStyleEditorLive` only shows
+  the F7 bar when `IsSongContextKey`/`IsBibleContextKey`/`IsNotesContextKey` recognizes the current
+  `contextKey` — a real bug caught by e2e verification (the F7 bar silently never appeared for Notes
+  until this gate was extended), now covered by `StageViewModelNotesContextKeyTests`. `**bold**`
+  markers (F8) work in Notes content with zero extra code: `BoldMarkupText`/`ProjectionWindow`
+  render whatever `Slide.Content` holds regardless of `SlideType`. Media schedule items still don't
+  expose F7.
 - **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
   overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
 - **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**

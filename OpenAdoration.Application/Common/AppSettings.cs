@@ -87,4 +87,7 @@ public sealed class AppSettings
 
     /// <summary>Default theme for media slides.</summary>
     public int? DefaultMediaThemeId { get; set; }
+
+    /// <summary>Default theme for Notes/Sermon slides.</summary>
+    public int? DefaultNotesThemeId { get; set; }
 }

@@ -78,6 +78,10 @@
                                 Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Media}"
                                 Command="{Binding NavigateToMediaCommand}" />
+                        <Button x:Name="NavNotesButton"
+                                Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Notes}"
+                                Command="{Binding NavigateToNotesCommand}" />
 
                         <TextBlock Text="{loc:Loc Nav_Group_Present}" Style="{StaticResource NavGroupHeader}" />
                         <Button x:Name="NavScheduleButton"

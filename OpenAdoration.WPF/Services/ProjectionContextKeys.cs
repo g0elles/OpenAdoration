@@ -12,6 +12,8 @@ internal static class ProjectionContextKeys
     private const string SongPrefix = "song:";
     private const string ServiceSongPrefix = "service-song:";
     private const string ServiceBiblePrefix = "service-bible:";
+    private const string NotesPrefix = "notes:";
+    private const string ServiceNotesPrefix = "service-notes:";
 
     /// <summary>Key for a song projected standalone from the Songs page.</summary>
     public static string Song(int songId) => $"{SongPrefix}{songId}";
@@ -90,4 +92,54 @@ internal static class ProjectionContextKeys
     public const string StandaloneBible = "bible:standalone";
 
     public static bool IsStandaloneBible(string? contextKey) => contextKey == StandaloneBible;
+
+    /// <summary>Key for a note projected standalone from the Notes library page. Notes is a real
+    /// library entity (like Song, unlike Bible/scripture) -- shares the exact key shape as
+    /// <see cref="Song"/>/<see cref="ServiceSong"/>.</summary>
+    public static string Notes(int noteId) => $"{NotesPrefix}{noteId}";
+
+    /// <summary>
+    /// Key for a note projected as the current item of a live service schedule. Carries the
+    /// schedule item's own id (after the note id) so Stage View can offer a "this occurrence"
+    /// style scope in addition to "this note" — see <see cref="TryGetServiceNotesScheduleItemId"/>.
+    /// </summary>
+    public static string ServiceNotes(int noteId, int scheduleItemId) => $"{ServiceNotesPrefix}{noteId}:{scheduleItemId}";
+
+    /// <summary>
+    /// Extracts the note id from a contextKey produced by <see cref="Notes"/> or <see cref="ServiceNotes"/>.
+    /// Null for keys from other content types, or null/malformed input — mirrors <see cref="TryGetSongId"/>.
+    /// </summary>
+    public static int? TryGetNoteId(string? contextKey)
+    {
+        if (string.IsNullOrEmpty(contextKey)) return null;
+
+        if (contextKey.StartsWith(ServiceNotesPrefix, StringComparison.Ordinal))
+        {
+            var rest = contextKey.AsSpan(ServiceNotesPrefix.Length);
+            var sep = rest.IndexOf(':');
+            var idSpan = sep >= 0 ? rest[..sep] : rest;
+            return int.TryParse(idSpan, out var serviceNoteId) ? serviceNoteId : null;
+        }
+
+        if (contextKey.StartsWith(NotesPrefix, StringComparison.Ordinal))
+            return int.TryParse(contextKey.AsSpan(NotesPrefix.Length), out var noteId) ? noteId : null;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts the schedule item id from a <see cref="ServiceNotes"/> contextKey. Null for a
+    /// standalone <see cref="Notes"/> key (no schedule item exists) or any other content type —
+    /// gates Stage View's "this occurrence" scope off a single check. Mirrors
+    /// <see cref="TryGetServiceScheduleItemId"/>.
+    /// </summary>
+    public static int? TryGetServiceNotesScheduleItemId(string? contextKey)
+    {
+        if (string.IsNullOrEmpty(contextKey) || !contextKey.StartsWith(ServiceNotesPrefix, StringComparison.Ordinal))
+            return null;
+
+        var rest = contextKey.AsSpan(ServiceNotesPrefix.Length);
+        var sep = rest.IndexOf(':');
+        return sep >= 0 && int.TryParse(rest[(sep + 1)..], out var itemId) ? itemId : null;
+    }
 }
