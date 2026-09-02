@@ -32,11 +32,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SongBooks/Songs.vpc` in one go, alongside the existing single-service `.vpagd` agenda import.
   Re-importing skips songs already in the library instead of duplicating them. Picking a `.vpc`
   that's actually a protected VideoPsalm Bible export is detected and redirected to Bible import.
+- **Optional password-protected backups.** Settings → Create Backup now offers a password; when
+  set, the whole `.oabak` (DB, media, settings) is encrypted with AES-256-GCM under a
+  PBKDF2-SHA256-derived key before it touches disk, so a backup copied to cloud storage or a
+  shared drive isn't readable without it. Leaving it blank keeps the previous plain-zip behaviour;
+  existing unencrypted backups still restore unchanged. Restoring an encrypted backup prompts for
+  the password and re-prompts on a wrong one rather than failing outright.
 
 ### Fixed
 - **Stage View now mirrors a scrolling lower-third.** The operator's Stage View showed the
   lower-third as static text even when "Desplazar el texto continuamente (marquesina)" was
   enabled in Settings; it now runs the same right-to-left ticker animation as the projector.
+
+### Security
+- The release GitHub Actions workflow no longer interpolates tag/ref values directly into script
+  bodies (a script-injection vector via a crafted tag name), pins third-party actions to a commit
+  SHA instead of a mutable version tag, and scopes `permissions` to the minimum the job needs.
+- Auto-update downloads to a random per-run staging directory with exclusive file creation,
+  closing a predictable-path race between the SHA-256 verify step and the installer launch.
+- A background-import failure log no longer includes the full source file path (username/folder
+  structure leak) — filename only.
+- Backup restore now validates every archive entry (zip-slip + compression ratio) before writing
+  anything, so a failure partway through can't leave settings/media half-restored alongside an
+  orphaned database stage file that the next launch would silently apply.
+- The VideoPsalm agenda importer now runs the same size/format/content-signature checks as the
+  regular media importer on every file and theme background it extracts, closing a bypass of that
+  validation specific to this import path.
+- Bible import now matches an existing version by exact abbreviation instead of a SQL `LIKE`
+  pattern — a version abbreviation containing `%`/`_` (e.g. from a plugin source) could otherwise
+  match an unrelated existing version and merge verses into it.
 
 ## [2.1.0] — 2026-08-30
 

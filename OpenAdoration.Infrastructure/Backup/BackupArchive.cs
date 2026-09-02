@@ -69,9 +69,15 @@ public static class BackupArchive
     /// <summary>
     /// Extracts settings + media in place and the database to <paramref name="dbStagePath"/>
     /// (swapped in on next startup — the live DB can't be overwritten while open).
+    /// Validates every entry (zip-slip + compression ratio) in a first pass, before writing
+    /// anything, so a bad entry discovered midway through a naive single-pass extract can't leave
+    /// settings/media half-overwritten with the DB stage file it already wrote still sitting there
+    /// — <c>App.xaml.cs.ApplyPendingRestore</c> would silently apply that orphaned stage on the
+    /// next launch even though this restore was reported as failed.
     /// </summary>
     public static void Unpack(ZipArchive zip, string dbStagePath, string settingsPath, string mediaDir)
     {
+        var plan = new List<(ZipArchiveEntry Entry, string Destination)>();
         foreach (var entry in zip.Entries)
         {
             if (entry.FullName == ManifestEntry || entry.Name.Length == 0) continue; // skip manifest + dir entries
@@ -80,11 +86,25 @@ public static class BackupArchive
                 throw new InvalidDataException($"Backup entry '{entry.FullName}' has a suspicious compression ratio.");
 
             if (entry.FullName == DbEntry)
-                ExtractTo(entry, dbStagePath);
+                plan.Add((entry, dbStagePath));
             else if (entry.FullName == SettingsEntry)
-                ExtractTo(entry, settingsPath);
+                plan.Add((entry, settingsPath));
             else if (entry.FullName.StartsWith(MediaPrefix, StringComparison.Ordinal))
-                ExtractTo(entry, SafeCombine(mediaDir, entry.FullName[MediaPrefix.Length..]));
+                plan.Add((entry, SafeCombine(mediaDir, entry.FullName[MediaPrefix.Length..])));
+        }
+
+        // Every entry validated (no zip-slip, no compression-ratio bomb) before any write — from
+        // here on extraction is IO-only and shouldn't throw, but if it does anyway (disk full,
+        // permission denied), don't leave an orphaned DB stage file for the next launch to apply.
+        try
+        {
+            foreach (var (entry, destination) in plan)
+                ExtractTo(entry, destination);
+        }
+        catch
+        {
+            if (File.Exists(dbStagePath)) File.Delete(dbStagePath);
+            throw;
         }
     }
 

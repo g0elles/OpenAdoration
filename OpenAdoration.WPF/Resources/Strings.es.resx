@@ -193,6 +193,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Common_New" xml:space="preserve"><value>+ Nuevo</value></data>
   <data name="Common_Clear" xml:space="preserve"><value>Borrar</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>Aceptar</value></data>
   <data name="Bible_NoVersion" xml:space="preserve"><value>No hay ninguna versión de la Biblia importada</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Importa un archivo de la Biblia para empezar. Formatos admitidos: Zefania XML, OSIS XML, USFX XML y JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Importar archivo de la Biblia…</value></data>
@@ -492,6 +493,13 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Settings_RestoreBackupTitle" xml:space="preserve"><value>Restaurar copia de seguridad</value></data>
   <data name="Settings_RestoreConfirm" xml:space="preserve"><value>Restaurar reemplaza tu biblioteca actual (cánticos, Biblias, temas, servicios, multimedia) y cierra la aplicación para finalizar. ¿Continuar?</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>No se pudo restaurar la copia de seguridad.</value></data>
+  <data name="Backup_PasswordField" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Backup_PasswordConfirmField" xml:space="preserve"><value>Confirmar contraseña</value></data>
+  <data name="Backup_PasswordMismatch" xml:space="preserve"><value>Las contraseñas no coinciden.</value></data>
+  <data name="Backup_PasswordRequired" xml:space="preserve"><value>Se requiere una contraseña.</value></data>
+  <data name="Backup_PasswordPromptCreate" xml:space="preserve"><value>Opcionalmente, protege esta copia de seguridad con una contraseña. Déjalo en blanco para crear una copia sin cifrar.</value></data>
+  <data name="Backup_PasswordPromptRestore" xml:space="preserve"><value>Esta copia de seguridad está protegida con contraseña. Ingresa la contraseña para restaurarla.</value></data>
+  <data name="Backup_PasswordPromptWrong" xml:space="preserve"><value>Esa contraseña es incorrecta. Inténtalo de nuevo.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>Estás usando la versión más reciente.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Buscar actualizaciones</value></data>
   <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Actualización cancelada. Puedes volver a intentarlo cuando quieras desde Configuración.</value></data>

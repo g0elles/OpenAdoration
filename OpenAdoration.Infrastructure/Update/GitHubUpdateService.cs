@@ -94,9 +94,17 @@ public sealed class GitHubUpdateService : IUpdateService
 
     public async Task<bool> DownloadAndApplyAsync(UpdateInfo info, CancellationToken ct = default)
     {
-        var msiPath = Path.Combine(Path.GetTempPath(), $"OpenAdoration-{info.Version}.msi");
+        // ponytail: a random per-run staging dir + exclusive file creation defeats predicting the
+        // download path in advance (the old fixed %TEMP%\OpenAdoration-<ver>.msi name); it does not
+        // fully close the TOCTOU window between our SHA256 verify and msiexec opening the path (that
+        // needs Authenticode signing of the MSI — S3, not built yet) but it's the cheap part of the
+        // fix and closes the "attacker pre-watches a known path" attack.
+        var stagingDir = Path.Combine(Path.GetTempPath(), $"OpenAdoration-Update-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(stagingDir);
+        var msiPath = Path.Combine(stagingDir, "OpenAdoration.msi");
+
         await using (var src = await Http.GetStreamAsync(info.MsiUrl, ct))
-        await using (var dst = File.Create(msiPath))
+        await using (var dst = new FileStream(msiPath, FileMode.CreateNew, FileAccess.Write))
             await src.CopyToAsync(dst, ct);
 
         await VerifyIntegrityAsync(msiPath, info, ct);
@@ -126,7 +134,7 @@ public sealed class GitHubUpdateService : IUpdateService
     {
         if (info.Sha256 is not { Length: > 0 } expected)
         {
-            File.Delete(msiPath);
+            Directory.Delete(Path.GetDirectoryName(msiPath)!, recursive: true);
             throw new InvalidDataException(
                 $"Release v{info.Version} has no asset digest — refusing to install an unverified MSI.");
         }
@@ -135,7 +143,8 @@ public sealed class GitHubUpdateService : IUpdateService
         var actual = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(stream, ct));
         if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
         {
-            File.Delete(msiPath);
+            stream.Dispose();
+            Directory.Delete(Path.GetDirectoryName(msiPath)!, recursive: true);
             throw new InvalidDataException(
                 $"MSI hash mismatch for v{info.Version}: expected {expected}, got {actual}. Download rejected.");
         }

@@ -252,11 +252,14 @@ public partial class SettingsViewModel : BaseViewModel
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
 
+        var password = _dialog.PromptPassword(L("Backup_PasswordPromptCreate"), confirm: true, allowBlank: true, title: L("Settings_CreateBackupTitle"));
+        if (password is null) return; // cancelled
+
         IsBusy = true;
         ClearError();
         try
         {
-            await _backup.CreateAsync(dialog.FileName);
+            await _backup.CreateAsync(dialog.FileName, password.Length == 0 ? null : password);
             _dialog.Inform(L("Settings_BackupCreated"), L("Settings_CreateBackupTitle"));
         }
         catch (Exception ex)
@@ -285,7 +288,24 @@ public partial class SettingsViewModel : BaseViewModel
         ClearError();
         try
         {
-            var result = await _backup.RestoreAsync(dialog.FileName);
+            string? password = null;
+            var promptKey = "Backup_PasswordPromptRestore";
+            RestoreResult result;
+
+            while (true)
+            {
+                result = await _backup.RestoreAsync(dialog.FileName, password);
+
+                if (result.Outcome is RestoreOutcome.PasswordRequired or RestoreOutcome.WrongPassword)
+                {
+                    promptKey = result.Outcome == RestoreOutcome.WrongPassword ? "Backup_PasswordPromptWrong" : promptKey;
+                    password = _dialog.PromptPassword(L(promptKey), confirm: false, allowBlank: false, title: L("Settings_RestoreBackupTitle"));
+                    if (password is null) return; // cancelled
+                    continue;
+                }
+                break;
+            }
+
             if (result.Outcome == RestoreOutcome.Compatible)
             {
                 _dialog.Inform(result.Message, L("Settings_RestoreBackupTitle"));

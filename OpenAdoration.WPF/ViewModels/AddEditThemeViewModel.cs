@@ -210,7 +210,8 @@ public partial class AddEditThemeViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to import background from {Source}", sourcePath);
+            // Log filename only -- full local paths expose usernames/folder structure in support logs.
+            _logger.LogError(ex, "Failed to import background from {Source}", Path.GetFileName(sourcePath));
             SetError(L("ThemeEdit_ErrBackgroundImport"));
         }
         finally

@@ -202,8 +202,12 @@ public sealed class BibleRepository : IBibleRepository
 
     private static async Task<int> EnsureVersionAsync(AppDbContext context, BibleVersion version, CancellationToken ct)
     {
+        // Exact match only — version.Abbreviation may originate from an untrusted plugin (M13), and
+        // EF.Functions.Like would let a "%" or "_" in it silently redirect the import onto an
+        // unrelated existing version. Abbreviation is already trimmed+uppercased above, and so is
+        // every stored one (same call site on every prior upsert), so plain equality is exact.
         var existing = await context.BibleVersions
-            .FirstOrDefaultAsync(bv => EF.Functions.Like(bv.Abbreviation, version.Abbreviation), ct);
+            .FirstOrDefaultAsync(bv => bv.Abbreviation == version.Abbreviation, ct);
 
         if (existing is not null)
         {

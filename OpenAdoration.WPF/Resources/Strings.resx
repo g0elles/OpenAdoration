@@ -193,6 +193,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Common_New" xml:space="preserve"><value>+ New</value></data>
   <data name="Common_Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
   <data name="Bible_NoVersion" xml:space="preserve"><value>No Bible version imported</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Import a Bible file to get started. Supported formats: Zefania XML, OSIS XML, USFX XML, and JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Import Bible File…</value></data>
@@ -492,6 +493,13 @@ This action cannot be undone.</value></data>
   <data name="Settings_RestoreBackupTitle" xml:space="preserve"><value>Restore Backup</value></data>
   <data name="Settings_RestoreConfirm" xml:space="preserve"><value>Restoring replaces your current library (songs, Bibles, themes, services, media) and closes the app to finish. Continue?</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>Could not restore the backup.</value></data>
+  <data name="Backup_PasswordField" xml:space="preserve"><value>Password</value></data>
+  <data name="Backup_PasswordConfirmField" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="Backup_PasswordMismatch" xml:space="preserve"><value>Passwords don't match.</value></data>
+  <data name="Backup_PasswordRequired" xml:space="preserve"><value>A password is required.</value></data>
+  <data name="Backup_PasswordPromptCreate" xml:space="preserve"><value>Optionally protect this backup with a password. Leave blank to create an unencrypted backup.</value></data>
+  <data name="Backup_PasswordPromptRestore" xml:space="preserve"><value>This backup is password-protected. Enter the password to restore it.</value></data>
+  <data name="Backup_PasswordPromptWrong" xml:space="preserve"><value>That password is incorrect. Try again.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>You're running the latest version.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Check for Updates</value></data>
   <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Update cancelled. You can try again any time from Settings.</value></data>
