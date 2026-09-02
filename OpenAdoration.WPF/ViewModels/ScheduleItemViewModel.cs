@@ -14,6 +14,7 @@ public partial class ScheduleItemViewModel : ObservableObject
         SongScheduleItem  => "♪",
         BibleScheduleItem => "✦",
         MediaScheduleItem => "▣",
+        NotesScheduleItem => "✎",
         _                 => "?"
     };
 
@@ -22,6 +23,7 @@ public partial class ScheduleItemViewModel : ObservableObject
         SongScheduleItem s  => s.Song?.Title ?? $"Song #{s.SongId}",
         BibleScheduleItem b => b.Reference,
         MediaScheduleItem m => m.MediaFile?.FileName ?? $"Media #{m.MediaFileId}",
+        NotesScheduleItem n => n.Note?.Title ?? $"Note #{n.NoteId}",
         _                   => TranslationSource.Instance["Common_Unknown"]
     };
 

@@ -17,6 +17,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
     private readonly IProjectionService      _projectionService;
     private readonly IBibleImportService     _importService;
     private readonly IAppSettingsService     _appSettings;
+    private readonly IStageNavigationService _stageNavigation;
     private readonly BibleNavigationState    _navState;
     private readonly ILogger<BibleViewModel> _logger;
 
@@ -103,6 +104,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         IProjectionService      projectionService,
         IBibleImportService     importService,
         IAppSettingsService     appSettings,
+        IStageNavigationService stageNavigation,
         BibleNavigationState    navState,
         ILogger<BibleViewModel> logger)
     {
@@ -110,6 +112,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
         _projectionService = projectionService;
         _importService     = importService;
         _appSettings       = appSettings;
+        _stageNavigation   = stageNavigation;
         _navState          = navState;
         _logger            = logger;
 
@@ -420,8 +423,18 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
 
     // ── Projection commands ───────────────────────────────────────────────
 
+    // Explicit "Proyectar" click only — ProjectCurrentSelection() is also invoked automatically
+    // (unfreeze, verse-restore) where auto-navigating to the Stage View would be unwanted.
     [RelayCommand]
-    private void ProjectSelected() => ProjectCurrentSelection();
+    private void ProjectSelected()
+    {
+        // Clear any stale cross-item "next" hint/queue left by an earlier standalone Song/Media
+        // projection — Bible verses source their own "up next" from the within-chapter deck.
+        _projectionService.SetNextScheduleItemPreview(null);
+        _projectionService.SetStandaloneQueue(Array.Empty<StandaloneQueueItem>(), 0);
+        ProjectCurrentSelection();
+        _stageNavigation.NavigateToStage();
+    }
 
     [RelayCommand]
     private void ExpandSelectionDown()
@@ -577,7 +590,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
                 _isChapterProjection = true;
                 try
                 {
-                    _projectionService.LoadSlides(slides, label);
+                    _projectionService.LoadSlides(slides, label, ProjectionContextKeys.StandaloneBible);
                     if (startIdx > 0) _projectionService.GoTo(startIdx);
                     SlidePreviewText  = slides[startIdx].Content;
                     SlidePreviewLabel = slides[startIdx].Label;
@@ -591,7 +604,7 @@ public partial class BibleViewModel : BaseViewModel, IDisposable
                 var versesPerSlide = Math.Max(1, _appSettings.Current.DefaultBibleVersesPerSlide);
                 var slides = _bibleService.GenerateSlides(selected, versesPerSlide,
                                  ThemeCascade.ForScripture(null, _appSettings.Current), SelectedVersion);
-                _projectionService.LoadSlides(slides, slides[0].Label);
+                _projectionService.LoadSlides(slides, slides[0].Label, ProjectionContextKeys.StandaloneBible);
                 SlidePreviewText  = slides[0].Content;
                 SlidePreviewLabel = slides[0].Label;
             }

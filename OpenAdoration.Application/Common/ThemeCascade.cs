@@ -18,4 +18,8 @@ public static class ThemeCascade
     /// <summary>Media: schedule-item theme → media content-type default.</summary>
     public static int? ForMedia(int? scheduleItemThemeId, AppSettings settings)
         => scheduleItemThemeId ?? settings.DefaultMediaThemeId;
+
+    /// <summary>Notes: schedule-item theme → note's own theme → notes content-type default.</summary>
+    public static int? ForNotes(int? scheduleItemThemeId, int? noteThemeId, AppSettings settings)
+        => scheduleItemThemeId ?? noteThemeId ?? settings.DefaultNotesThemeId;
 }

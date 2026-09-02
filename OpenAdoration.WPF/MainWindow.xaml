@@ -78,6 +78,10 @@
                                 Style="{StaticResource NavButton}"
                                 Content="{loc:Loc Nav_Media}"
                                 Command="{Binding NavigateToMediaCommand}" />
+                        <Button x:Name="NavNotesButton"
+                                Style="{StaticResource NavButton}"
+                                Content="{loc:Loc Nav_Notes}"
+                                Command="{Binding NavigateToNotesCommand}" />
 
                         <TextBlock Text="{loc:Loc Nav_Group_Present}" Style="{StaticResource NavGroupHeader}" />
                         <Button x:Name="NavScheduleButton"
@@ -245,7 +249,8 @@
 
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsProjecting, Converter={StaticResource BoolToVis}}">
-                        <Button Content="◀"
+                        <Button x:Name="ProjectionPreviousButton"
+                                Content="◀"
                                 Style="{StaticResource ProjectionButton}"
                                 Command="{Binding ProjectionPreviousCommand}"
                                 Margin="0,0,4,0" />

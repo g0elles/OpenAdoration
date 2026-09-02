@@ -5,8 +5,8 @@ namespace OpenAdoration.Tests.Infrastructure.Theming;
 
 public sealed class ThemeCascadeTests
 {
-    private static AppSettings Settings(int? song = null, int? scripture = null, int? media = null) =>
-        new() { DefaultSongThemeId = song, DefaultScriptureThemeId = scripture, DefaultMediaThemeId = media };
+    private static AppSettings Settings(int? song = null, int? scripture = null, int? media = null, int? notes = null) =>
+        new() { DefaultSongThemeId = song, DefaultScriptureThemeId = scripture, DefaultMediaThemeId = media, DefaultNotesThemeId = notes };
 
     [Fact]
     public void ForSong_PrefersScheduleItem_ThenSong_ThenDefault_ThenNull()
@@ -34,5 +34,15 @@ public sealed class ThemeCascadeTests
         Assert.Equal(6, ThemeCascade.ForMedia(6, s));
         Assert.Equal(7, ThemeCascade.ForMedia(null, s));
         Assert.Null(ThemeCascade.ForMedia(null, Settings()));
+    }
+
+    [Fact]
+    public void ForNotes_PrefersScheduleItem_ThenNote_ThenDefault_ThenNull()
+    {
+        var s = Settings(notes: 9);
+        Assert.Equal(1, ThemeCascade.ForNotes(1, 2, s));       // schedule item wins
+        Assert.Equal(2, ThemeCascade.ForNotes(null, 2, s));    // falls to note
+        Assert.Equal(9, ThemeCascade.ForNotes(null, null, s)); // falls to content-type default
+        Assert.Null(ThemeCascade.ForNotes(null, null, Settings())); // null = app default downstream
     }
 }

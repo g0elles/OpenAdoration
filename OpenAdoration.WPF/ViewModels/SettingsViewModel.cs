@@ -37,8 +37,8 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private bool _checkForUpdatesOnStartup;
     [ObservableProperty] private bool _lowerThirdScroll;
     [ObservableProperty] private int _lowerThirdScrollSpeed = 90;
-    [ObservableProperty] private string _lowerThirdBandColor = "#CC101018";
-    [ObservableProperty] private string _lowerThirdTextColor = "#FFFFFF";
+    [ObservableProperty] private System.Windows.Media.Color _lowerThirdBandColor = System.Windows.Media.Color.FromArgb(0xCC, 0x10, 0x10, 0x18);
+    [ObservableProperty] private System.Windows.Media.Color _lowerThirdTextColor = System.Windows.Media.Colors.White;
     [ObservableProperty] private int _lowerThirdFontSize = 40;
 
     public IReadOnlyList<SlideTransitionKind> AvailableTransitions { get; } = Enum.GetValues<SlideTransitionKind>();
@@ -126,8 +126,8 @@ public partial class SettingsViewModel : BaseViewModel
             CheckForUpdatesOnStartup    = current.CheckForUpdatesOnStartup;
             LowerThirdScroll            = current.LowerThirdScroll;
             LowerThirdScrollSpeed       = current.LowerThirdScrollSpeed;
-            LowerThirdBandColor         = current.LowerThirdBandColor;
-            LowerThirdTextColor         = current.LowerThirdTextColor;
+            LowerThirdBandColor         = ParseColor(current.LowerThirdBandColor, System.Windows.Media.Color.FromArgb(0xCC, 0x10, 0x10, 0x18));
+            LowerThirdTextColor         = ParseColor(current.LowerThirdTextColor, System.Windows.Media.Colors.White);
             LowerThirdFontSize          = current.LowerThirdFontSize;
             SelectedLanguage = AvailableLanguages.FirstOrDefault(l => l.Code == _localization.CurrentLanguageCode)
                                ?? AvailableLanguages.FirstOrDefault();
@@ -208,8 +208,8 @@ public partial class SettingsViewModel : BaseViewModel
                 SlideTransition             = SelectedTransition,
                 LowerThirdScroll            = LowerThirdScroll,
                 LowerThirdScrollSpeed       = LowerThirdScrollSpeed < 10 ? 10 : LowerThirdScrollSpeed,
-                LowerThirdBandColor         = string.IsNullOrWhiteSpace(LowerThirdBandColor) ? "#CC101018" : LowerThirdBandColor.Trim(),
-                LowerThirdTextColor         = string.IsNullOrWhiteSpace(LowerThirdTextColor) ? "#FFFFFF" : LowerThirdTextColor.Trim(),
+                LowerThirdBandColor         = ColorToHex(LowerThirdBandColor),
+                LowerThirdTextColor         = ColorToHex(LowerThirdTextColor),
                 LowerThirdFontSize          = LowerThirdFontSize < 12 ? 12 : LowerThirdFontSize,
                 Appearance                  = SelectedAppearance?.Mode ?? AppearanceMode.Dark,
                 UiCulture                   = SelectedLanguage?.Code,
@@ -252,11 +252,14 @@ public partial class SettingsViewModel : BaseViewModel
         };
         if (dialog.ShowDialog() != true || IsBusy) return;
 
+        var password = _dialog.PromptPassword(L("Backup_PasswordPromptCreate"), confirm: true, allowBlank: true, title: L("Settings_CreateBackupTitle"));
+        if (password is null) return; // cancelled
+
         IsBusy = true;
         ClearError();
         try
         {
-            await _backup.CreateAsync(dialog.FileName);
+            await _backup.CreateAsync(dialog.FileName, password.Length == 0 ? null : password);
             _dialog.Inform(L("Settings_BackupCreated"), L("Settings_CreateBackupTitle"));
         }
         catch (Exception ex)
@@ -285,7 +288,24 @@ public partial class SettingsViewModel : BaseViewModel
         ClearError();
         try
         {
-            var result = await _backup.RestoreAsync(dialog.FileName);
+            string? password = null;
+            var promptKey = "Backup_PasswordPromptRestore";
+            RestoreResult result;
+
+            while (true)
+            {
+                result = await _backup.RestoreAsync(dialog.FileName, password);
+
+                if (result.Outcome is RestoreOutcome.PasswordRequired or RestoreOutcome.WrongPassword)
+                {
+                    promptKey = result.Outcome == RestoreOutcome.WrongPassword ? "Backup_PasswordPromptWrong" : promptKey;
+                    password = _dialog.PromptPassword(L(promptKey), confirm: false, allowBlank: false, title: L("Settings_RestoreBackupTitle"));
+                    if (password is null) return; // cancelled
+                    continue;
+                }
+                break;
+            }
+
             if (result.Outcome == RestoreOutcome.Compatible)
             {
                 _dialog.Inform(result.Message, L("Settings_RestoreBackupTitle"));
@@ -364,7 +384,17 @@ public partial class SettingsViewModel : BaseViewModel
     partial void OnSlideTransitionMillisecondsChanged(int value) => MarkDirty();
     partial void OnLowerThirdScrollChanged(bool value) => MarkDirty();
     partial void OnLowerThirdScrollSpeedChanged(int value) => MarkDirty();
-    partial void OnLowerThirdBandColorChanged(string value) => MarkDirty();
-    partial void OnLowerThirdTextColorChanged(string value) => MarkDirty();
+    partial void OnLowerThirdBandColorChanged(System.Windows.Media.Color value) => MarkDirty();
+    partial void OnLowerThirdTextColorChanged(System.Windows.Media.Color value) => MarkDirty();
     partial void OnLowerThirdFontSizeChanged(int value) => MarkDirty();
+
+    private static System.Windows.Media.Color ParseColor(string? hex, System.Windows.Media.Color fallback)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return fallback;
+        try   { return (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex); }
+        catch { return fallback; }
+    }
+
+    // Keeps alpha (unlike StageViewModel's ColorToHex) — the band's default translucency (#CC..) depends on it.
+    private static string ColorToHex(System.Windows.Media.Color c) => $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}";
 }

@@ -412,7 +412,8 @@ This is a **desktop application** — there are no HTTP endpoints. The Applicati
 | Method / Event | Description |
 |---|---|
 | `LoadSlides(slides, contextLabel, contextKey?)` | Start projection with a slide list; `contextKey` tags the source for in-place updates |
-| `TryUpdateSlides(contextKey, slides, contextLabel)` | Replace slides in place (clamps index) if projecting and the key matches — live song/service edits |
+| `TryUpdateSlides(contextKey, slides, contextLabel)` | Replace slides in place (clamps index) if projecting and the key matches — live song/service edits, and Stage View's F7 quick style fix |
+| `ContextKey` | The `contextKey` of the currently projected content, or null — lets a caller (e.g. `StageViewModel`) re-target `TryUpdateSlides` without already knowing what's on screen |
 | `Next()` / `Previous()` / `GoTo(index)` | Advance / go back / jump to a slide |
 | `ShowBlank()` | Show black screen without stopping |
 | `ShowAnnouncement(text)` / `ClearAnnouncement()` | Blue banner overlay over the current slide (auto-dismiss); not a slide type |
@@ -1056,6 +1057,58 @@ v2.0 line (M8–M14). They follow the same layering and patterns. Full detail in
   themed 1920×1080 previews of the current slide + UP NEXT (including the first slide of the next
   schedule item), Prev/Next item, real video preview. Subscribes to the extended
   `IProjectionService` event bus.
+- **F7: Stage View live style editor** — writes into the real `ThemeCascade`, not a throwaway
+  struct (the original swatch-based version was rejected as "not a proper solution": no
+  background-image/video support, and nothing persisted across a live-item change or restart).
+  `StageViewModel` exposes a scope picker (Song / This Occurrence) plus font size, a real
+  `xctk:ColorPicker` for text colour, and a background type toggle (Color/Image/Video) with a
+  Browse + library picker for each. The first edit at a given (live item, scope) clones the
+  effective theme (`ShouldCloneBeforeEdit` — never mutates a theme other songs/occurrences share,
+  including the app-wide default); every further edit that session updates that clone directly via
+  `IThemeService`. Persists to `Song.ThemeId` or `ScheduleItem.ThemeId` (`ISongRepository`/
+  `IWorshipServiceRepository`'s narrow `SetThemeIdAsync`/`SetItemThemeIdAsync`, mirroring the
+  existing `SetItemAutoAdvanceAsync` single-column-patch pattern — never `SongRepository.UpdateAsync`'s
+  destructive section replace, G6). Because `Slide.ThemeId` is baked in once at slide-generation
+  time, a persisted edit alone doesn't move the live render — `PersistEditableThemeAsync`
+  regenerates the live song's slides with the new theme id (preserving any per-occurrence
+  verse-order override) and pushes them through `TryUpdateSlides`, the same live-refresh channel
+  song-content edits already use; `IProjectionService.NotifyThemeChanged` still fires afterward to
+  invalidate cached theme content on a second+ edit to the same clone. `ProjectionWindow.RenderSlide`
+  distinguishes a genuine slide change from this kind of style-only re-render of the *same* slide
+  (`IsSameContent`, comparing everything but ThemeId) and skips the slide transition for the
+  latter; `ApplyTheme` likewise leaves an already-playing background video open rather than
+  reopening (and black-flashing) it when the video path hasn't actually changed. Live, service-
+  driven Bible passages get the same editor too, but with only the "This Occurrence" scope —
+  scripture has no reusable library entity of its own to be the "Song" scope's equivalent
+  (`ThemeCascade.ForScripture` is just the schedule item's own ThemeId + one app-wide default, no
+  middle level), so the Song toggle is disabled whenever a Bible item is live. A standalone Bible
+  passage (browsed from the Biblia page, no schedule item) gets it too, with *both* scope toggles
+  disabled — the only persistent target there is the app-wide `AppSettings.DefaultScriptureThemeId`
+  itself (patched in place, never rebuilt from unrelated settings fields), since scripture has no
+  reusable "reading" entity at all outside a schedule item. Because a standalone browse selection
+  can be a single verse, a range, or a whole chapter chunked into many slides for verse-by-verse
+  ◀/▶ navigation, `PersistStandaloneBibleThemeAsync` re-themes whatever `IProjectionService.CurrentSlides`
+  already holds via `Slide.WithThemeId` instead of re-deriving that shape from `BibleViewModel`'s
+  selection state. Media schedule items don't yet expose this editor.
+- **Notes/Sermon content type (F9)** — a third `ScheduleItem` TPH subtype, `NotesScheduleItem`
+  (`Title` + plain-text `Content`, no reusable library entity — same shape as `BibleScheduleItem`).
+  `NotesSlideGenerator` (a pure static helper, no DI) splits `Content` on blank lines into one slide
+  per paragraph — the same rule `PlainTextParser.BlankLineRegex` uses for plain-text song import.
+  Addable to a service via `IWorshipServiceService.AddNotesItemAsync`, or projected standalone from
+  a new `NotesViewModel`/`NotesView` nav page (no browse list — type text, Proyectar, same F1
+  auto-nav-to-Stage pattern as Bible/Songs). F7 support shipped alongside it from day one rather
+  than bolted on later: `ProjectionContextKeys.ServiceNotes`/`StandaloneNotes` mirror the Bible
+  keys exactly, and both `PersistNotesThemeAsync`/`PersistStandaloneNotesThemeAsync` skip the
+  regenerate-from-source step Bible's persist path uses (Notes content never changes during a style
+  edit) in favor of `Slide.WithThemeId` directly on `IProjectionService.CurrentSlides` — the leaner
+  approach the Bible paths noted they "arguably should have used too." One gate is shared across all
+  three content types and must be extended for each: `StageViewModel.IsStyleEditorLive` only shows
+  the F7 bar when `IsSongContextKey`/`IsBibleContextKey`/`IsNotesContextKey` recognizes the current
+  `contextKey` — a real bug caught by e2e verification (the F7 bar silently never appeared for Notes
+  until this gate was extended), now covered by `StageViewModelNotesContextKeyTests`. `**bold**`
+  markers (F8) work in Notes content with zero extra code: `BoldMarkupText`/`ProjectionWindow`
+  render whatever `Slide.Content` holds regardless of `SlideType`. Media schedule items still don't
+  expose F7.
 - **Announcements** — `ShowAnnouncement/ClearAnnouncement` + `AnnouncementChanged`. A blue banner
   overlay over the untouched slide; auto-dismisses after `AnnouncementDurationSeconds`. Not a slide type.
 - **Lower-thirds (M10)** — `ShowLowerThird/ClearLowerThird` + `LowerThirdChanged`. A **persistent**

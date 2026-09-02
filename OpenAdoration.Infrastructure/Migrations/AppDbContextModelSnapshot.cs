@@ -178,6 +178,39 @@ namespace OpenAdoration.Infrastructure.Migrations
                     b.ToTable("MediaFiles");
                 });
 
+            modelBuilder.Entity("OpenAdoration.Domain.Entities.Note", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ThemeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThemeId");
+
+                    b.HasIndex("Title");
+
+                    b.ToTable("Notes");
+                });
+
             modelBuilder.Entity("OpenAdoration.Domain.Entities.ScheduleItem", b =>
                 {
                     b.Property<int>("Id")
@@ -467,6 +500,18 @@ namespace OpenAdoration.Infrastructure.Migrations
                     b.HasDiscriminator().HasValue("Media");
                 });
 
+            modelBuilder.Entity("OpenAdoration.Domain.Entities.NotesScheduleItem", b =>
+                {
+                    b.HasBaseType("OpenAdoration.Domain.Entities.ScheduleItem");
+
+                    b.Property<int>("NoteId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("NoteId");
+
+                    b.HasDiscriminator().HasValue("Notes");
+                });
+
             modelBuilder.Entity("OpenAdoration.Domain.Entities.SongScheduleItem", b =>
                 {
                     b.HasBaseType("OpenAdoration.Domain.Entities.ScheduleItem");
@@ -502,6 +547,14 @@ namespace OpenAdoration.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("BibleVersion");
+                });
+
+            modelBuilder.Entity("OpenAdoration.Domain.Entities.Note", b =>
+                {
+                    b.HasOne("OpenAdoration.Domain.Entities.Theme", null)
+                        .WithMany()
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("OpenAdoration.Domain.Entities.ScheduleItem", b =>
@@ -560,6 +613,17 @@ namespace OpenAdoration.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("MediaFile");
+                });
+
+            modelBuilder.Entity("OpenAdoration.Domain.Entities.NotesScheduleItem", b =>
+                {
+                    b.HasOne("OpenAdoration.Domain.Entities.Note", "Note")
+                        .WithMany()
+                        .HasForeignKey("NoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Note");
                 });
 
             modelBuilder.Entity("OpenAdoration.Domain.Entities.SongScheduleItem", b =>

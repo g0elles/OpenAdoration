@@ -88,6 +88,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Biblia</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Programa del servicio</value></data>
   <data name="Nav_Media" xml:space="preserve"><value>🖼  Multimedia</value></data>
+  <data name="Nav_Notes" xml:space="preserve"><value>📝  Notas</value></data>
   <data name="Nav_Themes" xml:space="preserve"><value>🎨  Temas</value></data>
   <data name="Nav_Stage" xml:space="preserve"><value>📺  Vista de escenario</value></data>
   <data name="Nav_Plugins" xml:space="preserve"><value>🧩  Complementos</value></data>
@@ -158,8 +159,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Settings_LowerThirdSection" xml:space="preserve"><value>BANDA INFERIOR</value></data>
   <data name="Settings_LowerThirdScroll" xml:space="preserve"><value>Desplazar el texto continuamente (marquesina)</value></data>
   <data name="Settings_LowerThirdSpeed" xml:space="preserve"><value>Velocidad de desplazamiento (píxeles por segundo)</value></data>
-  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Color de la banda (hex, p. ej. #CC101018)</value></data>
-  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Color del texto (hex)</value></data>
+  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Color de la banda</value></data>
+  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Color del texto</value></data>
   <data name="Settings_LowerThirdFontSize" xml:space="preserve"><value>Tamaño del texto</value></data>
   <data name="Settings_LowerThirdHelp" xml:space="preserve"><value>Estilo de la banda inferior persistente que se muestra desde la barra de proyección. Con el desplazamiento activado, el texto se mueve de derecha a izquierda hasta que se borra.</value></data>
   <data name="Settings_ThemesSection" xml:space="preserve"><value>TEMAS DE CONTENIDO</value></data>
@@ -192,6 +193,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Common_New" xml:space="preserve"><value>+ Nuevo</value></data>
   <data name="Common_Clear" xml:space="preserve"><value>Borrar</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>Aceptar</value></data>
   <data name="Bible_NoVersion" xml:space="preserve"><value>No hay ninguna versión de la Biblia importada</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Importa un archivo de la Biblia para empezar. Formatos admitidos: Zefania XML, OSIS XML, USFX XML y JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Importar archivo de la Biblia…</value></data>
@@ -204,6 +206,28 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Selecciona un libro y luego toca el número de capítulo</value></data>
   <data name="Bible_PlaceholderRef" xml:space="preserve"><value>p. ej. Juan 3:16-18, o escribe palabra(s) clave para buscar</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Biblioteca multimedia</value></data>
+  <data name="Notes_Title" xml:space="preserve"><value>Notas</value></data>
+  <data name="Notes_Content" xml:space="preserve"><value>Contenido</value></data>
+  <data name="Notes_ContentHint" xml:space="preserve"><value>Selecciona texto y pulsa Ctrl+B para ponerlo en negrita. Separa las diapositivas con una línea en blanco.</value></data>
+  <data name="Notes_ContentPlaceholder" xml:space="preserve"><value>Escribe tus notas aquí…</value></data>
+  <data name="Notes_SearchPlaceholder" xml:space="preserve"><value>Buscar notas…</value></data>
+  <data name="Notes_Empty" xml:space="preserve"><value>Aún no hay notas. Haz clic en + Nuevo para agregar una.</value></data>
+  <data name="Notes_NoResults" xml:space="preserve"><value>No se encontraron notas para "{0}".</value></data>
+  <data name="Notes_SelectPrompt" xml:space="preserve"><value>Selecciona una nota de la lista</value></data>
+  <data name="Notes_SelectPromptSub" xml:space="preserve"><value>o haz clic en + Nuevo para crear una</value></data>
+  <data name="Notes_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?
+
+Esta acción no se puede deshacer.</value></data>
+  <data name="Notes_DeleteTitle" xml:space="preserve"><value>Eliminar nota</value></data>
+  <data name="Notes_ErrLoad" xml:space="preserve"><value>No se pudieron cargar las notas.</value></data>
+  <data name="Notes_ErrDelete" xml:space="preserve"><value>No se pudo eliminar la nota.</value></data>
+  <data name="NoteEdit_FormNew" xml:space="preserve"><value>Nueva nota</value></data>
+  <data name="NoteEdit_FormEdit" xml:space="preserve"><value>Editar nota</value></data>
+  <data name="NoteEdit_TitleField" xml:space="preserve"><value>TÍTULO</value></data>
+  <data name="NoteEdit_TitlePlaceholder" xml:space="preserve"><value>p. ej. Sermón del domingo</value></data>
+  <data name="NoteEdit_Save" xml:space="preserve"><value>Guardar nota</value></data>
+  <data name="NoteEdit_ErrTitleRequired" xml:space="preserve"><value>El título de la nota es obligatorio.</value></data>
+  <data name="NoteEdit_ErrContentRequired" xml:space="preserve"><value>El contenido de la nota es obligatorio.</value></data>
   <data name="Media_TabMedia" xml:space="preserve"><value>Multimedia</value></data>
   <data name="Media_TabBackgrounds" xml:space="preserve"><value>Fondos</value></data>
   <data name="Media_BgInUse" xml:space="preserve"><value>No se puede eliminar: este fondo lo usan {0} tema(s). Quítalo de los temas primero.</value></data>
@@ -218,10 +242,18 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Stage_NotProjecting" xml:space="preserve"><value>Sin proyección</value></data>
   <data name="Stage_UpNext" xml:space="preserve"><value>A CONTINUACIÓN</value></data>
   <data name="Stage_EndOfItem" xml:space="preserve"><value>Fin del elemento</value></data>
+  <data name="Stage_AllSlides" xml:space="preserve"><value>Todas las diapositivas</value></data>
+  <data name="Stage_QuickStyle" xml:space="preserve"><value>Ajuste rápido:</value></data>
+  <data name="Stage_FontSizeDecrease" xml:space="preserve"><value>Disminuir tamaño de letra</value></data>
+  <data name="Stage_FontSizeIncrease" xml:space="preserve"><value>Aumentar tamaño de letra</value></data>
+  <data name="Stage_TextColor" xml:space="preserve"><value>Color de texto</value></data>
+  <data name="Stage_ScopeSong" xml:space="preserve"><value>Canto</value></data>
+  <data name="Stage_ScopeOccurrence" xml:space="preserve"><value>Esta Aparición</value></data>
+  <data name="Stage_BackgroundColor" xml:space="preserve"><value>Color de fondo</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Canciones</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Buscar canciones…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Importar</value></data>
-  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Importar canciones (OpenLyrics, OpenSong, VideoPsalm .vpagd, texto sin formato)</value></data>
+  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Importar canciones (OpenLyrics, OpenSong, VideoPsalm .vpagd/.vpc, Word .docx, texto sin formato)</value></data>
   <data name="Songs_Empty" xml:space="preserve"><value>Aún no hay canciones. Haz clic en + Nuevo para agregar una.</value></data>
   <data name="Songs_NoResults" xml:space="preserve"><value>No se encontraron canciones para "{0}".</value></data>
   <data name="Songs_SelectPrompt" xml:space="preserve"><value>Selecciona una canción de la lista</value></data>
@@ -261,6 +293,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>ORDEN DE EJECUCIÓN</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Opcional — p. ej. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Déjalo en blanco para reproducir las secciones de arriba abajo. Usa las fichas de sección de abajo (p. ej. V1 = Verso 1, C = Coro, B = Puente); repite una ficha para repetir esa sección.</value></data>
+  <data name="SongEdit_LyricsBoldHint" xml:space="preserve"><value>Selecciona texto y pulsa Ctrl+B para ponerlo en negrita.</value></data>
   <data name="SongEdit_Theme" xml:space="preserve"><value>TEMA</value></data>
   <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Usar tema predeterminado</value></data>
   <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Tema para esta canción al proyectarse. Déjalo en predeterminado para usar el tema del servicio o de la aplicación.</value></data>
@@ -341,7 +374,9 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_AddSong" xml:space="preserve"><value>+ Agregar canción</value></data>
   <data name="Sched_AddBible" xml:space="preserve"><value>+ Agregar Biblia</value></data>
   <data name="Sched_AddMedia" xml:space="preserve"><value>+ Agregar multimedia</value></data>
+  <data name="Sched_AddNotes" xml:space="preserve"><value>+ Agregar notas</value></data>
   <data name="Sched_SearchSongs" xml:space="preserve"><value>Buscar canciones…</value></data>
+  <data name="Sched_SearchNotes" xml:space="preserve"><value>Buscar notas…</value></data>
   <data name="Sched_AddSelected" xml:space="preserve"><value>Agregar seleccionado</value></data>
   <data name="Sched_Version" xml:space="preserve"><value>VERSIÓN</value></data>
   <data name="Sched_Book" xml:space="preserve"><value>LIBRO</value></data>
@@ -357,6 +392,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_QueueSong" xml:space="preserve"><value>+ Canción</value></data>
   <data name="Sched_QueueBible" xml:space="preserve"><value>+ Biblia</value></data>
   <data name="Sched_QueueMedia" xml:space="preserve"><value>+ Multimedia</value></data>
+  <data name="Sched_QueueNotes" xml:space="preserve"><value>+ Notas</value></data>
   <data name="Sched_AddToQueue" xml:space="preserve"><value>Agregar a la cola</value></data>
   <data name="Sched_NowProjecting" xml:space="preserve"><value>Proyectando ahora:</value></data>
   <data name="Sched_LiveHelp" xml:space="preserve"><value>Usa ◀ / ▶ en la barra principal para moverte entre diapositivas. Haz clic en cualquier elemento de la izquierda para saltar a él. Usa la cola para agregar más elementos sobre la marcha.</value></data>
@@ -401,10 +437,12 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrServiceNotFound" xml:space="preserve"><value>Servicio no encontrado.</value></data>
   <data name="Sched_ErrLoadService" xml:space="preserve"><value>No se pudo cargar el servicio.</value></data>
   <data name="Sched_ErrLoadSongs" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
+  <data name="Sched_ErrLoadNotes" xml:space="preserve"><value>No se pudieron cargar las notas.</value></data>
   <data name="Sched_ErrAddSong" xml:space="preserve"><value>No se pudo agregar la canción.</value></data>
   <data name="Sched_ErrLoadVersions" xml:space="preserve"><value>No se pudieron cargar las versiones de la Biblia.</value></data>
   <data name="Sched_ErrLoadMedia" xml:space="preserve"><value>No se pudieron cargar los archivos multimedia.</value></data>
   <data name="Sched_ErrAddMedia" xml:space="preserve"><value>No se pudo agregar el archivo multimedia.</value></data>
+  <data name="Sched_ErrAddNotes" xml:space="preserve"><value>No se pudo agregar el elemento de notas.</value></data>
   <data name="Sched_ErrSelectVersionBook" xml:space="preserve"><value>Selecciona una versión de la Biblia y un libro.</value></data>
   <data name="Sched_ErrSelectChapter" xml:space="preserve"><value>Selecciona un capítulo.</value></data>
   <data name="Sched_ErrSelectVerse" xml:space="preserve"><value>Selecciona al menos un versículo.</value></data>
@@ -412,6 +450,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrRemoveItem" xml:space="preserve"><value>No se pudo quitar el elemento.</value></data>
   <data name="Sched_ErrNoItemsStart" xml:space="preserve"><value>Agrega al menos un elemento antes de comenzar.</value></data>
   <data name="Sched_ErrNoLyrics" xml:space="preserve"><value>Esta canción no tiene letra para proyectar.</value></data>
+  <data name="Sched_ErrNoNotesContent" xml:space="preserve"><value>Este elemento de notas no tiene contenido para proyectar.</value></data>
   <data name="Sched_ErrProject" xml:space="preserve"><value>No se pudo proyectar este elemento.</value></data>
   <data name="Songs_ErrLoad" xml:space="preserve"><value>No se pudieron cargar las canciones.</value></data>
   <data name="Songs_ConfirmDelete" xml:space="preserve"><value>¿Eliminar "{0}"?
@@ -420,10 +459,12 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Songs_DeleteTitle" xml:space="preserve"><value>Eliminar canción</value></data>
   <data name="Songs_ErrDelete" xml:space="preserve"><value>No se pudo eliminar la canción.</value></data>
   <data name="Songs_ImportTitle" xml:space="preserve"><value>Importar canción</value></data>
-  <data name="Songs_ImportFailed" xml:space="preserve"><value>Error al importar. Formatos admitidos: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), texto sin formato.</value></data>
+  <data name="Songs_ImportFailed" xml:space="preserve"><value>Error al importar. Formatos admitidos: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd/.vpc), Word (.docx), texto sin formato.</value></data>
   <data name="Songs_ImportResultTitle" xml:space="preserve"><value>Importar canciones</value></data>
   <data name="Songs_ImportedOne" xml:space="preserve"><value>Se importó 1 canción.</value></data>
   <data name="Songs_ImportedMany" xml:space="preserve"><value>Se importaron {0} canciones.</value></data>
+  <data name="Songs_ImportedDetailed" xml:space="preserve"><value>Se importaron {0} canciones ({1} ya existían y se omitieron, {2} fallaron).</value></data>
+  <data name="Songs_ErrVpcIsBible" xml:space="preserve"><value>Este archivo es una Biblia de VideoPsalm protegida, no un cancionero. Impórtala desde Biblia.</value></data>
   <data name="Media_ImportTitle" xml:space="preserve"><value>Importar multimedia</value></data>
   <data name="Media_ImportFolderTitle" xml:space="preserve"><value>Importar carpeta multimedia</value></data>
   <data name="Media_FilterImages" xml:space="preserve"><value>Imágenes</value></data>
@@ -441,6 +482,8 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Themes_DeleteDialogTitle" xml:space="preserve"><value>Eliminar tema</value></data>
   <data name="Themes_ErrDelete" xml:space="preserve"><value>No se pudo eliminar el tema.</value></data>
   <data name="Stage_ErrLoad" xml:space="preserve"><value>No se pudo cargar la vista de escenario.</value></data>
+  <data name="Stage_ErrStyleSave" xml:space="preserve"><value>No se pudieron guardar los cambios de estilo.</value></data>
+  <data name="Stage_ErrBackgroundImport" xml:space="preserve"><value>No se pudo importar el archivo de fondo.</value></data>
   <data name="Settings_ErrSave" xml:space="preserve"><value>No se pudo guardar la configuración.</value></data>
   <data name="Settings_LeaveUnsaved" xml:space="preserve"><value>Tienes cambios sin guardar. ¿Guardarlos antes de salir?</value></data>
   <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Crear copia de seguridad</value></data>
@@ -450,6 +493,13 @@ Esta acción no se puede deshacer.</value></data>
   <data name="Settings_RestoreBackupTitle" xml:space="preserve"><value>Restaurar copia de seguridad</value></data>
   <data name="Settings_RestoreConfirm" xml:space="preserve"><value>Restaurar reemplaza tu biblioteca actual (cánticos, Biblias, temas, servicios, multimedia) y cierra la aplicación para finalizar. ¿Continuar?</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>No se pudo restaurar la copia de seguridad.</value></data>
+  <data name="Backup_PasswordField" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Backup_PasswordConfirmField" xml:space="preserve"><value>Confirmar contraseña</value></data>
+  <data name="Backup_PasswordMismatch" xml:space="preserve"><value>Las contraseñas no coinciden.</value></data>
+  <data name="Backup_PasswordRequired" xml:space="preserve"><value>Se requiere una contraseña.</value></data>
+  <data name="Backup_PasswordPromptCreate" xml:space="preserve"><value>Opcionalmente, protege esta copia de seguridad con una contraseña. Déjalo en blanco para crear una copia sin cifrar.</value></data>
+  <data name="Backup_PasswordPromptRestore" xml:space="preserve"><value>Esta copia de seguridad está protegida con contraseña. Ingresa la contraseña para restaurarla.</value></data>
+  <data name="Backup_PasswordPromptWrong" xml:space="preserve"><value>Esa contraseña es incorrecta. Inténtalo de nuevo.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>Estás usando la versión más reciente.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Buscar actualizaciones</value></data>
   <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Actualización cancelada. Puedes volver a intentarlo cuando quieras desde Configuración.</value></data>

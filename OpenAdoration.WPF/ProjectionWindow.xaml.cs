@@ -28,6 +28,16 @@ public partial class ProjectionWindow : Window
     // Active theme for the current slide (applied by ApplyTheme / RenderSlide).
     private Theme? _activeTheme;
 
+    // Path of the background video currently open in ThemeBackgroundVideo, so ApplyTheme can leave
+    // it playing instead of re-opening (and thus restarting/black-flashing) it on every re-render
+    // that doesn't actually change the video -- e.g. a live F7 style edit re-rendering the same slide.
+    private string? _activeVideoPath;
+
+    // The last slide actually rendered, compared by content (not ThemeId) so RenderSlide can tell a
+    // genuine slide change from a style-only re-render of the same slide (see IsSameContent) and skip
+    // the slide transition for the latter -- a live F7 edit shouldn't replay the fade every keystroke.
+    private Slide? _lastRenderedSlide;
+
     // Monotonic counter incremented on every SlideChanged event.
     // After each async suspension point the handler checks whether a newer event
     // has already taken over, and abandons the render if so (P1-2: stale slide guard).
@@ -45,6 +55,16 @@ public partial class ProjectionWindow : Window
     // because both would write the same Theme object fetched from the DB.
     private Theme?                                   _defaultTheme;
     private readonly ConcurrentDictionary<int, Theme> _themeCache = new();
+
+    /// <summary>
+    /// Floating preview window size used by <see cref="EnsureShown"/> when no secondary
+    /// (non-primary) monitor is connected. Public so <see cref="ViewModels.StageViewModel"/>
+    /// can mirror the same real on-screen proportions in that fallback mode — this window
+    /// renders its lower-third/announcement/header/footer text at literal pixel size with no
+    /// Viewbox, so their apparent size depends on the actual window size, not a fixed canvas.
+    /// </summary>
+    public const int FallbackPreviewWidth  = 800;
+    public const int FallbackPreviewHeight = 450;
 
     public ProjectionWindow(
         IProjectionService   projectionService,
@@ -106,8 +126,8 @@ public partial class ProjectionWindow : Window
             Title       = "Projection Preview";
 
             var primary = System.Windows.Forms.Screen.PrimaryScreen!;
-            Width  = 800;
-            Height = 450;
+            Width  = FallbackPreviewWidth;
+            Height = FallbackPreviewHeight;
             Left   = primary.WorkingArea.Right  - Width  - 20;
             Top    = primary.WorkingArea.Bottom - Height - 20;
             WindowState = WindowState.Normal;
@@ -341,12 +361,13 @@ public partial class ProjectionWindow : Window
         if (_activeTheme is null) return;
 
         var fontFamily = new System.Windows.Media.FontFamily(_activeTheme.FontFamily);
+        var fontSize   = _activeTheme.FontSize;
         var fontColor  = HexToBrush(_activeTheme.FontColor);
 
         // Body text style
         SlideTextBlock.FontFamily    = fontFamily;
-        SlideTextBlock.FontSize      = _activeTheme.FontSize;
-        SlideTextBlock.LineHeight    = _activeTheme.FontSize * 1.33;
+        SlideTextBlock.FontSize      = fontSize;
+        SlideTextBlock.LineHeight    = fontSize * 1.33;
         SlideTextBlock.Foreground    = fontColor;
         SlideTextBlock.TextAlignment = ParseTextAlignment(_activeTheme.TextAlignment);
 
@@ -363,6 +384,17 @@ public partial class ProjectionWindow : Window
         if (!string.IsNullOrWhiteSpace(_activeTheme.BackgroundVideoPath)
             && File.Exists(_activeTheme.BackgroundVideoPath))
         {
+            // Already playing this exact video -- leave it running. Re-opening on every re-render
+            // (e.g. each F7 style keystroke) would restart it from frame zero and black-flash while
+            // FFME reloads, even though the video itself didn't change.
+            if (_activeVideoPath == _activeTheme.BackgroundVideoPath
+                && ThemeBackgroundVideo.Visibility == Visibility.Visible)
+            {
+                ThemeBackgroundImage.Source     = null;
+                ThemeBackgroundImage.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             try
             {
                 ThemeBackgroundImage.Source     = null;
@@ -371,6 +403,7 @@ public partial class ProjectionWindow : Window
                 // FFME opens + plays automatically because LoadedBehavior="Play".
                 _ = ThemeBackgroundVideo.Open(new Uri(_activeTheme.BackgroundVideoPath, UriKind.Absolute));
                 ThemeBackgroundVideo.Visibility = Visibility.Visible;
+                _activeVideoPath = _activeTheme.BackgroundVideoPath;
             }
             catch (Exception ex)
             {
@@ -429,6 +462,7 @@ public partial class ProjectionWindow : Window
     {
         _ = ThemeBackgroundVideo.Close();
         ThemeBackgroundVideo.Visibility = Visibility.Collapsed;
+        _activeVideoPath = null;
     }
 
     private void StopContentVideo()
@@ -544,12 +578,20 @@ public partial class ProjectionWindow : Window
     {
         if (slide is null)
         {
+            _lastRenderedSlide = null;
             ClearDisplay();
             return;
         }
 
+        // A live style edit (F7) re-renders the CURRENT slide with only its ThemeId changed, via the
+        // same SlideChanged event a genuine slide change uses. Replaying the transition (and the
+        // content-video restart that implies) on every keystroke would be jarring, so treat it as a
+        // style-only refresh instead of a slide change when the content itself hasn't moved.
+        var isStyleOnlyRefresh = IsSameContent(_lastRenderedSlide, slide);
+        _lastRenderedSlide = slide;
+
         // Capture the outgoing content BEFORE the layers mutate, so old and new can overlap.
-        var snapshot = CaptureContentSnapshot();
+        var snapshot = isStyleOnlyRefresh ? null : CaptureContentSnapshot();
 
         ApplyTheme();
         UpdateCornerLabel(slide);
@@ -558,6 +600,7 @@ public partial class ProjectionWindow : Window
         {
             case SlideType.Song:
             case SlideType.Bible:
+            case SlideType.Notes:
                 ShowText(slide.Content, slide.Context);
                 break;
 
@@ -575,8 +618,17 @@ public partial class ProjectionWindow : Window
                 break;
         }
 
-        PlayTransition(snapshot);
+        if (isStyleOnlyRefresh)
+            ResetTransitionState(); // no fade -- just guarantee nothing is left mid-animation
+        else
+            PlayTransition(snapshot);
     }
+
+    /// <summary>True when two slides carry the same displayable content -- everything except
+    /// ThemeId, which a style-only refresh is exactly the case of changing.</summary>
+    private static bool IsSameContent(Slide? a, Slide? b) =>
+        a is not null && b is not null
+        && a.Content == b.Content && a.Type == b.Type && a.Label == b.Label && a.MediaPath == b.MediaPath;
 
     /// <summary>
     /// Renders the current <see cref="ContentLayers"/> to a frozen still for the crossfade.
@@ -723,7 +775,7 @@ public partial class ProjectionWindow : Window
     private void ShowText(string content, SlideContext context)
     {
         HideAllLayers();
-        SlideTextBlock.Text = content;
+        BoldMarkupText.Apply(SlideTextBlock, content);
 
         // Resolve and show header zone when the theme defines a template.
         // Collapse when the resolved text contains no letters or digits — this handles
@@ -831,8 +883,9 @@ public partial class ProjectionWindow : Window
         StopContentVideo();
         // Clear per-session caches so the next session picks up any theme edits
         // the operator made between services.
-        _activeTheme  = null;
-        _defaultTheme = null;
+        _activeTheme       = null;
+        _defaultTheme      = null;
+        _lastRenderedSlide = null;
         _themeCache.Clear();
         ClearDisplay();
         Hide();

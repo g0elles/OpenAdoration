@@ -15,8 +15,18 @@ public interface ISongService
     /// </summary>
     Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default);
     Task<Song> CreateAsync(Song song, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates <paramref name="song"/>, or returns the existing song when its
+    /// <see cref="Song.SourceGuid"/> already matches one in the library (VideoPsalm dedup).
+    /// </summary>
+    Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default);
     Task UpdateAsync(Song song, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
+
+    /// <summary>Patches only <see cref="Song.ThemeId"/> — used by Stage View's live style editor
+    /// so a quick theme tweak doesn't route through <see cref="UpdateAsync"/>'s section replace.</summary>
+    Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default);
 
     /// <summary>
     /// Generates the ordered list of projection slides for a song.

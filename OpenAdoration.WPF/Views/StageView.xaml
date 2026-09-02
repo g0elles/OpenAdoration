@@ -3,17 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OpenAdoration.WPF.ViewModels"
              xmlns:loc="clr-namespace:OpenAdoration.WPF.Localization"
+             xmlns:helpers="clr-namespace:OpenAdoration.WPF.Helpers"
+             xmlns:behaviors="clr-namespace:OpenAdoration.WPF.Behaviors"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:StageViewModel}"
              Background="{DynamicResource PrimaryBrush}"
-             Loaded="OnLoaded">
+             Loaded="OnLoaded"
+             Unloaded="OnUnloaded">
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />  <!-- Status bar -->
+            <RowDefinition Height="Auto" />  <!-- F7: quick style bar (song-only) -->
             <RowDefinition Height="*" />     <!-- Slide panels -->
         </Grid.RowDefinitions>
 
@@ -46,7 +51,8 @@
                 </StackPanel>
 
                 <!-- Context label -->
-                <TextBlock Grid.Column="1"
+                <TextBlock x:Name="ContextLabelText"
+                           Grid.Column="1"
                            Text="{Binding ContextLabel}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="14" FontWeight="SemiBold"
@@ -75,10 +81,191 @@
             </Grid>
         </Border>
 
+        <!-- ── F7: live style editor — writes into a real, per-scope Theme row for the live song ── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8"
+                Visibility="{Binding IsStyleEditorLive, Converter={StaticResource BoolToVis}}">
+            <WrapPanel Orientation="Horizontal">
+                <TextBlock Text="{loc:Loc Stage_QuickStyle}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           FontSize="12" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,10,0" />
+
+                <!-- Scope: which cascade level this edit writes to -->
+                <Border BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="4"
+                        ClipToBounds="True" Margin="0,0,14,0"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton x:Name="ScopeSongToggle"
+                                      Content="{loc:Loc Stage_ScopeSong}"
+                                      Style="{StaticResource AlignToggleButton}"
+                                      IsEnabled="{Binding IsSongScopeAvailable}"
+                                      IsChecked="{Binding IsScopeSong, Mode=OneWay}"
+                                      Command="{Binding SetScopeCommand}"
+                                      CommandParameter="Song" />
+                        <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
+                        <ToggleButton x:Name="ScopeOccurrenceToggle"
+                                      Content="{loc:Loc Stage_ScopeOccurrence}"
+                                      Style="{StaticResource AlignToggleButton}"
+                                      IsEnabled="{Binding IsOccurrenceScopeAvailable}"
+                                      IsChecked="{Binding IsScopeOccurrence, Mode=OneWay}"
+                                      Command="{Binding SetScopeCommand}"
+                                      CommandParameter="ThisOccurrence" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Font size stepper -->
+                <Button x:Name="DecreaseFontSizeButton" Content="A−" Width="44" Height="44" Margin="0,0,2,0"
+                        Style="{StaticResource SecondaryButton}"
+                        ToolTip="{loc:Loc Stage_FontSizeDecrease}"
+                        Command="{Binding DecreaseFontSizeCommand}" />
+                <TextBlock x:Name="FontSizeValueText"
+                           Text="{Binding EditableFontSize, StringFormat={}{0}pt}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           FontSize="12" MinWidth="34" TextAlignment="Center"
+                           VerticalAlignment="Center" />
+                <Button x:Name="IncreaseFontSizeButton" Content="A+" Width="44" Height="44" Margin="2,0,14,0"
+                        Style="{StaticResource SecondaryButton}"
+                        ToolTip="{loc:Loc Stage_FontSizeIncrease}"
+                        Command="{Binding IncreaseFontSizeCommand}" />
+
+                <!-- Text colour -->
+                <!-- Foreground is a fixed dark color, not DynamicResource (contra G27): the popup's own
+                     background is always light, regardless of app theme, so a dark-theme white Foreground
+                     was rendering illegible white-on-white RGBA labels inside it. -->
+                <xctk:ColorPicker x:Name="FontColorPicker"
+                                  SelectedColor="{Binding EditableFontColor}"
+                                  ToolTip="{loc:Loc Stage_TextColor}"
+                                  Background="{DynamicResource PrimaryBrush}"
+                                  Foreground="#1E1E2E"
+                                  BorderBrush="{DynamicResource BorderBrush}"
+                                  UsingAlphaChannel="False"
+                                  ShowRecentColors="True"
+                                  ShowAvailableColors="True"
+                                  ColorMode="ColorCanvas"
+                                  Width="90" Height="32" Margin="0,0,14,0"
+                                  VerticalAlignment="Center" />
+
+                <!-- Background type selector -->
+                <Border BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="4"
+                        ClipToBounds="True" Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton x:Name="BgTypeColorToggle"
+                                      Content="{loc:Loc ThemeEdit_BgColor}"
+                                      Style="{StaticResource AlignToggleButton}"
+                                      IsChecked="{Binding IsEditableBackgroundColor, Mode=OneWay}"
+                                      Command="{Binding SetBackgroundTypeCommand}"
+                                      CommandParameter="Color" />
+                        <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
+                        <ToggleButton x:Name="BgTypeImageToggle"
+                                      Content="{loc:Loc ThemeEdit_BgImage}"
+                                      Style="{StaticResource AlignToggleButton}"
+                                      IsChecked="{Binding IsEditableBackgroundImage, Mode=OneWay}"
+                                      Command="{Binding SetBackgroundTypeCommand}"
+                                      CommandParameter="Image" />
+                        <Rectangle Width="1" Fill="{DynamicResource BorderBrush}" />
+                        <ToggleButton x:Name="BgTypeVideoToggle"
+                                      Content="{loc:Loc ThemeEdit_BgVideo}"
+                                      Style="{StaticResource AlignToggleButton}"
+                                      IsChecked="{Binding IsEditableBackgroundVideo, Mode=OneWay}"
+                                      Command="{Binding SetBackgroundTypeCommand}"
+                                      CommandParameter="Video" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Background: colour -->
+                <xctk:ColorPicker x:Name="BackgroundColorPicker"
+                                  Visibility="{Binding IsEditableBackgroundColor, Converter={StaticResource BoolToVis}}"
+                                  SelectedColor="{Binding EditableBackgroundColor}"
+                                  ToolTip="{loc:Loc Stage_BackgroundColor}"
+                                  Background="{DynamicResource PrimaryBrush}"
+                                  Foreground="#1E1E2E"
+                                  BorderBrush="{DynamicResource BorderBrush}"
+                                  UsingAlphaChannel="False"
+                                  ShowRecentColors="True"
+                                  ShowAvailableColors="True"
+                                  ColorMode="ColorCanvas"
+                                  Width="90" Height="32"
+                                  VerticalAlignment="Center" />
+
+                <!-- Background: image (browse/clear + pick from library) -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding IsEditableBackgroundImage, Converter={StaticResource BoolToVis}}">
+                    <Button x:Name="BrowseBackgroundImageButton"
+                            Content="{loc:Loc Common_Browse}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" Margin="0,0,4,0"
+                            Click="OnBrowseBackgroundImageClick" />
+                    <Button x:Name="ClearBackgroundImageButton"
+                            Content="✕"
+                            Style="{StaticResource IconDangerButton}"
+                            Click="OnClearBackgroundImageClick"
+                            Visibility="{Binding HasEditableBackgroundImage, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,4,0" />
+                    <ComboBox x:Name="BackgroundImageLibraryCombo"
+                              Style="{StaticResource FieldComboBox}"
+                              Width="160"
+                              ItemsSource="{Binding BackgroundImages}"
+                              SelectedItem="{Binding SelectedLibraryImage}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
+                                           Width="32" Height="18" Stretch="UniformToFill" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding FileName}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Background: video (browse/clear + pick from library) -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding IsEditableBackgroundVideo, Converter={StaticResource BoolToVis}}">
+                    <Button x:Name="BrowseBackgroundVideoButton"
+                            Content="{loc:Loc Common_Browse}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" Margin="0,0,4,0"
+                            Click="OnBrowseBackgroundVideoClick" />
+                    <Button x:Name="ClearBackgroundVideoButton"
+                            Content="✕"
+                            Style="{StaticResource IconDangerButton}"
+                            Click="OnClearBackgroundVideoClick"
+                            Visibility="{Binding HasEditableBackgroundVideo, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,4,0" />
+                    <ComboBox x:Name="BackgroundVideoLibraryCombo"
+                              Style="{StaticResource FieldComboBox}"
+                              Width="160"
+                              ItemsSource="{Binding BackgroundVideos}"
+                              SelectedItem="{Binding SelectedLibraryVideo}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image behaviors:ThumbnailImage.Source="{Binding FilePath}"
+                                           Width="32" Height="18" Stretch="UniformToFill" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding FileName}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </WrapPanel>
+        </Border>
+
         <!-- ── Two-panel content area ── -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
@@ -133,7 +320,7 @@
 
                             <!-- Body zone -->
                             <Viewbox Grid.Row="1" Margin="120,30,120,30">
-                                <TextBlock Text="{Binding CurrentPreview.Content}"
+                                <TextBlock helpers:BoldMarkupText.Text="{Binding CurrentPreview.Content}"
                                            Width="1680"
                                            FontFamily="{Binding CurrentPreview.FontFamily}"
                                            FontSize="{Binding CurrentPreview.FontSize}"
@@ -183,13 +370,15 @@
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Border>
 
-                        <!-- Persistent lower-third mirror (static indicator; the ticker runs on the projector) -->
-                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                        <!-- Persistent lower-third mirror — band styling + scroll ticker replay the projector. -->
+                        <Border x:Name="LowerThirdBar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                                 Padding="60,18"
-                                Background="#CC101018"
+                                ClipToBounds="True"
+                                Background="{Binding LowerThirdBandColor, Converter={StaticResource HexToBrush}}"
                                 Visibility="{Binding HasLowerThird, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding LowerThirdText}"
-                                       Foreground="White" FontSize="40" FontWeight="SemiBold"
+                            <TextBlock x:Name="LowerThirdTextBlock" Text="{Binding LowerThirdText}"
+                                       Foreground="{Binding LowerThirdTextColor, Converter={StaticResource HexToBrush}}"
+                                       FontSize="{Binding LowerThirdFontSize}" FontWeight="SemiBold"
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Border>
 
@@ -281,7 +470,8 @@
                                            FontSize="56" Padding="80,30,80,10"
                                            TextAlignment="Right" TextWrapping="NoWrap" />
                                 <Viewbox Grid.Row="1" Margin="120,30,120,30">
-                                    <TextBlock Text="{Binding NextPreview.Content}"
+                                    <TextBlock x:Name="NextPreviewContentText"
+                                               helpers:BoldMarkupText.Text="{Binding NextPreview.Content}"
                                                Width="1680"
                                                FontFamily="{Binding NextPreview.FontFamily}"
                                                FontSize="{Binding NextPreview.FontSize}"
@@ -321,6 +511,69 @@
                     <TextBlock Text="{Binding NextPreview.SectionLabel}"
                                Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10" />
                 </Border>
+            </Grid>
+
+            <!-- Column separator -->
+            <Rectangle Grid.Column="3" Fill="{DynamicResource BorderBrush}" />
+
+            <!-- ─────────── ALL SLIDES (clickable list) ─────────── -->
+            <Grid Grid.Column="4" Background="{DynamicResource SurfaceBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- "ALL SLIDES" header -->
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}" Padding="14,8">
+                    <TextBlock Text="{loc:Loc Stage_AllSlides}"
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10" FontWeight="Bold" />
+                </Border>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding AllSlides}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button HorizontalContentAlignment="Stretch"
+                                        Padding="0" BorderThickness="0" Cursor="Hand"
+                                        MinHeight="44"
+                                        Command="{Binding DataContext.JumpToSlideCommand,
+                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding Index}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="SlideBd"
+                                                    Background="Transparent"
+                                                    BorderThickness="0,0,0,1"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    Padding="14,8">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Label}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               FontSize="12" FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding PreviewText}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                               FontSize="11" Margin="0,2,0,0"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                    <Setter TargetName="SlideBd" Property="Background"
+                                                            Value="{DynamicResource AccentBrush}" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="SlideBd" Property="Background"
+                                                            Value="{DynamicResource ActiveNavBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
         </Grid>
     </Grid>

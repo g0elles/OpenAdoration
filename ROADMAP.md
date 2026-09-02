@@ -65,7 +65,7 @@ A church operator opens this app 15 minutes before a service and uses it under p
 | Service Schedule | ✅ Done | Builder + live mode + per-item auto-advance + per-item verse-order override |
 | Media | ✅ Done | Import, project, delete (images **and** video); **Backgrounds** subsection — exclusive reusable theme-background library (store-backed, content-deduped, delete-guarded) |
 | Keyboard shortcuts | ✅ Done | Space/arrows/B/Esc/1–9/Ctrl+1–5 |
-| Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal) |
+| Stage View | ✅ Done | Themed previews, cross-item UP NEXT, Prev/Next Item (fulfils the M6 operator-preview goal); live quick style fix (font size + text/background colour swatches, song-only, non-persisted) |
 | Projection | ✅ Done | 3-zone tokens, announcement banner, configurable fade transition |
 | Settings | ✅ Done | settings.json; church tokens; default auto-advance / verses-per-slide |
 | Packaging | ✅ Done | Self-contained single-file exe + WiX v5 MSI (M7.5) |
@@ -484,6 +484,8 @@ Accessible from a `?` button in the toolbar.
 ### 9.1 — More song importers
 Extend `SongFormatDispatcher` with new parsers (same pattern as OpenSong/plain text):
 - **ChordPro / SongPro** (`.cho`, `.crd`, `.chopro`, `.chordpro`) — text-based, directive `{title}`/`{c:}`; strip chords to lyrics. *(Easy — done.)* ✅
+- **Word (`.docx`)** — filename → title, blank-paragraph-separated paragraphs → verses (same heuristic as plain text, at paragraph granularity). ✅ **DONE (2026-08-31)** — driven by a real 359-file church library (`DocxParser`, `DocumentFormat.OpenXml`); `+ Importar` now multi-selects, so a whole folder imports in one operation. Legacy `.doc` (binary OLE) and `.pptx` song decks found in the same library are **not** covered — see Backlog.
+- **VideoPsalm songbook (`.vpc`)** — a full VideoPsalm backup's `SongBooks/Songs.vpc` (hundreds of songs in one file, same relaxed-JSON dialect as `.vpagd`). ✅ **DONE (2026-08-31)** — `VideoPsalmParser.ParseSongbook` reuses the existing `MapSong`; `.vpc` also being VideoPsalm's DRM Bible export format, a Bible `.vpc` picked here is detected and redirected to Bible import instead of guessing. Dedup by `SourceGuid` (`ISongService.CreateOrReuseAsync`) applies to every VideoPsalm-sourced song import, not just full-service imports. The backup's `Images/`/`Videos/` folders needed **no new code** — Multimedia's existing "+ Importar carpeta" already bulk-imports any media type from a folder.
 - **EasyWorship** — EW7 stores songs in a bundled SQLite DB; read songs + slides. *(Medium.)*
 - **ProPresenter** — best-effort text extraction from `.pro` bundles (RTF inside). *(Hard — best-effort, clearly labelled.)*
 - Each new format → a fixture + a `SongParserTests` case; the dispatcher's file filter grows.
@@ -742,6 +744,7 @@ Pulled out of the active plan 2026-06-18; revisit when the blocker clears or a c
 |---|---|
 | M9.1 EasyWorship import | Needs a **real EW7 export** to validate the SQLite schema — can't build blind. |
 | M9.1 ProPresenter import | Needs a real `.pro`/bundle sample. |
+| M9.1 `.pptx`/legacy `.doc` song files | Found in the real 359-file church library used to build Word import (2026-08-31): 6 `.pptx` (slide-deck lyrics, different structure entirely) + 2 legacy `.doc` (binary OLE, no managed reader available). Same "needs a real sample to validate, and a different parser than the one just built" shape as EasyWorship/ProPresenter above. |
 | M9.2 PDF / pptx deck import | Native dependency decision (Docnet/PDFium for PDF; pptx unzip) — heavyweight, defer. |
 | M10.4 Clean output / NDI *(stretch)* | Clean borderless output is doable later; NDI needs a native SDK. |
 | ChordPro in import tooltip/format string | 2-line cosmetic copy fix (both langs) — fold into the next i18n touch. |
@@ -829,3 +832,4 @@ Each milestone leaves the app in a better, shippable state than before it. No mi
 | **18 — Countdown / loop / alerts** | Countdown-to-service, pre-service loop, nursery alerts | Recorded |
 | **19 — Remote control (LAN)** | Phone/tablet remote + stage view over local HTTP | Recorded |
 | **20 — Clean output** | Clean OBS window; NDI only on demand (graduates backlog M10.4) | Recorded |
+| **21 — Valley Of Beracah operator feedback (F1–F11)** | 11 items from the church actively running OA. F1 (Proyectar jumps to projection view), F2 (standalone next-items queue), F3 (Stage View "up next" full item list), F4 (VideoPsalm full-backup import), F5 (Word song import), F7 (F7 live style editor — Song/Bible/Notes), F8 (bold lyrics via `**markers**`), F9 (Notes/Sermon content type), F10 (Stage View lower-third mirrors the projector), F11 (color-wheel picker for lower-third band/text color, replacing raw hex entry) done. F6 (a vague "toolbar" ask) parked pending clarification. See `session_status/2026-08-31.md` and `session_status/CURRENT.md` for full detail. | Mostly done |

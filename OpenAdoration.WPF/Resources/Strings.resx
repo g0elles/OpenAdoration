@@ -88,6 +88,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Nav_Bible" xml:space="preserve"><value>📖  Bible</value></data>
   <data name="Nav_Schedule" xml:space="preserve"><value>📋  Service Schedule</value></data>
   <data name="Nav_Media" xml:space="preserve"><value>🖼  Media</value></data>
+  <data name="Nav_Notes" xml:space="preserve"><value>📝  Notes</value></data>
   <data name="Nav_Themes" xml:space="preserve"><value>🎨  Themes</value></data>
   <data name="Nav_Stage" xml:space="preserve"><value>📺  Stage View</value></data>
   <data name="Nav_Plugins" xml:space="preserve"><value>🧩  Plugins</value></data>
@@ -158,8 +159,8 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Settings_LowerThirdSection" xml:space="preserve"><value>LOWER THIRD</value></data>
   <data name="Settings_LowerThirdScroll" xml:space="preserve"><value>Scroll text continuously (ticker)</value></data>
   <data name="Settings_LowerThirdSpeed" xml:space="preserve"><value>Scroll speed (pixels per second)</value></data>
-  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Band color (hex, e.g. #CC101018)</value></data>
-  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Text color (hex)</value></data>
+  <data name="Settings_LowerThirdBandColor" xml:space="preserve"><value>Band color</value></data>
+  <data name="Settings_LowerThirdTextColor" xml:space="preserve"><value>Text color</value></data>
   <data name="Settings_LowerThirdFontSize" xml:space="preserve"><value>Text size</value></data>
   <data name="Settings_LowerThirdHelp" xml:space="preserve"><value>Styles the persistent lower-third band shown from the projection bar. With scrolling on, the text moves right to left until cleared.</value></data>
   <data name="Settings_ThemesSection" xml:space="preserve"><value>CONTENT THEMES</value></data>
@@ -192,6 +193,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Common_New" xml:space="preserve"><value>+ New</value></data>
   <data name="Common_Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
   <data name="Bible_NoVersion" xml:space="preserve"><value>No Bible version imported</value></data>
   <data name="Bible_NoVersionHelp" xml:space="preserve"><value>Import a Bible file to get started. Supported formats: Zefania XML, OSIS XML, USFX XML, and JSON.</value></data>
   <data name="Bible_ImportFile" xml:space="preserve"><value>Import Bible File…</value></data>
@@ -204,6 +206,28 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Bible_SelectPrompt" xml:space="preserve"><value>Select a book, then tap a chapter number</value></data>
   <data name="Bible_PlaceholderRef" xml:space="preserve"><value>e.g. John 3:16-18, or type keyword(s) to search</value></data>
   <data name="Media_Title" xml:space="preserve"><value>Media Library</value></data>
+  <data name="Notes_Title" xml:space="preserve"><value>Notes</value></data>
+  <data name="Notes_Content" xml:space="preserve"><value>Content</value></data>
+  <data name="Notes_ContentHint" xml:space="preserve"><value>Select text and press Ctrl+B to bold it. Separate slides with a blank line.</value></data>
+  <data name="Notes_ContentPlaceholder" xml:space="preserve"><value>Type your notes here…</value></data>
+  <data name="Notes_SearchPlaceholder" xml:space="preserve"><value>Search notes…</value></data>
+  <data name="Notes_Empty" xml:space="preserve"><value>No notes yet. Click + New to add one.</value></data>
+  <data name="Notes_NoResults" xml:space="preserve"><value>No notes found for "{0}".</value></data>
+  <data name="Notes_SelectPrompt" xml:space="preserve"><value>Select a note from the list</value></data>
+  <data name="Notes_SelectPromptSub" xml:space="preserve"><value>or click + New to create one</value></data>
+  <data name="Notes_ConfirmDelete" xml:space="preserve"><value>Delete "{0}"?
+
+This action cannot be undone.</value></data>
+  <data name="Notes_DeleteTitle" xml:space="preserve"><value>Delete Note</value></data>
+  <data name="Notes_ErrLoad" xml:space="preserve"><value>Failed to load notes.</value></data>
+  <data name="Notes_ErrDelete" xml:space="preserve"><value>Failed to delete note.</value></data>
+  <data name="NoteEdit_FormNew" xml:space="preserve"><value>New Note</value></data>
+  <data name="NoteEdit_FormEdit" xml:space="preserve"><value>Edit Note</value></data>
+  <data name="NoteEdit_TitleField" xml:space="preserve"><value>TITLE</value></data>
+  <data name="NoteEdit_TitlePlaceholder" xml:space="preserve"><value>e.g. Sunday Sermon</value></data>
+  <data name="NoteEdit_Save" xml:space="preserve"><value>Save Note</value></data>
+  <data name="NoteEdit_ErrTitleRequired" xml:space="preserve"><value>Note title is required.</value></data>
+  <data name="NoteEdit_ErrContentRequired" xml:space="preserve"><value>Note content is required.</value></data>
   <data name="Media_TabMedia" xml:space="preserve"><value>Media</value></data>
   <data name="Media_TabBackgrounds" xml:space="preserve"><value>Backgrounds</value></data>
   <data name="Media_BgInUse" xml:space="preserve"><value>Can't delete — this background is used by {0} theme(s). Remove it from the theme(s) first.</value></data>
@@ -218,10 +242,18 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Stage_NotProjecting" xml:space="preserve"><value>Not projecting</value></data>
   <data name="Stage_UpNext" xml:space="preserve"><value>UP NEXT</value></data>
   <data name="Stage_EndOfItem" xml:space="preserve"><value>End of item</value></data>
+  <data name="Stage_AllSlides" xml:space="preserve"><value>All slides</value></data>
+  <data name="Stage_QuickStyle" xml:space="preserve"><value>Quick style:</value></data>
+  <data name="Stage_FontSizeDecrease" xml:space="preserve"><value>Decrease font size</value></data>
+  <data name="Stage_FontSizeIncrease" xml:space="preserve"><value>Increase font size</value></data>
+  <data name="Stage_TextColor" xml:space="preserve"><value>Text color</value></data>
+  <data name="Stage_BackgroundColor" xml:space="preserve"><value>Background color</value></data>
+  <data name="Stage_ScopeSong" xml:space="preserve"><value>Song</value></data>
+  <data name="Stage_ScopeOccurrence" xml:space="preserve"><value>This Occurrence</value></data>
   <data name="Songs_Title" xml:space="preserve"><value>Songs</value></data>
   <data name="Songs_SearchPlaceholder" xml:space="preserve"><value>Search songs…</value></data>
   <data name="Songs_Import" xml:space="preserve"><value>Import</value></data>
-  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd, plain text)</value></data>
+  <data name="Songs_ImportTooltip" xml:space="preserve"><value>Import songs (OpenLyrics, OpenSong, VideoPsalm .vpagd/.vpc, Word .docx, plain text)</value></data>
   <data name="Songs_Empty" xml:space="preserve"><value>No songs yet. Click + New to add one.</value></data>
   <data name="Songs_NoResults" xml:space="preserve"><value>No songs found for "{0}".</value></data>
   <data name="Songs_SelectPrompt" xml:space="preserve"><value>Select a song from the list</value></data>
@@ -261,6 +293,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="SongEdit_PlayOrder" xml:space="preserve"><value>PLAY ORDER</value></data>
   <data name="SongEdit_PlayOrderPlaceholder" xml:space="preserve"><value>Optional — e.g. V1 C V2 C B C</value></data>
   <data name="SongEdit_PlayOrderHelp" xml:space="preserve"><value>Leave blank to play sections top-to-bottom. Use the section tokens below (e.g. V1 = Verse 1, C = Chorus, B = Bridge); repeat a token to repeat that section.</value></data>
+  <data name="SongEdit_LyricsBoldHint" xml:space="preserve"><value>Select text and press Ctrl+B to bold it.</value></data>
   <data name="SongEdit_Theme" xml:space="preserve"><value>THEME</value></data>
   <data name="SongEdit_ThemeInherit" xml:space="preserve"><value>Use default theme</value></data>
   <data name="SongEdit_ThemeHelp" xml:space="preserve"><value>Theme for this song when projected. Leave as default to use the service or app theme.</value></data>
@@ -341,7 +374,9 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_AddSong" xml:space="preserve"><value>+ Add Song</value></data>
   <data name="Sched_AddBible" xml:space="preserve"><value>+ Add Bible</value></data>
   <data name="Sched_AddMedia" xml:space="preserve"><value>+ Add Media</value></data>
+  <data name="Sched_AddNotes" xml:space="preserve"><value>+ Add Notes</value></data>
   <data name="Sched_SearchSongs" xml:space="preserve"><value>Search songs…</value></data>
+  <data name="Sched_SearchNotes" xml:space="preserve"><value>Search notes…</value></data>
   <data name="Sched_AddSelected" xml:space="preserve"><value>Add Selected</value></data>
   <data name="Sched_Version" xml:space="preserve"><value>VERSION</value></data>
   <data name="Sched_Book" xml:space="preserve"><value>BOOK</value></data>
@@ -357,6 +392,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_QueueSong" xml:space="preserve"><value>+ Song</value></data>
   <data name="Sched_QueueBible" xml:space="preserve"><value>+ Bible</value></data>
   <data name="Sched_QueueMedia" xml:space="preserve"><value>+ Media</value></data>
+  <data name="Sched_QueueNotes" xml:space="preserve"><value>+ Notes</value></data>
   <data name="Sched_AddToQueue" xml:space="preserve"><value>Add to Queue</value></data>
   <data name="Sched_NowProjecting" xml:space="preserve"><value>Now projecting:</value></data>
   <data name="Sched_LiveHelp" xml:space="preserve"><value>Use ◀ / ▶ in the main bar to move between slides. Click any item on the left to jump to it. Use Queue to add more items on the fly.</value></data>
@@ -401,10 +437,12 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrServiceNotFound" xml:space="preserve"><value>Service not found.</value></data>
   <data name="Sched_ErrLoadService" xml:space="preserve"><value>Could not load service.</value></data>
   <data name="Sched_ErrLoadSongs" xml:space="preserve"><value>Could not load songs.</value></data>
+  <data name="Sched_ErrLoadNotes" xml:space="preserve"><value>Could not load notes.</value></data>
   <data name="Sched_ErrAddSong" xml:space="preserve"><value>Could not add song.</value></data>
   <data name="Sched_ErrLoadVersions" xml:space="preserve"><value>Could not load Bible versions.</value></data>
   <data name="Sched_ErrLoadMedia" xml:space="preserve"><value>Could not load media files.</value></data>
   <data name="Sched_ErrAddMedia" xml:space="preserve"><value>Could not add media file.</value></data>
+  <data name="Sched_ErrAddNotes" xml:space="preserve"><value>Could not add notes item.</value></data>
   <data name="Sched_ErrSelectVersionBook" xml:space="preserve"><value>Select a Bible version and book.</value></data>
   <data name="Sched_ErrSelectChapter" xml:space="preserve"><value>Select a chapter.</value></data>
   <data name="Sched_ErrSelectVerse" xml:space="preserve"><value>Select at least one verse.</value></data>
@@ -412,6 +450,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe</value></data>
   <data name="Sched_ErrRemoveItem" xml:space="preserve"><value>Could not remove item.</value></data>
   <data name="Sched_ErrNoItemsStart" xml:space="preserve"><value>Add at least one item before starting.</value></data>
   <data name="Sched_ErrNoLyrics" xml:space="preserve"><value>This song has no lyrics to project.</value></data>
+  <data name="Sched_ErrNoNotesContent" xml:space="preserve"><value>This notes item has no content to project.</value></data>
   <data name="Sched_ErrProject" xml:space="preserve"><value>Could not project this item.</value></data>
   <data name="Songs_ErrLoad" xml:space="preserve"><value>Failed to load songs.</value></data>
   <data name="Songs_ConfirmDelete" xml:space="preserve"><value>Delete "{0}"?
@@ -420,10 +459,12 @@ This action cannot be undone.</value></data>
   <data name="Songs_DeleteTitle" xml:space="preserve"><value>Delete Song</value></data>
   <data name="Songs_ErrDelete" xml:space="preserve"><value>Failed to delete song.</value></data>
   <data name="Songs_ImportTitle" xml:space="preserve"><value>Import Song</value></data>
-  <data name="Songs_ImportFailed" xml:space="preserve"><value>Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd), plain text.</value></data>
+  <data name="Songs_ImportFailed" xml:space="preserve"><value>Import failed. Supported formats: OpenLyrics XML, OpenSong, VideoPsalm (.vpagd/.vpc), Word (.docx), plain text.</value></data>
   <data name="Songs_ImportResultTitle" xml:space="preserve"><value>Import Songs</value></data>
   <data name="Songs_ImportedOne" xml:space="preserve"><value>Imported 1 song.</value></data>
   <data name="Songs_ImportedMany" xml:space="preserve"><value>Imported {0} songs.</value></data>
+  <data name="Songs_ImportedDetailed" xml:space="preserve"><value>Imported {0} songs ({1} already existed and were skipped, {2} failed).</value></data>
+  <data name="Songs_ErrVpcIsBible" xml:space="preserve"><value>This file is a protected VideoPsalm Bible, not a songbook. Import it from Bible instead.</value></data>
   <data name="Media_ImportTitle" xml:space="preserve"><value>Import Media</value></data>
   <data name="Media_ImportFolderTitle" xml:space="preserve"><value>Import Media Folder</value></data>
   <data name="Media_FilterImages" xml:space="preserve"><value>Images</value></data>
@@ -441,6 +482,8 @@ This action cannot be undone.</value></data>
   <data name="Themes_DeleteDialogTitle" xml:space="preserve"><value>Delete Theme</value></data>
   <data name="Themes_ErrDelete" xml:space="preserve"><value>Failed to delete theme.</value></data>
   <data name="Stage_ErrLoad" xml:space="preserve"><value>Stage view failed to load.</value></data>
+  <data name="Stage_ErrStyleSave" xml:space="preserve"><value>Failed to save style changes.</value></data>
+  <data name="Stage_ErrBackgroundImport" xml:space="preserve"><value>Could not import the background file.</value></data>
   <data name="Settings_ErrSave" xml:space="preserve"><value>Could not save settings.</value></data>
   <data name="Settings_LeaveUnsaved" xml:space="preserve"><value>You have unsaved changes. Save them before leaving?</value></data>
   <data name="Settings_CreateBackupTitle" xml:space="preserve"><value>Create Backup</value></data>
@@ -450,6 +493,13 @@ This action cannot be undone.</value></data>
   <data name="Settings_RestoreBackupTitle" xml:space="preserve"><value>Restore Backup</value></data>
   <data name="Settings_RestoreConfirm" xml:space="preserve"><value>Restoring replaces your current library (songs, Bibles, themes, services, media) and closes the app to finish. Continue?</value></data>
   <data name="Settings_ErrRestore" xml:space="preserve"><value>Could not restore the backup.</value></data>
+  <data name="Backup_PasswordField" xml:space="preserve"><value>Password</value></data>
+  <data name="Backup_PasswordConfirmField" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="Backup_PasswordMismatch" xml:space="preserve"><value>Passwords don't match.</value></data>
+  <data name="Backup_PasswordRequired" xml:space="preserve"><value>A password is required.</value></data>
+  <data name="Backup_PasswordPromptCreate" xml:space="preserve"><value>Optionally protect this backup with a password. Leave blank to create an unencrypted backup.</value></data>
+  <data name="Backup_PasswordPromptRestore" xml:space="preserve"><value>This backup is password-protected. Enter the password to restore it.</value></data>
+  <data name="Backup_PasswordPromptWrong" xml:space="preserve"><value>That password is incorrect. Try again.</value></data>
   <data name="Settings_UpToDate" xml:space="preserve"><value>You're running the latest version.</value></data>
   <data name="Settings_CheckUpdatesTitle" xml:space="preserve"><value>Check for Updates</value></data>
   <data name="Settings_UpdateCancelled" xml:space="preserve"><value>Update cancelled. You can try again any time from Settings.</value></data>

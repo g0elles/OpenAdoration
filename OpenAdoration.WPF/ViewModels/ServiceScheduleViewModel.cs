@@ -16,12 +16,14 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 {
     private readonly IWorshipServiceService      _serviceService;
     private readonly ISongService                _songService;
+    private readonly INoteService                _noteService;
     private readonly IBibleService               _bibleService;
     private readonly IMediaService               _mediaService;
     private readonly IProjectionService          _projectionService;
     private readonly IDialogService              _dialogService;
     private readonly IAppSettingsService         _appSettings;
     private readonly ISongLibraryNotifier        _songNotifier;
+    private readonly INoteLibraryNotifier        _noteNotifier;
     private readonly VideoPsalmServiceImporter   _vpImporter;
     private readonly ILogger<ServiceScheduleViewModel> _logger;
 
@@ -99,6 +101,16 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
 
     public bool CanConfirmAddMedia => PickerSelectedMedia is not null;
 
+    // Add Notes panel — picks an existing Note from the library (mirrors Add Song panel)
+    [ObservableProperty] private bool   _isAddingNotes;
+    [ObservableProperty] private string _notePickerSearchTerm = string.Empty;
+    [ObservableProperty] private ObservableCollection<Note> _notePickerResults = [];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfirmAddNotes))]
+    private Note? _pickerSelectedNote;
+
+    public bool CanConfirmAddNotes => PickerSelectedNote is not null;
+
     // ── Live mode ─────────────────────────────────────────────────────────────
 
     [ObservableProperty]
@@ -124,23 +136,27 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     public ServiceScheduleViewModel(
         IWorshipServiceService      serviceService,
         ISongService                songService,
+        INoteService                noteService,
         IBibleService               bibleService,
         IMediaService               mediaService,
         IProjectionService          projectionService,
         IDialogService              dialogService,
         IAppSettingsService         appSettings,
         ISongLibraryNotifier        songNotifier,
+        INoteLibraryNotifier        noteNotifier,
         VideoPsalmServiceImporter   vpImporter,
         ILogger<ServiceScheduleViewModel> logger)
     {
         _serviceService    = serviceService;
         _songService       = songService;
+        _noteService       = noteService;
         _bibleService      = bibleService;
         _mediaService      = mediaService;
         _projectionService = projectionService;
         _dialogService     = dialogService;
         _appSettings       = appSettings;
         _songNotifier      = songNotifier;
+        _noteNotifier      = noteNotifier;
         _vpImporter        = vpImporter;
         _logger            = logger;
 
@@ -149,6 +165,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _projectionService.NextScheduleItemRequested     += OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested += OnPrevItemRequested;
         _songNotifier.SongSaved                          += OnSongLibrarySaved;
+        _noteNotifier.NoteSaved                          += OnNoteLibrarySaved;
     }
 
     // App-wide default applied to newly added items; null = manual.
@@ -413,6 +430,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IsAddingSong     = false;
         IsAddingBible    = false;
         IsAddingMedia    = false;
+        IsAddingNotes    = false;
     }
 
     // ── Add Song ──────────────────────────────────────────────────────────────
@@ -422,6 +440,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         IsAddingBible      = false;
         IsAddingMedia      = false;
+        IsAddingNotes      = false;
         SongPickerSearchTerm = string.Empty;
         PickerSelectedSong   = null;
         IsAddingSong         = true;
@@ -494,6 +513,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         ReplacingBibleItem            = null; // default to add mode; replace flow sets it after opening
         IsAddingSong                  = false;
         IsAddingMedia                 = false;
+        IsAddingNotes                 = false;
         SelectedAddBibleBook          = null;
         SelectedAddBibleVersion       = null;
         AddBibleBooks                 = [];
@@ -634,6 +654,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
     {
         IsAddingSong        = false;
         IsAddingBible       = false;
+        IsAddingNotes       = false;
         PickerSelectedMedia = null;
         MediaPickerFiles    = [];
         IsAddingMedia       = true;
@@ -724,6 +745,78 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         {
             _logger.LogError(ex, "Failed to save Bible item to service");
             SetError(L("Sched_ErrSaveBible"));
+        }
+    }
+
+    // ── Add Notes ─────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task ShowAddNotesPanelAsync()
+    {
+        IsAddingSong          = false;
+        IsAddingBible         = false;
+        IsAddingMedia         = false;
+        NotePickerSearchTerm  = string.Empty;
+        PickerSelectedNote    = null;
+        IsAddingNotes         = true;
+
+        try
+        {
+            var notes = await _noteService.GetAllAsync();
+            NotePickerResults = new ObservableCollection<Note>(notes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load notes for picker");
+            SetError(L("Sched_ErrLoadNotes"));
+            IsAddingNotes = false;
+        }
+    }
+
+    partial void OnNotePickerSearchTermChanged(string value)
+    {
+        _ = FilterNotePickerAsync(value);
+    }
+
+    private async Task FilterNotePickerAsync(string term)
+    {
+        try
+        {
+            var results = string.IsNullOrWhiteSpace(term)
+                ? await _noteService.GetAllAsync()
+                : await _noteService.SearchByTitleAsync(term);
+            NotePickerResults = new ObservableCollection<Note>(results);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Note picker search failed");
+        }
+    }
+
+    [RelayCommand]
+    private void CancelAddNotes()
+    {
+        IsAddingNotes        = false;
+        NotePickerSearchTerm = string.Empty;
+        PickerSelectedNote   = null;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmAddNotesAsync()
+    {
+        if (PickerSelectedNote is null || OpenedService is null) return;
+
+        try
+        {
+            await _serviceService.AddNotesItemAsync(OpenedService.Id, PickerSelectedNote.Id, autoAdvanceSeconds: DefaultAutoAdvanceSeconds);
+            _logger.LogInformation("Added note {NoteId} to service {ServiceId}", PickerSelectedNote.Id, OpenedService.Id);
+            IsAddingNotes = false;
+            await RefreshScheduleItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add note to service");
+            SetError(L("Sched_ErrAddNotes"));
         }
     }
 
@@ -920,6 +1013,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         IsAddingSong  = false;
         IsAddingBible = false;
         IsAddingMedia = false;
+        IsAddingNotes = false;
         IsLiveMode       = true;
         CurrentLiveIndex = 0;
         _projectionService.SetServiceScheduleActive(true);
@@ -986,7 +1080,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                     var themeId = ThemeCascade.ForSong(songItem.ThemeId, songItem.Song.ThemeId, _appSettings.Current);
                     var slides = _songService.GenerateSlides(songItem.Song, themeId, songItem.VerseOrderOverride);
                     if (slides.Count == 0) { SetError(L("Sched_ErrNoLyrics")); return; }
-                    _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId));
+                    _projectionService.LoadSlides(slides, songItem.Song.Title, ProjectionContextKeys.ServiceSong(songItem.SongId, songItem.Id));
                     break;
                 }
 
@@ -1000,7 +1094,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                     if (verses.Count == 0) { SetError($"No verses found for {bibleItem.Reference}."); return; }
                     var themeId = ThemeCascade.ForScripture(bibleItem.ThemeId, _appSettings.Current);
                     var slides = _bibleService.GenerateSlides(verses, BibleVersesPerSlide, themeId);
-                    _projectionService.LoadSlides(slides, bibleItem.Reference);
+                    _projectionService.LoadSlides(slides, bibleItem.Reference, ProjectionContextKeys.ServiceBible(bibleItem.Id));
                     break;
                 }
 
@@ -1009,6 +1103,15 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                     var themeId = ThemeCascade.ForMedia(mediaItem.ThemeId, _appSettings.Current);
                     var slide = _mediaService.GenerateSlide(mediaItem.MediaFile, themeId);
                     _projectionService.LoadSlides([slide], mediaItem.MediaFile.FileName);
+                    break;
+                }
+
+                case NotesScheduleItem notesItem:
+                {
+                    var themeId = ThemeCascade.ForNotes(notesItem.ThemeId, notesItem.Note.ThemeId, _appSettings.Current);
+                    var slides = _noteService.GenerateSlides(notesItem.Note, themeId);
+                    if (slides.Count == 0) { SetError(L("Sched_ErrNoNotesContent")); return; }
+                    _projectionService.LoadSlides(slides, notesItem.Note.Title, ProjectionContextKeys.ServiceNotes(notesItem.NoteId, notesItem.Id));
                     break;
                 }
             }
@@ -1045,6 +1148,10 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
                 MediaScheduleItem mediaItem =>
                     _mediaService.GenerateSlide(mediaItem.MediaFile,
                         ThemeCascade.ForMedia(mediaItem.ThemeId, _appSettings.Current)),
+
+                NotesScheduleItem notesItem =>
+                    _noteService.GenerateSlides(notesItem.Note,
+                        ThemeCascade.ForNotes(notesItem.ThemeId, notesItem.Note.ThemeId, _appSettings.Current)).FirstOrDefault(),
 
                 _ => null
             };
@@ -1114,7 +1221,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
             var themeId = ThemeCascade.ForSong(current.ThemeId, fresh.ThemeId, _appSettings.Current);
             var slides = _songService.GenerateSlides(fresh, themeId, current.VerseOrderOverride);
             if (slides.Count > 0)
-                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId), slides, fresh.Title);
+                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceSong(songId, current.Id), slides, fresh.Title);
         }
 
         // Queued as the next item → refresh the stage view's UP NEXT preview.
@@ -1131,6 +1238,55 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         var nextIdx = CurrentLiveIndex + 1;
         return nextIdx < ScheduleItems.Count
             && ScheduleItems[nextIdx].Item is SongScheduleItem s && s.SongId == songId;
+    }
+
+    // A library note was edited. Refresh the cached entity on EVERY schedule item that uses it
+    // (mirrors OnSongLibrarySaved), then live-update the projector if it's the current or next item.
+    private async void OnNoteLibrarySaved(object? sender, int noteId)
+    {
+        if (NoteItems(noteId).Count == 0) return;
+        try
+        {
+            var fresh = await _noteService.GetByIdAsync(noteId);
+            if (fresh is null) return;
+
+            foreach (var item in NoteItems(noteId))
+                item.Note = fresh;
+
+            if (IsLiveMode) ApplyEditedNoteToLiveProjection(noteId, fresh);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to apply edited note {NoteId} to the service schedule", noteId);
+        }
+    }
+
+    private List<NotesScheduleItem> NoteItems(int noteId) =>
+        ScheduleItems.Select(vm => vm.Item).OfType<NotesScheduleItem>().Where(n => n.NoteId == noteId).ToList();
+
+    private void ApplyEditedNoteToLiveProjection(int noteId, Note fresh)
+    {
+        if (CurrentLiveNote(noteId) is { } current)
+        {
+            var themeId = ThemeCascade.ForNotes(current.ThemeId, fresh.ThemeId, _appSettings.Current);
+            var slides = _noteService.GenerateSlides(fresh, themeId);
+            if (slides.Count > 0)
+                _projectionService.TryUpdateSlides(ProjectionContextKeys.ServiceNotes(noteId, current.Id), slides, fresh.Title);
+        }
+
+        if (IsNextLiveNote(noteId))
+            _ = RefreshNextItemPreviewAsync();
+    }
+
+    private NotesScheduleItem? CurrentLiveNote(int noteId) =>
+        CurrentLiveIndex >= 0 && CurrentLiveIndex < ScheduleItems.Count
+        && ScheduleItems[CurrentLiveIndex].Item is NotesScheduleItem n && n.NoteId == noteId ? n : null;
+
+    private bool IsNextLiveNote(int noteId)
+    {
+        var nextIdx = CurrentLiveIndex + 1;
+        return nextIdx < ScheduleItems.Count
+            && ScheduleItems[nextIdx].Item is NotesScheduleItem n && n.NoteId == noteId;
     }
 
     private async Task RefreshNextItemPreviewAsync() =>
@@ -1259,6 +1415,7 @@ public partial class ServiceScheduleViewModel : BaseViewModel, IDisposable
         _projectionService.NextScheduleItemRequested     -= OnNextItemRequested;
         _projectionService.PreviousScheduleItemRequested -= OnPrevItemRequested;
         _songNotifier.SongSaved                          -= OnSongLibrarySaved;
+        _noteNotifier.NoteSaved                          -= OnNoteLibrarySaved;
         foreach (var vm in ScheduleItems)
             UnsubscribeItemEvents(vm);
     }

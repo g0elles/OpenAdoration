@@ -252,6 +252,7 @@ public partial class App : WpfApp
     {
         services.AddSingleton<IDialogService, MessageBoxDialogService>();
         services.AddSingleton<ISongLibraryNotifier, SongLibraryNotifier>();
+        services.AddSingleton<INoteLibraryNotifier, NoteLibraryNotifier>();
         services.AddSingleton<BibleNavigationState>();
         services.AddSingleton<IBibleImportService, BibleImportService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -264,12 +265,15 @@ public partial class App : WpfApp
             Path.Combine(Path.GetDirectoryName(sp.GetRequiredService<OpenAdoration.Application.Common.AppPaths>().DbPath)!, "plugins")));
         services.AddTransient<PluginBibleImporter>();
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<IStageNavigationService>(sp => sp.GetRequiredService<MainViewModel>());
         services.AddTransient<SongsViewModel>();
         services.AddTransient<AddEditSongViewModel>();
         services.AddTransient<BibleViewModel>();
         services.AddTransient<ServiceScheduleViewModel>();
         services.AddTransient<OpenAdoration.WPF.Helpers.VideoPsalmMigration.VideoPsalmServiceImporter>();
         services.AddTransient<MediaViewModel>();
+        services.AddTransient<NotesViewModel>();
+        services.AddTransient<AddEditNoteViewModel>();
         services.AddTransient<ThemeViewModel>();
         services.AddTransient<AddEditThemeViewModel>();
         services.AddTransient<StageViewModel>();

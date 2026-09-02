@@ -208,6 +208,10 @@
                             Style="{StaticResource SecondaryButton}"
                             Command="{Binding ShowAddMediaPanelCommand}"
                             Margin="0,0,8,0" />
+                    <Button Content="{loc:Loc Sched_AddNotes}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAddNotesPanelCommand}"
+                            Margin="0,0,8,0" />
                 </StackPanel>
             </Border>
 
@@ -228,6 +232,9 @@
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsAddingMedia}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAddingNotes}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -484,6 +491,59 @@
                     </StackPanel>
                 </Grid>
 
+                <!-- Add Notes panel -->
+                <Grid Visibility="{Binding IsAddingNotes, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="160" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBox Grid.Row="0"
+                             Style="{StaticResource FieldTextBox}"
+                             Tag="{loc:Loc Sched_SearchNotes}"
+                             Text="{Binding NotePickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,8" />
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <ListBox ItemsSource="{Binding NotePickerResults}"
+                                 SelectedItem="{Binding PickerSelectedNote}"
+                                 DisplayMemberPath="Title"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    <Setter Property="Padding"    Value="10,6" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Border>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="{loc:Loc Sched_AddSelected}"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ConfirmAddNotesCommand}"
+                                IsEnabled="{Binding CanConfirmAddNotes}"
+                                Margin="0,0,8,0" />
+                        <Button Content="{loc:Loc Common_Cancel}"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelAddNotesCommand}" />
+                    </StackPanel>
+                </Grid>
+
                 </Grid> <!-- end wrapping Grid for add panels -->
             </Border>
 
@@ -702,7 +762,11 @@
                             Margin="0,0,8,0" />
                     <Button Content="{loc:Loc Sched_QueueMedia}"
                             Style="{StaticResource SecondaryButton}"
-                            Command="{Binding ShowAddMediaPanelCommand}" />
+                            Command="{Binding ShowAddMediaPanelCommand}"
+                            Margin="0,0,8,0" />
+                    <Button Content="{loc:Loc Sched_QueueNotes}"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ShowAddNotesPanelCommand}" />
                 </StackPanel>
             </Border>
 
@@ -723,6 +787,9 @@
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsAddingMedia}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAddingNotes}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -962,6 +1029,57 @@
                             <Button Content="{loc:Loc Common_Cancel}"
                                     Style="{StaticResource SecondaryButton}"
                                     Command="{Binding CancelAddMediaCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Notes picker -->
+                    <Grid Visibility="{Binding IsAddingNotes, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="160" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBox Grid.Row="0"
+                                 Style="{StaticResource FieldTextBox}"
+                                 Tag="{loc:Loc Sched_SearchNotes}"
+                                 Text="{Binding NotePickerSearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,8" />
+                        <Border Grid.Row="1"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="4">
+                            <ListBox ItemsSource="{Binding NotePickerResults}"
+                                     SelectedItem="{Binding PickerSelectedNote}"
+                                     DisplayMemberPath="Title"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                        <Setter Property="Padding"    Value="10,6" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected"  Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ActiveNavBrush}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+                        </Border>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="{loc:Loc Sched_AddToQueue}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ConfirmAddNotesCommand}"
+                                    IsEnabled="{Binding CanConfirmAddNotes}"
+                                    Margin="0,0,8,0" />
+                            <Button Content="{loc:Loc Common_Cancel}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding CancelAddNotesCommand}" />
                         </StackPanel>
                     </Grid>
                 </Grid>

@@ -72,6 +72,9 @@ desktop.ini
 ## Local Bible test files
 Bibles/
 
+## Personal working files dropped in the repo root — never source, not for publishing (225 MB+)
+/sample data/
+
 ## Internal dev docs — kept locally, never published
 /CLAUDE.md
 /AGENTS.md

@@ -5,10 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
-public partial class MainViewModel : BaseViewModel, IDisposable
+public partial class MainViewModel : BaseViewModel, IDisposable, IStageNavigationService
 {
     private readonly IServiceProvider _services;
     private readonly IProjectionService _projectionService;
@@ -106,6 +107,13 @@ public partial class MainViewModel : BaseViewModel, IDisposable
     }
 
     [RelayCommand]
+    private void NavigateToNotes()
+    {
+        _logger.LogDebug("Navigating to Notes");
+        NavigateTo<NotesViewModel>();
+    }
+
+    [RelayCommand]
     private void NavigateToThemes()
     {
         _logger.LogDebug("Navigating to Themes");
@@ -125,6 +133,9 @@ public partial class MainViewModel : BaseViewModel, IDisposable
         _logger.LogDebug("Navigating to Settings");
         NavigateTo<SettingsViewModel>();
     }
+
+    /// <summary>IStageNavigationService — lets page-scoped VMs (e.g. after "Proyectar") jump to the Stage View.</summary>
+    void IStageNavigationService.NavigateToStage() => NavigateTo<StageViewModel>();
 
     private void NavigateTo<T>() where T : BaseViewModel
     {

@@ -139,6 +139,20 @@ public sealed class WorshipServiceService : IWorshipServiceService
         }
     }
 
+    public async Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding note {NoteId} to service {ServiceId}", noteId, serviceId);
+        try
+        {
+            await _repository.AddNotesItemAsync(serviceId, noteId, themeId, autoAdvanceSeconds, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add notes item to service {ServiceId}", serviceId);
+            throw;
+        }
+    }
+
     public async Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default)
     {
         _logger.LogInformation("Removing schedule item {ItemId}", scheduleItemId);
@@ -194,6 +208,29 @@ public sealed class WorshipServiceService : IWorshipServiceService
             throw;
         }
     }
+
+    public async Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Setting theme for schedule item {ItemId}", itemId);
+        try
+        {
+            await _repository.SetItemThemeIdAsync(itemId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set theme for schedule item {ItemId}", itemId);
+            throw;
+        }
+    }
+
+    public async Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetItemThemeIdAsync(itemId, ct);
+
+    public async Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetItemVerseOrderOverrideAsync(itemId, ct);
+
+    public async Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default)
+        => await _repository.GetBibleItemAddressAsync(itemId, ct);
 
     public async Task UpdateBibleItemAsync(
         int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default)

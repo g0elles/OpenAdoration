@@ -141,6 +141,9 @@
                                FontSize="11" Margin="0,0,0,20" TextWrapping="Wrap" />
 
                     <!-- Section list -->
+                    <TextBlock Text="{loc:Loc SongEdit_LyricsBoldHint}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
                     <ItemsControl ItemsSource="{Binding Sections}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:SongSectionViewModel}">
@@ -194,6 +197,7 @@
                                         <TextBox Grid.Row="1"
                                                  Style="{StaticResource LyricsTextBox}"
                                                  Text="{Binding Lyrics, UpdateSourceTrigger=PropertyChanged}"
+                                                 PreviewKeyDown="OnLyricsPreviewKeyDown"
                                                  MinHeight="80"
                                                  MaxHeight="200" />
                                     </Grid>

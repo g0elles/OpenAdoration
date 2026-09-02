@@ -79,6 +79,20 @@ public sealed class SongService : ISongService
         }
     }
 
+    public async Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+
+        if (!string.IsNullOrWhiteSpace(song.SourceGuid))
+        {
+            var existing = await GetBySourceGuidAsync(song.SourceGuid, ct);
+            if (existing is not null) return (existing, true);
+        }
+
+        var created = await CreateAsync(song, ct);
+        return (created, false);
+    }
+
     public async Task UpdateAsync(Song song, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(song);
@@ -105,6 +119,19 @@ public sealed class SongService : ISongService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete song {SongId}", id);
+            throw;
+        }
+    }
+
+    public async Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _repository.SetThemeIdAsync(songId, themeId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set theme for song {SongId}", songId);
             throw;
         }
     }

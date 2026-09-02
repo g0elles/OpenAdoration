@@ -34,6 +34,7 @@ public static class InfrastructureServiceExtensions
 
         // Repositories (scoped — new instance per logical operation scope)
         services.AddScoped<ISongRepository, SongRepository>();
+        services.AddScoped<INoteRepository, NoteRepository>();
         services.AddScoped<IWorshipServiceRepository, WorshipServiceRepository>();
         services.AddScoped<IBibleRepository, BibleRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
@@ -41,6 +42,7 @@ public static class InfrastructureServiceExtensions
 
         // Application services
         services.AddScoped<ISongService, SongService>();
+        services.AddScoped<INoteService, NoteService>();
         services.AddScoped<IBibleService, BibleService>();
         services.AddScoped<IMediaService, MediaService>();
         services.AddScoped<IThemeService, ThemeService>();

@@ -163,6 +163,22 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
             }
         }
 
+        var noteIds = service.Items.OfType<NotesScheduleItem>().Select(i => i.NoteId).ToList();
+        if (noteIds.Count > 0)
+        {
+            var notes = await context.Notes
+                .Where(n => noteIds.Contains(n.Id))
+                .ToListAsync(ct);
+            var noteMap = notes.ToDictionary(n => n.Id);
+            foreach (var item in service.Items.OfType<NotesScheduleItem>())
+            {
+                if (!noteMap.TryGetValue(item.NoteId, out var note))
+                    throw new InvalidOperationException(
+                        $"NotesScheduleItem {item.Id} references missing Note {item.NoteId}.");
+                item.Note = note;
+            }
+        }
+
         return service;
     }
 
@@ -223,6 +239,26 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
         {
             ServiceId          = serviceId,
             MediaFileId        = mediaFileId,
+            ThemeId            = themeId,
+            AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
+            Order              = nextOrder + 1
+        });
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var nextOrder = await context.ScheduleItems
+            .Where(i => i.ServiceId == serviceId)
+            .Select(i => (int?)i.Order)
+            .MaxAsync(ct) ?? -1;
+
+        context.ScheduleItems.Add(new NotesScheduleItem
+        {
+            ServiceId          = serviceId,
+            NoteId             = noteId,
             ThemeId            = themeId,
             AutoAdvanceSeconds = autoAdvanceSeconds > 0 ? autoAdvanceSeconds : null,
             Order              = nextOrder + 1
@@ -305,5 +341,51 @@ public sealed class WorshipServiceRepository : IWorshipServiceRepository
 
         songItem.VerseOrderOverride = string.IsNullOrWhiteSpace(verseOrderOverride) ? null : verseOrderOverride.Trim();
         await context.SaveChangesAsync(ct);
+    }
+
+    public async Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var item = await context.ScheduleItems.FindAsync([itemId], ct)
+            ?? throw new InvalidOperationException($"ScheduleItem with ID {itemId} was not found.");
+
+        item.ThemeId = themeId;
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .Where(i => i.Id == itemId)
+            .Select(i => i.ThemeId)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .OfType<SongScheduleItem>()
+            .Where(i => i.Id == itemId)
+            .Select(i => i.VerseOrderOverride)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        return await context.ScheduleItems
+            .AsNoTracking()
+            .OfType<BibleScheduleItem>()
+            .Where(i => i.Id == itemId)
+            .Select(i => new BibleItemAddress(i.BibleVersionId, i.Book, i.Chapter, i.VerseStart, i.VerseEnd))
+            .FirstOrDefaultAsync(ct);
     }
 }

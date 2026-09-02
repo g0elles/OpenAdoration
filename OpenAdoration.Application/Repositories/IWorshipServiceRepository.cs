@@ -2,6 +2,10 @@ using OpenAdoration.Domain.Entities;
 
 namespace OpenAdoration.Application.Repositories;
 
+/// <summary>A Bible schedule item's passage address, for regenerating its slides without loading
+/// the full service graph.</summary>
+public sealed record BibleItemAddress(int? BibleVersionId, string Book, int Chapter, int VerseStart, int VerseEnd);
+
 public interface IWorshipServiceRepository
 {
     Task<WorshipService?> GetByIdAsync(int id, CancellationToken ct = default);
@@ -14,9 +18,24 @@ public interface IWorshipServiceRepository
     Task AddSongItemAsync(int serviceId, int songId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
     Task AddBibleItemAsync(int serviceId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId = null, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
     Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
+    Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default);
     Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default);
     Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default);
     Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default);
     Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default);
+
+    /// <summary>Patches only <see cref="ScheduleItem.ThemeId"/> — the write path <c>ThemeCascade.ForSong</c>
+    /// expects but that nothing previously supplied after item creation.</summary>
+    Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default);
+    Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default);
+
+    /// <summary>Reads a song schedule item's verse-order override without loading the full service
+    /// graph — used to preserve it when Stage View's live style editor regenerates live slides.</summary>
+    Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default);
     Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default);
+
+    /// <summary>Reads a Bible schedule item's passage address without loading the full service
+    /// graph — used by Stage View's live style editor to regenerate live slides. Null if the item
+    /// doesn't exist or isn't a Bible item.</summary>
+    Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default);
 }

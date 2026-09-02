@@ -8,6 +8,7 @@ using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
 using OpenAdoration.WPF.Helpers;
+using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
 
@@ -17,6 +18,7 @@ public partial class MediaViewModel : BaseViewModel
     private readonly IThemeService       _themeService;
     private readonly IProjectionService  _projectionService;
     private readonly IAppSettingsService _appSettings;
+    private readonly IStageNavigationService _stageNavigation;
     private readonly AppPaths            _appPaths;
     private readonly ILogger<MediaViewModel> _logger;
 
@@ -43,6 +45,7 @@ public partial class MediaViewModel : BaseViewModel
         IThemeService       themeService,
         IProjectionService  projectionService,
         IAppSettingsService appSettings,
+        IStageNavigationService stageNavigation,
         AppPaths            appPaths,
         ILogger<MediaViewModel> logger)
     {
@@ -50,6 +53,7 @@ public partial class MediaViewModel : BaseViewModel
         _themeService      = themeService;
         _projectionService = projectionService;
         _appSettings       = appSettings;
+        _stageNavigation   = stageNavigation;
         _appPaths          = appPaths;
         _logger            = logger;
     }
@@ -247,13 +251,35 @@ public partial class MediaViewModel : BaseViewModel
         {
             var slide = _mediaService.GenerateSlide(file, ThemeCascade.ForMedia(null, _appSettings.Current));
             _projectionService.LoadSlides(new[] { slide }, file.FileName);
+            UpdateStandaloneQueue(file);
             SelectedFile = file;
+            _stageNavigation.NavigateToStage();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to project media file {Id}", file.Id);
             SetError(L("Media_ProjectFailed"));
         }
+    }
+
+    // Standalone (non-service) projection has no built-in "next/previous item" — feed the projector
+    // the full displayed list (Media or Fondos, whichever tab is active) as a browsable queue so
+    // Next()/Previous() can hop freely across it. Never touch it while a real service owns projection.
+    private void UpdateStandaloneQueue(MediaFile current)
+    {
+        if (_projectionService.IsServiceScheduleActive) return;
+
+        var files = DisplayedFiles.ToList();
+        var items = files.Select(f => new StandaloneQueueItem(
+            new[] { _mediaService.GenerateSlide(f, ThemeCascade.ForMedia(null, _appSettings.Current)) },
+            f.FileName, null)).ToList();
+
+        var currentIndex = Math.Max(files.FindIndex(f => f.Id == current.Id), 0);
+        _projectionService.SetStandaloneQueue(items, currentIndex);
+
+        var nextIndex = currentIndex + 1;
+        _projectionService.SetNextScheduleItemPreview(
+            nextIndex < items.Count ? items[nextIndex].Slides[0] : null);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

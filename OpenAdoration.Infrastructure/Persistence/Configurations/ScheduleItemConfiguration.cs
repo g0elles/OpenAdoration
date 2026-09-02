@@ -14,7 +14,8 @@ public sealed class ScheduleItemConfiguration : IEntityTypeConfiguration<Schedul
         builder.HasDiscriminator<string>("ItemType")
             .HasValue<SongScheduleItem>("Song")
             .HasValue<BibleScheduleItem>("Bible")
-            .HasValue<MediaScheduleItem>("Media");
+            .HasValue<MediaScheduleItem>("Media")
+            .HasValue<NotesScheduleItem>("Notes");
 
         builder.Property(si => si.Order)
             .IsRequired();

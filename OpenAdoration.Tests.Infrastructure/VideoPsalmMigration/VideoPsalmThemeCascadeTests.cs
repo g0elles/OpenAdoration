@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenAdoration.Application.Common;
+using OpenAdoration.Application.Repositories;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
@@ -168,8 +169,10 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task<IReadOnlyList<Song>> GetAllAsync(CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<Song>> SearchByTitleAsync(string term, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<Song>> SearchByLyricsAsync(string term, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<(Song Song, bool WasReused)> CreateOrReuseAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateAsync(Song song, CancellationToken ct = default) => throw new NotImplementedException();
         Task ISongService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
+        public Task SetThemeIdAsync(int songId, int? themeId, CancellationToken ct = default) => throw new NotImplementedException();
         public IReadOnlyList<Slide> GenerateSlides(Song song, int? themeId = null, string? verseOrderOverride = null) => throw new NotImplementedException();
 
         Task<IReadOnlyList<MediaFile>> IMediaService.GetAllAsync(CancellationToken ct) => throw new NotImplementedException();
@@ -188,10 +191,15 @@ public sealed class VideoPsalmThemeCascadeTests : IDisposable
         public Task UpdateAsync(WorshipService service, CancellationToken ct = default) => throw new NotImplementedException();
         Task IWorshipServiceService.DeleteAsync(int id, CancellationToken ct) => throw new NotImplementedException();
         public Task AddMediaItemAsync(int serviceId, int mediaFileId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task AddNotesItemAsync(int serviceId, int noteId, int? themeId = null, int? autoAdvanceSeconds = null, CancellationToken ct = default) => throw new NotImplementedException();
         public Task RemoveItemAsync(int scheduleItemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task ReorderItemsAsync(int serviceId, IReadOnlyList<int> orderedItemIds, CancellationToken ct = default) => throw new NotImplementedException();
         public Task SetItemAutoAdvanceAsync(int itemId, int? autoAdvanceSeconds, CancellationToken ct = default) => throw new NotImplementedException();
         public Task SetItemVerseOrderOverrideAsync(int itemId, string? verseOrderOverride, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task SetItemThemeIdAsync(int itemId, int? themeId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<int?> GetItemThemeIdAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<string?> GetItemVerseOrderOverrideAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<BibleItemAddress?> GetBibleItemAddressAsync(int itemId, CancellationToken ct = default) => throw new NotImplementedException();
         public Task UpdateBibleItemAsync(int itemId, string book, int chapter, int verseStart, int verseEnd, int? bibleVersionId, CancellationToken ct = default) => throw new NotImplementedException();
 
         public Task<IReadOnlyList<BibleBook>> GetBooksAsync(int versionId, CancellationToken ct = default) => throw new NotImplementedException();

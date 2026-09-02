@@ -21,4 +21,8 @@ public class MediaFile : BaseEntity
     /// or the other, never both; dedup by <see cref="ContentHash"/> is scoped per-category.
     /// </summary>
     public bool IsBackground { get; set; }
+
+    // Combo/list items using this entity without an explicit ItemTemplate (or whose template
+    // doesn't set an accessible name) otherwise expose the CLR type name to screen readers/UIA.
+    public override string ToString() => FileName;
 }

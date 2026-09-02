@@ -2,6 +2,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.Domain.Enums;
@@ -251,24 +252,38 @@ public sealed class VideoPsalmServiceImporter
         if (basename is null) return null;
         if (ctx.BackgroundCache.TryGetValue(basename, out var existing)) return existing;
 
+        // Same S4-equivalent validation as ResolveMediaAsync -- a theme background extracted from
+        // the .vpagd zip must pass the same size/format checks a normal background import does.
+        if (!MediaFormats.IsSupported(basename)) return null;
+
         using var archive = ZipFile.OpenRead(ctx.FilePath);
         var entry = archive.Entries.FirstOrDefault(e =>
             string.Equals(Path.GetFileName(e.FullName), basename, StringComparison.OrdinalIgnoreCase));
-        if (entry is null) return null;
+        if (entry is null || entry.Length > MediaFormats.MaxFileSizeBytes) return null;
 
         var hash = HashEntry(entry);
         var path = await _media.GetByContentHashAsync(hash, isBackground: true, ct) is { } reused
             ? reused.FilePath
             : await StoreBackgroundAsync(entry, hash, ct);
 
+        if (path is null) return null;
+
         ctx.BackgroundCache[basename] = path;
         return path;
     }
 
-    /// <summary>Extracts a new background entry to the store and registers it as a background MediaFile.</summary>
-    private async Task<string> StoreBackgroundAsync(ZipArchiveEntry entry, string hash, CancellationToken ct)
+    /// <summary>Extracts a new background entry to the store and registers it as a background
+    /// MediaFile, or null if the extracted bytes fail signature validation (rejected, not fatal to
+    /// the rest of the import -- the theme just gets no background for this style).</summary>
+    private async Task<string?> StoreBackgroundAsync(ZipArchiveEntry entry, string hash, CancellationToken ct)
     {
         var destPath = ExtractToStore(entry);
+        if (!MediaSignatureValidator.IsValid(destPath, MediaFormats.IsVideo(destPath)))
+        {
+            File.Delete(destPath);
+            return null;
+        }
+
         await _media.AddAsync(new MediaFile
         {
             FileName     = Path.GetFileName(destPath),
@@ -288,11 +303,24 @@ public sealed class VideoPsalmServiceImporter
         var entry = archive.GetEntry(entryName);
         if (entry is null) return null;
 
+        // S4-equivalent validation: MediaService.ImportBackgroundAsync already rejects an oversized
+        // or format-spoofed file before it ever reaches FFME; this path extracted straight from the
+        // .vpagd zip with none of those checks. Treated the same as "entry not found" (skipped,
+        // counted as missing) rather than fatal to the rest of the import.
+        if (entry.Length > MediaFormats.MaxFileSizeBytes || !MediaFormats.IsSupported(entryName))
+            return null;
+
         var hash = HashEntry(entry);
         var existing = await _media.GetByContentHashAsync(hash, ct: ct);
         if (existing is not null) return (existing.Id, true);
 
         var destPath = ExtractToStore(entry);
+        if (!MediaSignatureValidator.IsValid(destPath, MediaFormats.IsVideo(destPath)))
+        {
+            File.Delete(destPath);
+            return null;
+        }
+
         var media = await _media.AddAsync(new MediaFile
         {
             FileName = Path.GetFileName(destPath),

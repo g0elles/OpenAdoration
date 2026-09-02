@@ -11,6 +11,7 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<Song> Songs => Set<Song>();
     public DbSet<SongSection> SongSections => Set<SongSection>();
+    public DbSet<Note> Notes => Set<Note>();
     public DbSet<WorshipService> WorshipServices => Set<WorshipService>();
     public DbSet<ScheduleItem> ScheduleItems => Set<ScheduleItem>();
     public DbSet<BibleVersion> BibleVersions => Set<BibleVersion>();

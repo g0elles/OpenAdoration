@@ -6,6 +6,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Notes/Sermon content type (F9).** A new plain-text content type, alongside Songs/Bible/Media:
+  type or paste text (blank lines separate slides), add it to a service schedule or project it
+  standalone from the new Notes page. Supports the same `**bold**` markers as song lyrics (F8),
+  and Stage View's live style editor (F7) works for it from the start — both for a service-driven
+  Notes item ("This Occurrence" scope) and standalone Notes (the app-wide default style).
+- **Bold text in lyrics (F8).** Wrap any part of a lyric line in `**...**` (select text in the
+  song editor and press Ctrl+B to toggle it) and that span renders bold on the projector and in
+  Stage View's live preview. No new storage — `SongSections.Lyrics` stays plain text; the markers
+  live inline and are parsed at render time.
+- **Stage View live style editor for the live song or Bible passage (F7 rebuild).** Superseded
+  the swatch-based quick fix, which never persisted and couldn't touch the background at all. The
+  operator can now pick a scope (the song itself, or just this occurrence in the current service),
+  adjust font size, pick any text colour, and set a background colour/image/video — changes write
+  into a real theme (cloning one first if needed, so a shared/default theme is never mutated for
+  other songs) and show up immediately on the projector, surviving a live-item change or app
+  restart. A live Bible passage gets the same editor too — scoped to just that occurrence when
+  it's part of a service, or to the app's default Bible style when browsed and projected directly
+  (scripture has no song-like library entry of its own to point a narrower scope at).
+- **Word (`.docx`) song import.** Pick one or many `.docx` files at once — each file's name
+  becomes the song title and its blank-paragraph-separated paragraphs become verses (manual line
+  breaks inside a paragraph stay as lyric lines), the same rule plain-text import already uses.
+- **VideoPsalm songbook import (`.vpc`).** Import every song from a full VideoPsalm backup's
+  `SongBooks/Songs.vpc` in one go, alongside the existing single-service `.vpagd` agenda import.
+  Re-importing skips songs already in the library instead of duplicating them. Picking a `.vpc`
+  that's actually a protected VideoPsalm Bible export is detected and redirected to Bible import.
+- **Optional password-protected backups.** Settings → Create Backup now offers a password; when
+  set, the whole `.oabak` (DB, media, settings) is encrypted with AES-256-GCM under a
+  PBKDF2-SHA256-derived key before it touches disk, so a backup copied to cloud storage or a
+  shared drive isn't readable without it. Leaving it blank keeps the previous plain-zip behaviour;
+  existing unencrypted backups still restore unchanged. Restoring an encrypted backup prompts for
+  the password and re-prompts on a wrong one rather than failing outright.
+- **Color-wheel picker for the lower-third band/text color (F11).** Settings → lower-third band
+  colour and text colour are now a real color picker (canvas + hue strip, RGBA sliders) instead
+  of a raw hex textbox — operators found hex codes hard to reason about. Existing settings still
+  load correctly; the band colour's opacity carries through unchanged (previously entered as the
+  hex string's alpha channel, now the picker's alpha slider).
+
+### Fixed
+- **Stage View now mirrors a scrolling lower-third.** The operator's Stage View showed the
+  lower-third as static text even when "Desplazar el texto continuamente (marquesina)" was
+  enabled in Settings; it now runs the same right-to-left ticker animation as the projector.
+- **Color picker popup text was illegible in dark mode.** Every `ColorPicker` in the app (Stage
+  View's F7 live style editor, the theme editor, and the new Settings lower-third pickers) bound
+  its `Foreground` to the app's dark-theme text colour, but the picker's own popup is always
+  light-background regardless of app theme — rendering the R/G/B/A labels as white-on-white.
+  Foreground is now a fixed dark colour on all six instances, independent of the app theme.
+
+### Security
+- The release GitHub Actions workflow no longer interpolates tag/ref values directly into script
+  bodies (a script-injection vector via a crafted tag name), pins third-party actions to a commit
+  SHA instead of a mutable version tag, and scopes `permissions` to the minimum the job needs.
+- Auto-update downloads to a random per-run staging directory with exclusive file creation,
+  closing a predictable-path race between the SHA-256 verify step and the installer launch.
+- A background-import failure log no longer includes the full source file path (username/folder
+  structure leak) — filename only.
+- Backup restore now validates every archive entry (zip-slip + compression ratio) before writing
+  anything, so a failure partway through can't leave settings/media half-restored alongside an
+  orphaned database stage file that the next launch would silently apply.
+- The VideoPsalm agenda importer now runs the same size/format/content-signature checks as the
+  regular media importer on every file and theme background it extracts, closing a bypass of that
+  validation specific to this import path.
+- Bible import now matches an existing version by exact abbreviation instead of a SQL `LIKE`
+  pattern — a version abbreviation containing `%`/`_` (e.g. from a plugin source) could otherwise
+  match an unrelated existing version and merge verses into it.
+
 ## [2.1.0] — 2026-08-30
 
 ### Added

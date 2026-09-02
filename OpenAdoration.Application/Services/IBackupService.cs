@@ -9,6 +9,14 @@ namespace OpenAdoration.Application.Services;
 /// </summary>
 public interface IBackupService
 {
-    Task CreateAsync(string destinationPath, CancellationToken ct = default);
-    Task<RestoreResult> RestoreAsync(string sourcePath, CancellationToken ct = default);
+    /// <summary>Optionally encrypts the backup with <paramref name="password"/> (null/empty = plain zip, as before).</summary>
+    Task CreateAsync(string destinationPath, string? password = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Restores from <paramref name="sourcePath"/>. If the backup is encrypted and
+    /// <paramref name="password"/> is null/empty, returns <see cref="RestoreOutcome.PasswordRequired"/>
+    /// without touching any files — call again with the password. A wrong password returns
+    /// <see cref="RestoreOutcome.WrongPassword"/>.
+    /// </summary>
+    Task<RestoreResult> RestoreAsync(string sourcePath, string? password = null, CancellationToken ct = default);
 }

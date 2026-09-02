@@ -20,7 +20,13 @@ public enum RestoreOutcome
     NeedsNewerApp,
 
     /// <summary>Archive or manifest was missing/unreadable — not restored.</summary>
-    Corrupt
+    Corrupt,
+
+    /// <summary>Backup is password-encrypted; call restore again with the password.</summary>
+    PasswordRequired,
+
+    /// <summary>The supplied password failed to decrypt the backup.</summary>
+    WrongPassword
 }
 
 public sealed record RestoreResult(RestoreOutcome Outcome, string Message);

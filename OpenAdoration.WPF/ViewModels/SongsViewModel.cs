@@ -6,6 +6,7 @@ using OpenAdoration.Application.Common;
 using OpenAdoration.Application.Services;
 using OpenAdoration.Domain.Entities;
 using OpenAdoration.WPF.Helpers.SongImport;
+using OpenAdoration.WPF.Helpers.SongImport.VideoPsalm;
 using OpenAdoration.WPF.Services;
 
 namespace OpenAdoration.WPF.ViewModels;
@@ -17,6 +18,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
     private readonly IDialogService          _dialogService;
     private readonly ISongLibraryNotifier    _songNotifier;
     private readonly IAppSettingsService     _appSettings;
+    private readonly IStageNavigationService _stageNavigation;
     private readonly ILogger<SongsViewModel> _logger;
 
     // Child VM -- shares the same DI scope, created once per navigation to Songs
@@ -41,6 +43,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         ISongLibraryNotifier    songNotifier,
         AddEditSongViewModel    editViewModel,
         IAppSettingsService     appSettings,
+        IStageNavigationService stageNavigation,
         ILogger<SongsViewModel> logger)
     {
         _songService       = songService;
@@ -48,6 +51,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         _dialogService     = dialogService;
         _songNotifier      = songNotifier;
         _appSettings       = appSettings;
+        _stageNavigation   = stageNavigation;
         _logger            = logger;
         EditViewModel      = editViewModel;
 
@@ -179,7 +183,7 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         {
             Title  = L("Songs_ImportTitle"),
             Filter = SongFormatDispatcher.FileDialogFilter,
-            Multiselect = false
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() != true) return;
@@ -188,33 +192,50 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
         IsBusy = true;
         ClearError();
 
-        int imported;
+        int imported = 0, reused = 0, failed = 0;
         try
         {
-            var songs = SongFormatDispatcher.ImportMany(dialog.FileName);
-            foreach (var song in songs)
-                await _songService.CreateAsync(song);
-            imported = songs.Count;
-            _logger.LogInformation("Imported {Count} song(s) from {File}", imported, dialog.FileName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to import song from {File}", dialog.FileName);
-            _dialogService.Inform(
-                L("Songs_ImportFailed"),
-                L("Songs_ImportResultTitle"));
-            return;
+            foreach (var file in dialog.FileNames)
+            {
+                try
+                {
+                    var songs = SongFormatDispatcher.ImportMany(file);
+                    foreach (var song in songs)
+                    {
+                        var (_, wasReused) = await _songService.CreateOrReuseAsync(song);
+                        if (wasReused) reused++; else imported++;
+                    }
+                }
+                catch (VideoPsalmSongbookIsBibleException)
+                {
+                    _dialogService.Inform(L("Songs_ErrVpcIsBible"), L("Songs_ImportResultTitle"));
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    _logger.LogError(ex, "Failed to import song from {File}", file);
+                }
+            }
+            _logger.LogInformation("Imported {Imported} song(s), reused {Reused}, failed {Failed}", imported, reused, failed);
         }
         finally
         {
             IsBusy = false;
         }
 
+        if (imported == 0 && reused == 0)
+        {
+            _dialogService.Inform(L("Songs_ImportFailed"), L("Songs_ImportResultTitle"));
+            return;
+        }
+
         // Reached only on success — IsBusy already reset by finally, so LoadAsync can run (G4).
         await LoadAsync();
-        _dialogService.Inform(
-            imported == 1 ? L("Songs_ImportedOne") : L("Songs_ImportedMany", imported),
-            L("Songs_ImportResultTitle"));
+        var message = reused > 0 || failed > 0
+            ? L("Songs_ImportedDetailed", imported, reused, failed)
+            : imported == 1 ? L("Songs_ImportedOne") : L("Songs_ImportedMany", imported);
+        _dialogService.Inform(message, L("Songs_ImportResultTitle"));
     }
 
     [RelayCommand]
@@ -227,8 +248,38 @@ public partial class SongsViewModel : BaseViewModel, IDisposable
             return;
         }
         _projectionService.LoadSlides(slides, song.Title, ProjectionContextKeys.Song(song.Id));
+        UpdateStandaloneQueue(song);
         _logger.LogInformation("Projecting song: {Title}", song.Title);
+        _stageNavigation.NavigateToStage();
     }
+
+    // Standalone (non-service) projection has no built-in "next/previous item" — feed the projector
+    // the full displayed list as a browsable queue (eagerly pre-generated: cheap, in-memory, list
+    // sizes are dozens not hundreds) so Next()/Previous() can hop freely across the whole list, not
+    // just one step. Never touch it while a real service owns projection.
+    private void UpdateStandaloneQueue(Song current)
+    {
+        if (_projectionService.IsServiceScheduleActive) return;
+
+        var items = BuildStandaloneQueueItems();
+        var currentIndex = Math.Max(items.FindIndex(i => i.ContextKey == ProjectionContextKeys.Song(current.Id)), 0);
+        _projectionService.SetStandaloneQueue(items, currentIndex);
+
+        // Keep the existing Stage View "up next" preview in sync at project-time too (SetStandaloneQueue
+        // itself only updates it when Next/Previous crosses an item boundary).
+        var nextIndex = currentIndex + 1;
+        _projectionService.SetNextScheduleItemPreview(
+            nextIndex < items.Count ? items[nextIndex].Slides[0] : null);
+    }
+
+    // Skips songs whose lyrics generate zero slides so one bad song can't break the whole queue.
+    private List<StandaloneQueueItem> BuildStandaloneQueueItems() =>
+        Songs.Select(s => new StandaloneQueueItem(
+                _songService.GenerateSlides(s, ThemeCascade.ForSong(null, s.ThemeId, _appSettings.Current)),
+                s.Title,
+                ProjectionContextKeys.Song(s.Id)))
+             .Where(i => i.Slides.Count > 0)
+             .ToList();
 
     // -- Event handlers from EditViewModel -------------------------------------
 

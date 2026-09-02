@@ -37,6 +37,9 @@
             <DataTemplate DataType="{x:Type vm:MediaViewModel}">
                 <views:MediaView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:NotesViewModel}">
+                <views:NotesView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:ThemeViewModel}">
                 <views:ThemeView />
             </DataTemplate>

@@ -16,6 +16,14 @@ public interface IProjectionService
     /// <summary>Human-readable label for the item being projected (e.g. the song title). Empty when not projecting.</summary>
     string ContextLabel { get; }
 
+    /// <summary>
+    /// The opaque contextKey identifying the currently projected content (e.g. <c>"song:42"</c>), as
+    /// passed to <see cref="LoadSlides"/>. Null when not projecting or the content isn't live-updatable.
+    /// Lets a caller like Stage View's quick style fix (F7) re-target <see cref="TryUpdateSlides"/>
+    /// without needing to already know what is on screen.
+    /// </summary>
+    string? ContextKey { get; }
+
     /// <summary>Fires whenever the displayed slide changes (including when projection stops).</summary>
     event EventHandler<Slide?> SlideChanged;
 
@@ -132,6 +140,19 @@ public interface IProjectionService
     /// <summary>Called by ServiceScheduleViewModel after loading each schedule item.</summary>
     void SetNextScheduleItemPreview(Slide? slide);
 
+    /// <summary>
+    /// The full ordered list the operator is standalone-browsing (e.g. the currently displayed
+    /// Songs list, or MediaViewModel.DisplayedFiles) — each item's slides pre-generated eagerly at
+    /// Proyectar-time (cheap: GenerateSlides is a synchronous in-memory transform, no I/O; realistic
+    /// list sizes are dozens, not hundreds, since operators browse filtered/searched subsets — ponytail:
+    /// revisit with lazy/windowed generation if that assumption breaks). currentIndex is which item is
+    /// live right now. Stored here (not in the transient page VM) because F1 auto-navigates away from
+    /// the content page immediately after projecting, disposing the VM's scope before the operator
+    /// could ever click Next/Previous — eager pre-generation means no later call-back into a
+    /// possibly-disposed scoped service is ever needed.
+    /// </summary>
+    void SetStandaloneQueue(IReadOnlyList<StandaloneQueueItem> items, int currentIndex);
+
     // ── Media transport (video media slides, M10.5) ──────────────────────────────
 
     /// <summary>True when the current slide is a playable video file.</summary>
@@ -161,3 +182,9 @@ public interface IProjectionService
     /// <summary>Called by the projection window to publish the live transport snapshot.</summary>
     void ReportMediaTransport(MediaTransportState state);
 }
+
+/// <summary>
+/// One entry in a standalone-browsing queue (see <see cref="IProjectionService.SetStandaloneQueue"/>):
+/// a fully pre-generated slide deck for one list item, plus the label/context-key <see cref="IProjectionService.LoadSlides"/> needs to project it.
+/// </summary>
+public sealed record StandaloneQueueItem(IReadOnlyList<Slide> Slides, string ContextLabel, string? ContextKey);

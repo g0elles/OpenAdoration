@@ -17,9 +17,12 @@ public partial class StageView : System.Windows.Controls.UserControl
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (_vm is not null) _vm.PropertyChanged -= OnVmPropertyChanged;
+        StopLowerThirdTicker();
         _vm = e.NewValue as StageViewModel;
         if (_vm is not null) _vm.PropertyChanged += OnVmPropertyChanged;
     }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e) => StopLowerThirdTicker();
 
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -27,6 +30,51 @@ public partial class StageView : System.Windows.Controls.UserControl
             Dispatcher.InvokeAsync(SyncVideoSources);
         else if (e.PropertyName is nameof(StageViewModel.IsPreviewVideoPlaying))
             Dispatcher.InvokeAsync(SyncVideoPlayback);
+        else if (e.PropertyName is nameof(StageViewModel.LowerThirdText))
+            Dispatcher.InvokeAsync(SyncLowerThirdTicker);
+    }
+
+    // Mirrors ProjectionWindow's ticker (continuous right-to-left marquee, constant speed)
+    // so the stage monitor shows the same scrolling behaviour the projector is running.
+    private void SyncLowerThirdTicker()
+    {
+        if (_vm is null) return;
+        StopLowerThirdTicker();
+        if (_vm.HasLowerThird && _vm.LowerThirdScrollEnabled) StartLowerThirdTicker();
+    }
+
+    private void StartLowerThirdTicker()
+    {
+        LowerThirdTextBlock.TextWrapping        = TextWrapping.NoWrap;
+        LowerThirdTextBlock.TextAlignment       = TextAlignment.Left;
+        LowerThirdTextBlock.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+
+        LowerThirdBar.UpdateLayout();
+        var textWidth = LowerThirdTextBlock.ActualWidth;
+        var barWidth  = LowerThirdBar.ActualWidth;
+        if (textWidth <= 0 || barWidth <= 0 || _vm is null) return;
+
+        var speed    = Math.Max(10, _vm.LowerThirdScrollSpeed);
+        var duration = TimeSpan.FromSeconds((barWidth + textWidth) / speed);
+
+        var translate = new System.Windows.Media.TranslateTransform();
+        LowerThirdTextBlock.RenderTransform = translate;
+        translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(barWidth, -textWidth, duration)
+            {
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever
+            });
+    }
+
+    private void StopLowerThirdTicker()
+    {
+        if (LowerThirdTextBlock.RenderTransform is System.Windows.Media.TranslateTransform t)
+            t.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        LowerThirdTextBlock.RenderTransform = System.Windows.Media.Transform.Identity;
+
+        LowerThirdTextBlock.TextWrapping        = TextWrapping.Wrap;
+        LowerThirdTextBlock.TextAlignment       = TextAlignment.Center;
+        LowerThirdTextBlock.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
     }
 
     // Mirror the projector's play/pause onto the current-slide preview (UP NEXT keeps looping).
@@ -115,5 +163,41 @@ public partial class StageView : System.Windows.Controls.UserControl
     {
         if (DataContext is StageViewModel vm && vm.LoadCommand.CanExecute(null))
             vm.LoadCommand.Execute(null);
+    }
+
+    // ── F7: background picker (mirrors AddEditThemeView's Browse/Clear handlers) ──
+
+    private async void OnBrowseBackgroundImageClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Select Background Image",
+            Filter = "Image files|*.jpg;*.jpeg;*.png;*.bmp;*.gif|All files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true && DataContext is StageViewModel vm)
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: false);
+    }
+
+    private void OnClearBackgroundImageClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is StageViewModel vm) vm.EditableBackgroundImagePath = null;
+    }
+
+    private async void OnBrowseBackgroundVideoClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Select Background Video",
+            Filter = "Video files|*.mp4;*.wmv;*.avi;*.mov;*.mkv|All files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true && DataContext is StageViewModel vm)
+            await vm.ImportBackgroundFileAsync(dialog.FileName, isVideo: true);
+    }
+
+    private void OnClearBackgroundVideoClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is StageViewModel vm) vm.EditableBackgroundVideoPath = null;
     }
 }
